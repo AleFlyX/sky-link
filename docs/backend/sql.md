@@ -128,7 +128,7 @@ DROP TABLE IF EXISTS `friendship`;
 CREATE TABLE `friendship` (
   `user_id` BIGINT NOT NULL COMMENT '用户ID，恒小于 friend_user_id',
   `friend_user_id` BIGINT NOT NULL COMMENT '好友用户ID',
-  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-待确认 1-已成为好友 2-已拒绝 3-已拉黑',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-待确认 1-已成为好友 2-已拒绝 3-软删除',
   `initiator_id` BIGINT NOT NULL COMMENT '发起人ID',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
