@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: land
+  # 数据源（MySQL，与项目规格一致）
+  datasource:
+    url: jdbc:mysql://localhost:3306/skylink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  # XML 映射文件位置（有自定义 SQL 时放到 resources/mapper 下）
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 实体类别名包（实体放在 entity 包下时，XML 里可省略全限定名）
+  type-aliases-package: com.skylink.land.entity
+  configuration:
+    # 下划线字段自动转驼峰（默认开启，显式声明更清晰）
+    map-underscore-to-camel-case: true
+    # 开发期打印 SQL，生产环境建议注释掉
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 主键策略：雪花算法（对应规格 BIGINT 主键）
+      id-type: assign_id
+      # 逻辑删除（对应规格"逻辑删除保留历史"）
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+logging:
+  level:
+    root: INFO
+    com.skylink.land: DEBUG
