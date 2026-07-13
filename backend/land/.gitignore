@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### env ###
+.env
+
+### maven ###
+.m2
+backend\land\.mvn
+codex-settings.xml
