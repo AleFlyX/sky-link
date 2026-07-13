@@ -1,23 +1,45 @@
 <script setup>
 import AppCard from '../../components/common/AppCard.vue'
+import AppStatusTag from '../../components/common/AppStatusTag.vue'
+import { useAppStore } from '../../stores/app'
+
+const appStore = useAppStore()
 
 const cards = [
-  { title: '用户与组织', text: '登录、用户、部门和角色权限是第一批联调重点。' },
-  { title: '协作业务', text: '文件、任务、公告和消息会在这里逐步接入真实接口。' },
-  { title: '前端结构', text: '当前目录已按标准结构初始化，方便三人并行开发。' },
+  { title: '用户与组织', text: '个人中心、用户管理、部门管理已能承接联调。' },
+  { title: '协作业务', text: '文件、任务、公告三条列表链路已经串通。' },
+  { title: '公共组件', text: '表格、分页、表单弹窗、状态标签已统一沉淀。' },
 ]
 </script>
 
 <template>
   <div class="dashboard">
-    <AppCard variant="hero" title="前端基础结构已完成初始化" padding="lg">
+    <AppCard variant="hero" title="Day 2 前端联调面板" padding="lg">
       <div>
-        <p class="hero__eyebrow">Project Ready</p>
+        <p class="hero__eyebrow">Sprint Snapshot</p>
         <p class="hero__text">
-          现在可以直接在 `views/` 中补页面，在 `api/` 中补接口，在 `components/` 中沉淀复用组件。
+          当前工作台已经具备可演示的头栏、通知提醒、列表页公共能力和多业务页面骨架，后续主要替换为真实接口。
         </p>
       </div>
     </AppCard>
+
+    <section class="summary-grid">
+      <AppCard title="当前登录成员" subtitle="头栏与个人中心共享同一份用户资料">
+        <div class="summary-card">
+          <strong>{{ appStore.currentUser.name }}</strong>
+          <span>{{ appStore.currentUser.department }}</span>
+          <AppStatusTag :label="appStore.currentUser.roleLabel" tone="primary" />
+        </div>
+      </AppCard>
+
+      <AppCard title="未读提醒" subtitle="铃铛按钮会随着这里的数据变化一起响应">
+        <div class="summary-card">
+          <strong>{{ appStore.unreadNotificationCount }} 条</strong>
+          <span>含公告提醒与任务状态更新</span>
+          <AppStatusTag label="待处理" tone="warning" />
+        </div>
+      </AppCard>
+    </section>
 
     <section class="cards">
       <AppCard
@@ -36,6 +58,25 @@ const cards = [
 .dashboard {
   display: grid;
   gap: 1.25rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summary-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.summary-card strong {
+  font-size: 1.35rem;
+}
+
+.summary-card span {
+  color: var(--color-text-muted);
 }
 
 .hero__eyebrow {
@@ -61,6 +102,7 @@ p {
 }
 
 @media (max-width: 900px) {
+  .summary-grid,
   .cards {
     grid-template-columns: 1fr;
   }

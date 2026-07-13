@@ -1,7 +1,7 @@
 <script setup>
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 
 const router = useRouter()
@@ -29,10 +29,10 @@ function handleLogin() {
       <div class="login-page__badge">SkyLink Workspace</div>
       <h1>更轻、更快的团队协作工作台</h1>
       <p>
-        面向课程项目与小型组织的协同平台，把成员、消息、文件、任务和公告统一在一个清晰的工作入口里。
+        面向项目与小型组织的协同平台，把成员、消息、文件、任务和公告统一在一个清晰的工作入口里。
       </p>
 
-      <div class="login-page__summary">
+      <!-- <div class="login-page__summary">
         <div class="login-page__summary-card">
           <div class="login-page__summary-label">当前版本重点</div>
           <div class="login-page__summary-value">登录、任务、文件、公告</div>
@@ -59,7 +59,7 @@ function handleLogin() {
         <div>统一身份与权限管理</div>
         <div>文件、任务与公告集中流转</div>
         <div>适合课程答辩展示的企业化界面</div>
-      </div>
+      </div> -->
     </section>
 
     <section class="login-page__panel">
@@ -99,9 +99,15 @@ function handleLogin() {
             <a href="/">忘记密码</a>
           </div>
 
-          <el-button type="primary" size="large" class="login-card__submit" @click="handleLogin">
+          <AppButton
+            variant="primary"
+            size="large"
+            block
+            class="login-card__submit"
+            @click="handleLogin"
+          >
             登录工作台
-          </el-button>
+          </AppButton>
         </el-form>
 
         <div class="login-card__footer">
