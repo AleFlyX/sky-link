@@ -1,0 +1,63 @@
+import axios from 'axios'
+
+const TOKEN_KEY = 'skylink_token'
+
+const service = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  timeout: 10000,
+})
+
+service.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(TOKEN_KEY)
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
+service.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || error.message || 'Request failed'
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem(TOKEN_KEY)
+      }
+
+      return Promise.reject(new Error(message))
+    }
+
+    return Promise.reject(error)
+  },
+)
+
+export function request(urlOrConfig, options = {}) {
+  if (typeof urlOrConfig === 'string') {
+    const { body, ...restOptions } = options
+
+    return service({
+      url: urlOrConfig,
+      method: restOptions.method || 'get',
+      data: body,
+      ...restOptions,
+    })
+  }
+
+  return service(urlOrConfig)
+}
+
+export function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
+export { TOKEN_KEY, service }
