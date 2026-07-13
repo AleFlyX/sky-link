@@ -35,3 +35,16 @@ logging:
   level:
     root: INFO
     com.skylink.land: DEBUG
+
+skylink:
+  jwt:
+    issuer: sky-link
+    secret: ${JWT_SECRET:change-me-to-a-long-random-secret-at-least-32-bytes}
+    ttl: 24h
+    header: Authorization
+    token-prefix: "Bearer "
+    exclude-paths:
+      - /api/v1/auth/login
+      - /api/v1/auth/register
+      - /api/v1/health
+      - /error
