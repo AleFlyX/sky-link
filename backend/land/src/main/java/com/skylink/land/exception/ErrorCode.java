@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public enum ErrorCode {
 
-    SUCCESS(0, "success"),
+    SUCCESS(200, "success"),
     BAD_REQUEST(400, "请求参数错误"),
     UNAUTHORIZED(401, "未认证或 Token 无效"),
     FORBIDDEN(403, "无权限访问"),
