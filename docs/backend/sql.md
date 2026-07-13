@@ -1,10 +1,10 @@
 ~~~sql
--- SkyLink 数据库建表脚本（规范版）
+-- SkyLink 数据库建表脚本（与 spec.md / model.md 对齐版）
 -- 设计约定：
 -- 1. 主业务表使用 BIGINT 自增主键；多对多关联表使用复合主键。
--- 2. 角色、权限等配置型实体同时保留稳定业务编码唯一约束。
--- 3. 业务数据优先采用逻辑删除，不依赖外键级联物理删除历史数据。
--- 4. 使用更明确的表名，避免 group、file 等保留字/泛化名。
+-- 2. 角色、权限、系统配置等配置型实体保留稳定业务编码唯一约束。
+-- 3. 业务数据优先采用逻辑删除，不依赖级联物理删除历史数据。
+-- 4. 对收藏、已读、附件、文件日志、删除日志、系统配置等需求补充实体承载。
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -123,7 +123,6 @@ CREATE TABLE `role_permission` (
 
 -- ----------------------------
 -- 7. 好友关系表
--- 说明：好友是对称关系，不使用自增主键。
 -- ----------------------------
 DROP TABLE IF EXISTS `friendship`;
 CREATE TABLE `friendship` (
@@ -178,7 +177,6 @@ CREATE TABLE `group_member` (
 
 -- ----------------------------
 -- 10. 消息表
--- 说明：单聊和群聊二选一。
 -- ----------------------------
 DROP TABLE IF EXISTS `message`;
 CREATE TABLE `message` (
@@ -186,7 +184,7 @@ CREATE TABLE `message` (
   `sender_id` BIGINT DEFAULT NULL COMMENT '发送者ID，系统消息可为空',
   `receiver_id` BIGINT DEFAULT NULL COMMENT '接收者ID，单聊使用',
   `group_id` BIGINT DEFAULT NULL COMMENT '群聊ID，群聊使用',
-  `message_type` TINYINT NOT NULL COMMENT '消息类型 1-文本 2-图片 3-文件 4-系统',
+  `message_type` TINYINT NOT NULL COMMENT '消息类型 1-文本 2-图片 3-文件 4-系统 5-emoji',
   `content` TEXT NOT NULL COMMENT '消息内容或资源路径',
   `send_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
   `read_status` TINYINT NOT NULL DEFAULT 0 COMMENT '已读状态 0-未读 1-已读',
@@ -217,6 +215,7 @@ CREATE TABLE `sys_file` (
   `file_ext` VARCHAR(20) DEFAULT NULL COMMENT '文件扩展名，如 pdf、docx',
   `mime_type` VARCHAR(100) DEFAULT NULL COMMENT 'MIME 类型',
   `owner_id` BIGINT NOT NULL COMMENT '上传者ID',
+  `storage_type` TINYINT NOT NULL DEFAULT 1 COMMENT '存储类型 1-本地 2-对象存储',
   `upload_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
   PRIMARY KEY (`file_id`),
@@ -227,7 +226,6 @@ CREATE TABLE `sys_file` (
 
 -- ----------------------------
 -- 12. 文件共享表
--- 说明：目标用户和目标群组二选一。
 -- ----------------------------
 DROP TABLE IF EXISTS `file_share`;
 CREATE TABLE `file_share` (
@@ -253,7 +251,40 @@ CREATE TABLE `file_share` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件共享表';
 
 -- ----------------------------
--- 13. 在线文档表
+-- 13. 文件收藏表
+-- ----------------------------
+DROP TABLE IF EXISTS `file_favorite`;
+CREATE TABLE `file_favorite` (
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `file_id` BIGINT NOT NULL COMMENT '文件ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`user_id`, `file_id`),
+  KEY `idx_file_favorite_file_id` (`file_id`),
+  CONSTRAINT `fk_file_favorite_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_file_favorite_file` FOREIGN KEY (`file_id`) REFERENCES `sys_file` (`file_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件收藏表';
+
+-- ----------------------------
+-- 14. 文件日志表
+-- ----------------------------
+DROP TABLE IF EXISTS `file_log`;
+CREATE TABLE `file_log` (
+  `file_log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '文件日志ID',
+  `file_id` BIGINT NOT NULL COMMENT '文件ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '操作用户ID',
+  `action_type` TINYINT NOT NULL COMMENT '操作类型 1-上传 2-下载 3-分享 4-删除 5-收藏 6-取消收藏',
+  `detail` VARCHAR(255) DEFAULT NULL COMMENT '操作说明',
+  `action_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  PRIMARY KEY (`file_log_id`),
+  KEY `idx_file_log_file_id` (`file_id`),
+  KEY `idx_file_log_user_id` (`user_id`),
+  KEY `idx_file_log_action_time` (`action_time`),
+  CONSTRAINT `fk_file_log_file` FOREIGN KEY (`file_id`) REFERENCES `sys_file` (`file_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_file_log_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件日志表';
+
+-- ----------------------------
+-- 15. 在线文档表
 -- ----------------------------
 DROP TABLE IF EXISTS `document`;
 CREATE TABLE `document` (
@@ -272,7 +303,7 @@ CREATE TABLE `document` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='在线文档表';
 
 -- ----------------------------
--- 14. 文档权限表
+-- 16. 文档权限表
 -- ----------------------------
 DROP TABLE IF EXISTS `document_permission`;
 CREATE TABLE `document_permission` (
@@ -287,17 +318,34 @@ CREATE TABLE `document_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档权限表';
 
 -- ----------------------------
--- 15. 任务表
+-- 17. 文档收藏表
+-- ----------------------------
+DROP TABLE IF EXISTS `document_favorite`;
+CREATE TABLE `document_favorite` (
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `document_id` BIGINT NOT NULL COMMENT '文档ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`user_id`, `document_id`),
+  KEY `idx_document_favorite_document_id` (`document_id`),
+  CONSTRAINT `fk_document_favorite_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_document_favorite_document` FOREIGN KEY (`document_id`) REFERENCES `document` (`document_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档收藏表';
+
+-- ----------------------------
+-- 18. 任务表
 -- ----------------------------
 DROP TABLE IF EXISTS `task`;
 CREATE TABLE `task` (
   `task_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '任务ID',
   `title` VARCHAR(100) NOT NULL COMMENT '任务标题',
   `content` TEXT DEFAULT NULL COMMENT '任务描述',
+  `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
   `creator_id` BIGINT NOT NULL COMMENT '创建人ID',
   `executor_id` BIGINT DEFAULT NULL COMMENT '执行人ID',
   `priority` TINYINT NOT NULL DEFAULT 2 COMMENT '优先级 1-低 2-中 3-高',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1-未开始 2-进行中 3-已完成 4-已取消',
+  `progress_rate` TINYINT NOT NULL DEFAULT 0 COMMENT '进度百分比 0-100',
+  `start_time` DATETIME DEFAULT NULL COMMENT '开始时间',
   `deadline` DATETIME DEFAULT NULL COMMENT '截止时间',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -306,12 +354,29 @@ CREATE TABLE `task` (
   KEY `idx_task_creator_id` (`creator_id`),
   KEY `idx_task_executor_id` (`executor_id`),
   KEY `idx_task_status_deadline` (`status`, `deadline`),
+  CONSTRAINT `ck_task_progress_rate` CHECK (`progress_rate` >= 0 AND `progress_rate` <= 100),
   CONSTRAINT `fk_task_creator` FOREIGN KEY (`creator_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_task_executor` FOREIGN KEY (`executor_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务表';
 
 -- ----------------------------
--- 16. 日程表
+-- 19. 任务附件表
+-- ----------------------------
+DROP TABLE IF EXISTS `task_attachment`;
+CREATE TABLE `task_attachment` (
+  `attachment_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '任务附件ID',
+  `task_id` BIGINT NOT NULL COMMENT '任务ID',
+  `file_id` BIGINT NOT NULL COMMENT '文件ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`attachment_id`),
+  UNIQUE KEY `uk_task_attachment` (`task_id`, `file_id`),
+  KEY `idx_task_attachment_file_id` (`file_id`),
+  CONSTRAINT `fk_task_attachment_task` FOREIGN KEY (`task_id`) REFERENCES `task` (`task_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_task_attachment_file` FOREIGN KEY (`file_id`) REFERENCES `sys_file` (`file_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务附件表';
+
+-- ----------------------------
+-- 20. 日程表
 -- ----------------------------
 DROP TABLE IF EXISTS `schedule`;
 CREATE TABLE `schedule` (
@@ -319,6 +384,8 @@ CREATE TABLE `schedule` (
   `title` VARCHAR(100) NOT NULL COMMENT '日程标题',
   `content` TEXT DEFAULT NULL COMMENT '日程描述',
   `user_id` BIGINT NOT NULL COMMENT '所属用户ID',
+  `schedule_type` TINYINT NOT NULL DEFAULT 1 COMMENT '类型 1-会议 2-学习 3-工作 4-提醒',
+  `is_all_day` TINYINT NOT NULL DEFAULT 0 COMMENT '是否全天事件 0-否 1-是',
   `start_time` DATETIME NOT NULL COMMENT '开始时间',
   `end_time` DATETIME NOT NULL COMMENT '结束时间',
   `remind_time` DATETIME DEFAULT NULL COMMENT '提醒时间',
@@ -333,14 +400,15 @@ CREATE TABLE `schedule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日程表';
 
 -- ----------------------------
--- 17. 公告通知表
+-- 21. 公告通知表
 -- ----------------------------
 DROP TABLE IF EXISTS `notice`;
 CREATE TABLE `notice` (
-  `notice_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '公告ID',
-  `title` VARCHAR(100) NOT NULL COMMENT '公告标题',
-  `content` TEXT NOT NULL COMMENT '公告内容',
+  `notice_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '公告通知ID',
+  `title` VARCHAR(100) NOT NULL COMMENT '标题',
+  `content` TEXT NOT NULL COMMENT '内容',
   `publisher_id` BIGINT NOT NULL COMMENT '发布者ID',
+  `notice_type` TINYINT NOT NULL DEFAULT 1 COMMENT '类型 1-公告 2-通知 3-活动',
   `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-草稿 1-已发布 2-已撤回',
   `publish_time` DATETIME DEFAULT NULL COMMENT '发布时间',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -348,13 +416,27 @@ CREATE TABLE `notice` (
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
   PRIMARY KEY (`notice_id`),
   KEY `idx_notice_publisher_id` (`publisher_id`),
-  KEY `idx_notice_status_publish_time` (`status`, `publish_time`),
+  KEY `idx_notice_type_status` (`notice_type`, `status`),
+  KEY `idx_notice_publish_time` (`publish_time`),
   CONSTRAINT `fk_notice_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告通知表';
 
 -- ----------------------------
--- 18. 登录日志表
--- 日志数据保留历史，不对用户做外键约束。
+-- 22. 公告已读表
+-- ----------------------------
+DROP TABLE IF EXISTS `notice_read`;
+CREATE TABLE `notice_read` (
+  `notice_id` BIGINT NOT NULL COMMENT '公告通知ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `read_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '已读时间',
+  PRIMARY KEY (`notice_id`, `user_id`),
+  KEY `idx_notice_read_user_id` (`user_id`),
+  CONSTRAINT `fk_notice_read_notice` FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_notice_read_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告已读表';
+
+-- ----------------------------
+-- 23. 登录日志表
 -- ----------------------------
 DROP TABLE IF EXISTS `login_log`;
 CREATE TABLE `login_log` (
@@ -372,8 +454,7 @@ CREATE TABLE `login_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录日志表';
 
 -- ----------------------------
--- 19. 操作日志表
--- 日志数据保留历史，不对用户做外键约束。
+-- 24. 操作日志表
 -- ----------------------------
 DROP TABLE IF EXISTS `operation_log`;
 CREATE TABLE `operation_log` (
@@ -389,6 +470,38 @@ CREATE TABLE `operation_log` (
   KEY `idx_operation_log_module` (`module`),
   KEY `idx_operation_log_operation_time` (`operation_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
+
+-- ----------------------------
+-- 25. 删除日志表
+-- ----------------------------
+DROP TABLE IF EXISTS `delete_log`;
+CREATE TABLE `delete_log` (
+  `delete_log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '删除日志ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '操作用户ID',
+  `target_type` VARCHAR(50) NOT NULL COMMENT '删除对象类型，如 file/document/task',
+  `target_id` BIGINT NOT NULL COMMENT '删除对象ID',
+  `reason` VARCHAR(255) DEFAULT NULL COMMENT '删除原因',
+  `delete_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '删除时间',
+  PRIMARY KEY (`delete_log_id`),
+  KEY `idx_delete_log_user_id` (`user_id`),
+  KEY `idx_delete_log_target` (`target_type`, `target_id`),
+  CONSTRAINT `fk_delete_log_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='删除日志表';
+
+-- ----------------------------
+-- 26. 系统配置表
+-- ----------------------------
+DROP TABLE IF EXISTS `system_config`;
+CREATE TABLE `system_config` (
+  `config_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '配置ID',
+  `config_key` VARCHAR(100) NOT NULL COMMENT '配置键',
+  `config_value` VARCHAR(1000) DEFAULT NULL COMMENT '配置值',
+  `description` VARCHAR(255) DEFAULT NULL COMMENT '配置说明',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`config_id`),
+  UNIQUE KEY `uk_system_config_key` (`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
 
 SET FOREIGN_KEY_CHECKS = 1;
 ~~~
