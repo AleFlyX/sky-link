@@ -76,14 +76,15 @@ public class AuthServiceImpl implements AuthService {
         userMapper.insert(user);
 
         bindDefaultRole(user.getUserId());
+        User savedUser = userMapper.selectById(user.getUserId());
 
         return AuthDto.RegisterResponse.builder()
-            .userId(user.getUserId())
-            .username(user.getUsername())
-            .nickname(user.getNickname())
-            .email(user.getEmail())
-            .phone(user.getPhone())
-            .createTime(user.getCreateTime())
+            .userId(savedUser.getUserId())
+            .username(savedUser.getUsername())
+            .nickname(savedUser.getNickname())
+            .email(savedUser.getEmail())
+            .phone(savedUser.getPhone())
+            .createTime(savedUser.getCreateTime())
             .build();
     }
 
