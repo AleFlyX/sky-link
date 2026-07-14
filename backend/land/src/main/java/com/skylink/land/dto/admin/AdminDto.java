@@ -31,6 +31,7 @@ public final class AdminDto {
         private String roleCode;
         private String description;
         private Integer status;
+        private List<PermissionResponse> permissions;
     }
 
     @Data

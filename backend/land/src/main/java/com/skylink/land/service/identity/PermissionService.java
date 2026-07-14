@@ -11,7 +11,13 @@ public interface PermissionService extends IService<Permission> {
 
     PageResponse<PermissionVO> pagePermissions(IdentityDto.PermissionQueryRequest request);
 
+    PermissionVO createPermission(IdentityDto.SavePermissionRequest request);
+
     PermissionVO getPermissionVO(Long permissionId);
+
+    PermissionVO updatePermission(Long permissionId, IdentityDto.SavePermissionRequest request);
+
+    void deletePermission(Long permissionId);
 
     List<PermissionVO> listByRoleId(Long roleId);
 

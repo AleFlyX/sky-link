@@ -6,6 +6,7 @@ import com.skylink.land.dto.user.UserDto;
 import com.skylink.land.entity.identity.User;
 import com.skylink.land.vo.identity.UserProfileVO;
 import com.skylink.land.vo.identity.UserVO;
+import com.skylink.land.vo.identity.RoleVO;
 import java.util.List;
 
 public interface UserService extends IService<User> {
@@ -28,5 +29,7 @@ public interface UserService extends IService<User> {
 
     List<String> listPermissionCodes(Long userId);
 
-    void assignRoles(Long userId, List<Long> roleIds);
+    List<RoleVO> assignRoles(Long userId, List<Long> roleIds);
+
+    List<RoleVO> removeRole(Long userId, Long roleId);
 }

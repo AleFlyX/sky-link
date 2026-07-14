@@ -196,11 +196,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public List<String> listRoleCodes(Long userId) {
-        List<Long> roleIds = listRoleIds(userId);
-        if (CollectionUtils.isEmpty(roleIds)) {
+        List<Role> roles = listEnabledRoles(userId);
+        if (CollectionUtils.isEmpty(roles)) {
             return List.of();
         }
-        return roleMapper.selectBatchIds(roleIds).stream()
+        return roles.stream()
             .map(Role::getRoleCode)
             .filter(StringUtils::hasText)
             .distinct()
@@ -209,7 +209,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public List<String> listPermissionCodes(Long userId) {
-        List<Long> roleIds = listRoleIds(userId);
+        List<Long> roleIds = listEnabledRoles(userId).stream()
+            .map(Role::getRoleId)
+            .toList();
         if (CollectionUtils.isEmpty(roleIds)) {
             return List.of();
         }
@@ -231,15 +233,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void assignRoles(Long userId, List<Long> roleIds) {
+    public List<RoleVO> assignRoles(Long userId, List<Long> roleIds) {
+        requireUser(userId);
         userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
-        if (CollectionUtils.isEmpty(roleIds)) {
-            return;
+        List<Long> normalizedRoleIds = normalizeIds("roleIds", roleIds);
+        if (CollectionUtils.isEmpty(normalizedRoleIds)) {
+            return List.of();
         }
-        roleIds.stream()
-            .distinct()
+        ensureRolesExist(normalizedRoleIds);
+        normalizedRoleIds.stream()
             .map(roleId -> buildUserRole(userId, roleId))
             .forEach(userRoleMapper::insert);
+        return listRoles(userId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<RoleVO> removeRole(Long userId, Long roleId) {
+        requireUser(userId);
+        if (roleId == null || roleId < 1) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "roleId is invalid");
+        }
+        ensureRolesExist(List.of(roleId));
+        userRoleMapper.delete(
+            new LambdaQueryWrapper<UserRole>()
+                .eq(UserRole::getUserId, userId)
+                .eq(UserRole::getRoleId, roleId)
+        );
+        return listRoles(userId);
     }
 
     private UserVO toUserVO(User user) {
@@ -255,11 +276,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     private List<RoleVO> listRoles(Long userId) {
-        List<Long> roleIds = listRoleIds(userId);
-        if (CollectionUtils.isEmpty(roleIds)) {
+        List<Role> roles = listEnabledRoles(userId);
+        if (CollectionUtils.isEmpty(roles)) {
             return List.of();
         }
-        return roleMapper.selectBatchIds(roleIds).stream()
+        return roles.stream()
             .map(RoleVO::from)
             .toList();
     }
@@ -271,11 +292,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             .toList();
     }
 
+    private List<Role> listEnabledRoles(Long userId) {
+        List<Long> roleIds = listRoleIds(userId);
+        if (CollectionUtils.isEmpty(roleIds)) {
+            return List.of();
+        }
+        return roleMapper.selectList(
+            new LambdaQueryWrapper<Role>()
+                .in(Role::getRoleId, roleIds)
+                .eq(Role::getStatus, 1)
+        );
+    }
+
     private UserRole buildUserRole(Long userId, Long roleId) {
         UserRole userRole = new UserRole();
         userRole.setUserId(userId);
         userRole.setRoleId(roleId);
         return userRole;
+    }
+
+    private User requireUser(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "userId is required");
+        }
+        User user = getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user not found");
+        }
+        return user;
+    }
+
+    private void ensureRolesExist(List<Long> roleIds) {
+        if (CollectionUtils.isEmpty(roleIds)) {
+            return;
+        }
+        List<Long> foundIds = roleMapper.selectBatchIds(roleIds).stream()
+            .map(Role::getRoleId)
+            .toList();
+        List<Long> missingIds = roleIds.stream()
+            .filter(roleId -> !foundIds.contains(roleId))
+            .toList();
+        if (!missingIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "roles not found: " + missingIds);
+        }
+    }
+
+    private List<Long> normalizeIds(String fieldName, List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return List.of();
+        }
+        if (ids.stream().anyMatch(id -> id == null || id < 1)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, fieldName + " contains invalid id");
+        }
+        return ids.stream()
+            .distinct()
+            .toList();
     }
 
     private void ensureUniqueEmail(String email, Long excludeUserId) {

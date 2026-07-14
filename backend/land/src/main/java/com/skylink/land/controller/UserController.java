@@ -1,6 +1,7 @@
 package com.skylink.land.controller;
 
 import com.skylink.land.auth.AuthContext;
+import com.skylink.land.auth.RequirePermission;
 import com.skylink.land.dto.common.PageResponse;
 import com.skylink.land.dto.user.UserDto;
 import com.skylink.land.exception.BusinessException;
@@ -13,6 +14,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,21 +31,25 @@ public class UserController {
     }
 
     @GetMapping("/me")
+    @RequirePermission("user:me:get")
     public UserDto.UserProfileResponse me() {
         return toProfileResponse(userService.getUserProfile(AuthContext.requireUserId()));
     }
 
     @PutMapping("/me")
+    @RequirePermission("user:me:update")
     public UserDto.UserProfileResponse updateProfile(@RequestBody UserDto.UpdateProfileRequest request) {
         return toProfileResponse(userService.updateProfile(AuthContext.requireUserId(), request));
     }
 
     @PutMapping("/me/password")
+    @RequirePermission("user:password:update")
     public void changePassword(@RequestBody UserDto.ChangePasswordRequest request) {
         userService.changePassword(AuthContext.requireUserId(), request);
     }
 
     @GetMapping
+    @RequirePermission("user:list")
     public PageResponse<UserDto.UserSummaryResponse> pageUsers(UserDto.UserQueryRequest request) {
         PageResponse<UserVO> page = userService.pageUsers(request);
         return PageResponse.<UserDto.UserSummaryResponse>builder()
@@ -55,6 +61,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/status")
+    @RequirePermission("user:status:update")
     public UserDto.UserSummaryResponse updateUserStatus(
         @PathVariable Long userId,
         @RequestBody UserDto.UpdateUserStatusRequest request
@@ -66,8 +73,27 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
+    @RequirePermission("user:delete")
     public void deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
+    }
+
+    @PostMapping("/{userId}/roles")
+    @RequirePermission("user:role:add")
+    public List<UserDto.UserRoleInfo> assignUserRoles(
+        @PathVariable Long userId,
+        @RequestBody UserDto.AssignUserRolesRequest request
+    ) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
+        }
+        return toRoleInfos(userService.assignRoles(userId, request.getRoleIds()));
+    }
+
+    @DeleteMapping("/{userId}/roles/{roleId}")
+    @RequirePermission("user:role:delete")
+    public List<UserDto.UserRoleInfo> removeUserRole(@PathVariable Long userId, @PathVariable Long roleId) {
+        return toRoleInfos(userService.removeRole(userId, roleId));
     }
 
     private UserDto.UserProfileResponse toProfileResponse(UserProfileVO profile) {
