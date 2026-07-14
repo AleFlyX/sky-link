@@ -329,4 +329,4 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 应用默认启用 Spring SQL 初始化并执行 `backend/land/src/main/resources/schema.sql`。运行时脚本只使用 `CREATE TABLE IF NOT EXISTS`，不会执行本文件中的 `DROP TABLE`；数据库本身仍需由部署环境提前创建。
 
-当前自动建表范围以本文件中的 17 张核心表为准。仓库中其余文件、日程、通知、附件和审计实体是需求缩减后保留的代码，不参与当前 schema 初始化。
+当前自动建表范围以 `docs/spec-current.md` 定义的数据边界和本文件中的 17 张表为准。文件、日程、系统公告、任务附件和业务审计已因工期从本期需求中移出；仓库中对应保留实体不参与当前 schema 初始化。
