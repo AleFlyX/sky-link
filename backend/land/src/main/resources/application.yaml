@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  # 配置文件来源，目前指定application-dev，若无则使用当前的
+  profiles:
+    active: dev
   application:
     name: land
   # 数据源（MySQL，与项目规格一致）
