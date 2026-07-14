@@ -14,6 +14,7 @@ import com.skylink.land.mapper.identity.UserMapper;
 import com.skylink.land.mapper.identity.UserRoleMapper;
 import com.skylink.land.service.auth.AuthService;
 import com.skylink.land.service.identity.UserService;
+import com.skylink.land.service.identity.bootstrap.SecurityBootstrapCatalog;
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,6 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class AuthServiceImpl implements AuthService {
-
-    private static final String DEFAULT_ROLE_CODE = "ROLE_USER";
 
     private final UserMapper userMapper;
 
@@ -176,10 +175,10 @@ public class AuthServiceImpl implements AuthService {
 
     private void bindDefaultRole(Long userId) {
         Role role = roleMapper.selectOne(
-            new LambdaQueryWrapper<Role>().eq(Role::getRoleCode, DEFAULT_ROLE_CODE).last("limit 1")
+            new LambdaQueryWrapper<Role>().eq(Role::getRoleCode, SecurityBootstrapCatalog.ROLE_USER).last("limit 1")
         );
         if (role == null) {
-            return;
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "default role is not initialized");
         }
         UserRole userRole = new UserRole();
         userRole.setUserId(userId);

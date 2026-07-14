@@ -1,3 +1,5 @@
+> 注意：该文件仅保留为权限模型参考。运行时由 `SecurityDataInitializer` 幂等初始化角色和权限；不要执行文件末尾基于固定用户 ID 的授权示例。首次超级管理员通过 `SKYLINK_BOOTSTRAP_ADMIN_*` 环境变量创建。
+
 <!--role-->
 
 INSERT IGNORE INTO role
@@ -128,42 +130,4 @@ JOIN permission p
 
 <!--user_role-->
 
--- 为指定用户分配 ROLE_USER
-INSERT IGNORE INTO user_role
-    (user_id, role_id, create_time)
-SELECT
-    1001,
-    r.role_id,
-    NOW()
-FROM role r
-WHERE r.role_code = 'ROLE_USER';
-
--- 为指定用户分配 ROLE_ADMIN
-INSERT IGNORE INTO user_role
-    (user_id, role_id, create_time)
-SELECT
-    1002,
-    r.role_id,
-    NOW()
-FROM role r
-WHERE r.role_code = 'ROLE_ADMIN';
-
--- 为指定用户分配 ROLE_PROJECT_LEADER
-INSERT IGNORE INTO user_role
-    (user_id, role_id, create_time)
-SELECT
-    1003,
-    r.role_id,
-    NOW()
-FROM role r
-WHERE r.role_code = 'ROLE_PROJECT_LEADER';
-
--- 为指定用户分配 ROLE_SUPER_ADMIN
-INSERT IGNORE INTO user_role
-    (user_id, role_id, create_time)
-SELECT
-    1,
-    r.role_id,
-    NOW()
-FROM role r
-WHERE r.role_code = 'ROLE_SUPER_ADMIN';
+不要使用固定用户 ID 初始化管理员。首次超级管理员由应用读取 `SKYLINK_BOOTSTRAP_ADMIN_*` 环境变量创建；普通注册用户由注册事务绑定 `ROLE_USER`。

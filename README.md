@@ -87,13 +87,13 @@ USE skylink;
 
 ### 2. 启动后端
 
-后端默认连接 `localhost:3306/skylink`，默认端口为 `8080`。建议通过环境变量覆盖数据库凭据和 JWT 密钥：
+后端默认连接 `localhost:3306/skylink`，默认端口为 `8080`。数据库凭据和 JWT 密钥没有默认值，启动前必须显式设置：
 
-| 环境变量 | 说明 | 开发默认值 |
+| 环境变量 | 说明 | 是否必填 |
 | --- | --- | --- |
-| `DB_USERNAME` | MySQL 用户名 | `root` |
-| `DB_PASSWORD` | MySQL 密码 | `root` |
-| `JWT_SECRET` | JWT 签名密钥，至少 32 字节 | 仅供本地占位的默认值 |
+| `DB_USERNAME` | MySQL 用户名 | 是 |
+| `DB_PASSWORD` | MySQL 密码 | 是 |
+| `JWT_SECRET` | JWT 签名密钥，至少 32 字节，不能使用示例值 | 是 |
 
 PowerShell 示例：
 
@@ -101,9 +101,28 @@ PowerShell 示例：
 cd backend/land
 $env:DB_USERNAME = "root"
 $env:DB_PASSWORD = "your-password"
-$env:JWT_SECRET = "replace-with-a-long-random-secret"
+$jwtBytes = New-Object byte[] 48
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($jwtBytes)
+$rng.Dispose()
+$env:JWT_SECRET = [Convert]::ToBase64String($jwtBytes)
 .\mvnw.cmd spring-boot:run
 ```
+
+应用启动时会幂等创建 `ROLE_USER`、`ROLE_ADMIN`、`ROLE_SUPER_ADMIN`、当前接口权限及角色权限关系。新注册用户会自动获得 `ROLE_USER`；如果初始化数据缺失，注册事务会回滚，不会产生无角色账号。
+
+首次部署可通过以下环境变量显式创建超级管理员。管理员成功创建后，应删除这些环境变量，并保持 `SKYLINK_BOOTSTRAP_ADMIN_ENABLED=false`：
+
+```powershell
+$env:SKYLINK_BOOTSTRAP_ADMIN_ENABLED = "true"
+$env:SKYLINK_BOOTSTRAP_ADMIN_USERNAME = "admin"
+$env:SKYLINK_BOOTSTRAP_ADMIN_PASSWORD = "replace-with-a-strong-password"
+$env:SKYLINK_BOOTSTRAP_ADMIN_NICKNAME = "System Admin"
+$env:SKYLINK_BOOTSTRAP_ADMIN_EMAIL = "admin@example.com"
+$env:SKYLINK_BOOTSTRAP_ADMIN_PHONE = "13800000000"
+```
+
+引导密码至少 12 个字符并同时包含字母和数字。系统不会覆盖已有管理员的密码，也不会把第一个注册用户自动提升为管理员。
 
 启动后可访问健康检查：`GET http://localhost:8080/api/v1/health`。
 

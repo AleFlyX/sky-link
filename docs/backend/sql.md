@@ -319,3 +319,7 @@ CREATE TABLE `system_config` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 ~~~
+
+## 安全初始化
+
+应用启动时由 `SecurityDataInitializer` 幂等创建基础角色、接口权限和角色权限关系，因此不要再依赖固定用户 ID 的授权脚本。首次超级管理员必须通过 `SKYLINK_BOOTSTRAP_ADMIN_*` 环境变量显式创建，创建完成后关闭引导开关并移除引导密码。

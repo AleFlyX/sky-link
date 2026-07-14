@@ -172,6 +172,9 @@ SkyLink Database
 - `permission.sort_no` 用于前端菜单展示排序。
 - `user_role` 是用户和角色的中间表，复合主键防止重复授权。
 - `role_permission` 是角色和权限的中间表，复合主键防止重复分配。
+- 系统启动时幂等维护 `ROLE_USER`、`ROLE_ADMIN`、`ROLE_SUPER_ADMIN` 及接口权限；被逻辑删除的系统角色或权限会按稳定业务编码恢复。
+- 普通注册用户必须绑定 `ROLE_USER`，绑定失败时注册事务整体回滚。
+- 首次超级管理员由显式环境配置引导创建，不使用固定用户 ID 或默认密码。
 
 ### 4.4 好友申请（FriendRequest）与好友关系（Friendship）
 
