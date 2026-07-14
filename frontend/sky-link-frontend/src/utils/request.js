@@ -22,7 +22,20 @@ service.interceptors.request.use(
 )
 
 service.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    const payload = response.data
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'code' in payload &&
+      ![0, 200].includes(payload.code)
+    ) {
+      return Promise.reject(new Error(payload.message || 'Request failed'))
+    }
+
+    return payload
+  },
   (error) => {
     if (axios.isAxiosError(error)) {
       const message = error.response?.data?.message || error.message || 'Request failed'

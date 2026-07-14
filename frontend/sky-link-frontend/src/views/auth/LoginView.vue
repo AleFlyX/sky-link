@@ -1,10 +1,16 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { login } from '../../api/workspace'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import { useAppStore } from '../../stores/app'
+import { setToken } from '../../utils/request'
 
 const router = useRouter()
+const appStore = useAppStore()
+const loading = ref(false)
+const loginError = ref('')
 
 const form = reactive({
   account: '',
@@ -12,14 +18,32 @@ const form = reactive({
   remember: true,
 })
 
-function handleLogin() {
+async function handleLogin() {
   if (!form.account || !form.password) {
     ElMessage.warning('请输入账号和密码')
     return
   }
 
-  ElMessage.success('登录页已就绪，后续可直接对接真实接口')
-  router.push('/app/dashboard')
+  loading.value = true
+  loginError.value = ''
+  try {
+    const result = await login(form.account, form.password)
+    setToken(result.token)
+    if (result.userInfo) {
+      appStore.currentUser = {
+        ...appStore.currentUser,
+        name: result.userInfo.nickname || result.userInfo.name || appStore.currentUser.name,
+        account: result.userInfo.username || result.userInfo.account || form.account,
+      }
+    }
+    ElMessage.success('登录成功，正在进入工作台')
+    await router.push('/app/dashboard')
+  } catch (error) {
+    loginError.value = error.message || '登录失败，请检查账号和密码'
+    ElMessage.error(loginError.value)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -74,6 +98,15 @@ function handleLogin() {
 
         <div class="login-card__switch">账号密码登录</div>
 
+        <el-alert
+          v-if="loginError"
+          :title="loginError"
+          type="error"
+          show-icon
+          :closable="false"
+          class="login-card__feedback"
+        />
+
         <el-form label-position="top" class="login-card__form" @submit.prevent="handleLogin">
           <el-form-item label="账号">
             <el-input
@@ -104,6 +137,8 @@ function handleLogin() {
             size="large"
             block
             class="login-card__submit"
+            :loading="loading"
+            :disabled="loading"
             @click="handleLogin"
           >
             登录工作台
