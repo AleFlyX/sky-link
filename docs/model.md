@@ -259,7 +259,6 @@ SkyLink Database
 - `priority` 用数值区分低、中、高优先级。
 - `status` 用数值表示未开始、进行中、已完成、已取消。
 - `start_time` 与 `deadline` 一起描述任务周期。
-- `remark` 用于存放补充说明、注意事项等文本。
 ### 4.9 系统配置（SystemConfig）
 
 `system_config` 使用 `config_key` / `config_value` 方式保存系统配置，适合开关项、默认值、展示文案等轻量配置。
@@ -309,7 +308,7 @@ erDiagram
 
 1. **文档收藏**：新增 `document_favorite`
 2. **系统配置**：新增 `system_config`
-3. **任务开始时间与备注**：`task.start_time`、`task.remark`
+3. **任务开始时间**：`task.start_time`
 4. **好友申请附言**：新增 `friend_request`
 5. **文档群组权限**：新增 `document_group_permission`
 
