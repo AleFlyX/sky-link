@@ -14,11 +14,17 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@hocuspocus/provider": "^4.4.0",
+    "@tiptap/extension-collaboration": "^3.27.4",
+    "@tiptap/extension-collaboration-caret": "^3.27.4",
+    "@tiptap/starter-kit": "^3.27.4",
+    "@tiptap/vue-3": "^3.27.4",
     "axios": "^1.18.1",
     "element-plus": "^2.14.3",
     "pinia": "^3.0.4",
     "vue": "^3.5.38",
-    "vue-router": "^5.1.0"
+    "vue-router": "^5.1.0",
+    "yjs": "^13.6.31"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

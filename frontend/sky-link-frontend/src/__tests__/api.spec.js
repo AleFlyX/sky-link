@@ -5,6 +5,7 @@ import { downloadFile } from '../api/file'
 import { sendMessage } from '../api/message'
 import { updateRolePermissions } from '../api/role'
 import { assignUserRoles } from '../api/user'
+import { createCollaborationTicket, setDocumentPermission, setDocumentGroupPermission } from '../api/document'
 import { cookieRequest, request } from '../utils/request'
 
 vi.mock('../utils/request', () => ({
@@ -67,5 +68,15 @@ describe('business API contracts', () => {
 
     expect(cookieRequest.post).toHaveBeenCalledWith('/auth/refresh')
     expect(request.post).not.toHaveBeenCalledWith('/auth/refresh')
+  })
+
+  it('uses document-scoped permission and collaboration contracts', () => {
+    setDocumentPermission(9, 12, 'edit')
+    setDocumentGroupPermission(9, 3, 'read')
+    createCollaborationTicket(9)
+
+    expect(request.put).toHaveBeenCalledWith('/documents/9/permissions/12', { permissionType: 'edit' })
+    expect(request.put).toHaveBeenCalledWith('/documents/9/group-permissions/3', { permissionType: 'read' })
+    expect(request.post).toHaveBeenCalledWith('/documents/9/collaboration-ticket')
   })
 })

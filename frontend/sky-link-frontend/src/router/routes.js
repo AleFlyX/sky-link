@@ -120,6 +120,12 @@ const routes = [
         },
       },
       {
+        path: 'documents/:documentId/edit',
+        name: 'document-edit',
+        component: () => import('../views/documents/CollaborativeDocumentView.vue'),
+        meta: { title: '协同编辑', eyebrow: 'Live Collaboration' },
+      },
+      {
         path: 'schedules',
         name: 'schedules',
         component: () => import('../views/schedules/ScheduleView.vue'),
