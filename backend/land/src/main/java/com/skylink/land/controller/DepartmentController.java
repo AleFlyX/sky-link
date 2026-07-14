@@ -1,5 +1,6 @@
 package com.skylink.land.controller;
 
+import com.skylink.land.auth.RequirePermission;
 import com.skylink.land.dto.common.PageResponse;
 import com.skylink.land.dto.department.DepartmentDto;
 import com.skylink.land.dto.user.UserDto;
@@ -27,6 +28,7 @@ public class DepartmentController {
     }
 
     @GetMapping
+    @RequirePermission("department:list")
     public List<DepartmentDto.DepartmentResponse> listDepartments() {
         return departmentService.listDepartmentVO().stream()
             .map(this::toDepartmentResponse)
@@ -34,11 +36,13 @@ public class DepartmentController {
     }
 
     @PostMapping
+    @RequirePermission("department:create")
     public DepartmentDto.DepartmentResponse createDepartment(@RequestBody DepartmentDto.SaveDepartmentRequest request) {
         return toDepartmentResponse(departmentService.createDepartment(request));
     }
 
     @PutMapping("/{departmentId}")
+    @RequirePermission("department:update")
     public DepartmentDto.DepartmentResponse updateDepartment(
         @PathVariable Long departmentId,
         @RequestBody DepartmentDto.SaveDepartmentRequest request
@@ -47,11 +51,13 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{departmentId}")
+    @RequirePermission("department:delete")
     public void deleteDepartment(@PathVariable Long departmentId) {
         departmentService.deleteDepartment(departmentId);
     }
 
     @GetMapping("/{departmentId}/members")
+    @RequirePermission("department:members:list")
     public PageResponse<UserDto.UserSummaryResponse> pageDepartmentMembers(
         @PathVariable Long departmentId,
         DepartmentDto.DepartmentMemberQueryRequest request

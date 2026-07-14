@@ -11,9 +11,17 @@ public interface RoleService extends IService<Role> {
 
     PageResponse<RoleVO> pageRoles(IdentityDto.RoleQueryRequest request);
 
+    RoleVO createRole(IdentityDto.SaveRoleRequest request);
+
     RoleVO getRoleVO(Long roleId);
+
+    RoleVO updateRole(Long roleId, IdentityDto.SaveRoleRequest request);
+
+    void deleteRole(Long roleId);
 
     List<RoleVO> listByUserId(Long userId);
 
     void assignPermissions(Long roleId, List<Long> permissionIds);
+
+    RoleVO assignPermissionCodes(Long roleId, List<String> permissionCodes);
 }
