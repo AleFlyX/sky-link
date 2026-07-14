@@ -1,4 +1,14 @@
-import { request } from '../utils/request'
+import * as authApi from './auth'
+import * as departmentApi from './department'
+import * as documentApi from './document'
+import * as fileApi from './file'
+import * as friendApi from './friend'
+import * as groupApi from './group'
+import * as messageApi from './message'
+import * as noticeApi from './notice'
+import * as scheduleApi from './schedule'
+import * as taskApi from './task'
+import * as userApi from './user'
 import {
   departments,
   files,
@@ -84,13 +94,13 @@ function demoResult(factory) {
   })
 }
 
-async function remoteOrDemo(path, factory, options = {}) {
+async function remoteOrDemo(remoteRequest, factory) {
   if (!remoteEnabled) {
     return demoResult(factory)
   }
 
   try {
-    const payload = await request(path, options)
+    const payload = await remoteRequest()
     return { data: payload?.data ?? payload, source: 'remote', degraded: false }
   } catch (error) {
     const result = await demoResult(factory)
@@ -104,112 +114,118 @@ function searchRecords(records, keyword, fields) {
   return records.filter((record) => fields.some((field) => String(record[field] ?? '').toLowerCase().includes(value)))
 }
 
+function messageTarget(sessionId) {
+  const [sessionType, targetId] = String(sessionId).split('-')
+  const id = Number(targetId)
+  return sessionType === 'group' ? { groupId: id } : { receiverId: id }
+}
+
 export function isDemoMode() {
   return !remoteEnabled
 }
 
 export async function login(account, password) {
   if (remoteEnabled) {
-    const payload = await request('/api/v1/auth/login', { method: 'post', body: { account, password } })
+    const payload = await authApi.login(account, password)
     return payload?.data ?? payload
   }
   return demoResult(() => ({ token: `demo-token-${Date.now()}`, expiresIn: 86400, userInfo: clone(demoCurrentUser) })).then((result) => result.data)
 }
 
 export function getCurrentUser() {
-  return remoteOrDemo('/api/v1/users/me', () => demoCurrentUser)
+  return remoteOrDemo(() => userApi.getCurrentUser(), () => demoCurrentUser)
 }
 
 export function getUsers({ page = 1, size = 5, keyword = '', status = '' } = {}) {
-  return remoteOrDemo('/api/v1/users', () => pageOf(searchRecords(state.users.filter((item) => !status || item.status === status), keyword, ['name', 'account', 'department']), page, size), { params: { page, size, keyword, status } })
+  return remoteOrDemo(() => userApi.getUsers({ page, size, keyword, status }), () => pageOf(searchRecords(state.users.filter((item) => !status || item.status === status), keyword, ['name', 'account', 'department']), page, size))
 }
 
 export function createUser(data) {
-  return remoteOrDemo('/api/v1/users', () => {
+  return remoteOrDemo(() => userApi.createUser(data), () => {
     const item = { ...data, id: Date.now(), roles: ['普通成员'], status: data.status || 'active', updatedAt: '刚刚', phone: data.phone || '未填写' }
     state.users.unshift(item)
     return item
-  }, { method: 'post', body: data })
+  })
 }
 
 export function getDepartments({ page = 1, size = 5, keyword = '' } = {}) {
-  return remoteOrDemo('/api/v1/departments', () => pageOf(searchRecords(state.departments, keyword, ['name', 'leader', 'roleScope']), page, size), { params: { page, size, keyword } })
+  return remoteOrDemo(() => departmentApi.getDepartments({ page, size, keyword }), () => pageOf(searchRecords(state.departments, keyword, ['name', 'leader', 'roleScope']), page, size))
 }
 
 export function getFiles({ page = 1, size = 5, keyword = '' } = {}) {
-  return remoteOrDemo('/api/v1/files', () => pageOf(searchRecords(state.files, keyword, ['name', 'category', 'owner']), page, size), { params: { page, size, keyword } })
+  return remoteOrDemo(() => fileApi.getFiles({ page, size, keyword }), () => pageOf(searchRecords(state.files, keyword, ['name', 'category', 'owner']), page, size))
 }
 
 export function createFile(data) {
-  return remoteOrDemo('/api/v1/files', () => {
+  return remoteOrDemo(() => fileApi.createFile(data), () => {
     const item = { ...data, id: Date.now(), owner: demoCurrentUser.name, size: '待上传', updatedAt: '刚刚' }
     state.files.unshift(item)
     return item
-  }, { method: 'post', body: data })
+  })
 }
 
 export function getTasks({ page = 1, size = 5, keyword = '', status = '' } = {}) {
-  return remoteOrDemo('/api/v1/tasks', () => pageOf(searchRecords(state.tasks.filter((item) => !status || item.status === status), keyword, ['title', 'assignee', 'priority']), page, size), { params: { page, size, keyword, status } })
+  return remoteOrDemo(() => taskApi.getTasks({ page, size, keyword, status }), () => pageOf(searchRecords(state.tasks.filter((item) => !status || item.status === status), keyword, ['title', 'assignee', 'priority']), page, size))
 }
 
 export function createTask(data) {
-  return remoteOrDemo('/api/v1/tasks', () => {
+  return remoteOrDemo(() => taskApi.createTask(data), () => {
     const item = { ...data, id: Date.now(), priority: data.priority || '中', status: data.status || 'todo', dueDate: data.dueDate || '待定' }
     state.tasks.unshift(item)
     return item
-  }, { method: 'post', body: data })
+  })
 }
 
 export function getNotices({ page = 1, size = 5, keyword = '', type = '' } = {}) {
-  return remoteOrDemo('/api/v1/notices', () => pageOf(searchRecords(state.notices.filter((item) => !type || item.type === type), keyword, ['title', 'publisher']), page, size), { params: { page, size, keyword, type } })
+  return remoteOrDemo(() => noticeApi.getNotices({ page, size, keyword, type }), () => pageOf(searchRecords(state.notices.filter((item) => !type || item.type === type), keyword, ['title', 'publisher']), page, size))
 }
 
 export function createNotice(data) {
-  return remoteOrDemo('/api/v1/notices', () => {
+  return remoteOrDemo(() => noticeApi.createNotice(data), () => {
     const item = { ...data, id: Date.now(), publisher: demoCurrentUser.name, publishAt: '刚刚', read: false, type: data.type || 'system' }
     state.notices.unshift(item)
     return item
-  }, { method: 'post', body: data })
+  })
 }
 
 export function markNoticeRead(id) {
-  return remoteOrDemo(`/api/v1/notices/${id}/read`, () => {
+  return remoteOrDemo(() => noticeApi.markNoticeRead(id), () => {
     const item = state.notices.find((notice) => notice.id === id)
     if (item) item.read = true
     return item
-  }, { method: 'post' })
+  })
 }
 
 export function getFriends({ page = 1, size = 6, keyword = '' } = {}) {
-  return remoteOrDemo('/api/v1/friends', () => pageOf(searchRecords(state.friends, keyword, ['name', 'account', 'department']), page, size), { params: { page, size, keyword } })
+  return remoteOrDemo(() => friendApi.getFriends({ page, size, keyword }), () => pageOf(searchRecords(state.friends, keyword, ['name', 'account', 'department']), page, size))
 }
 
 export function addFriend(data) {
-  return remoteOrDemo('/api/v1/friends/requests', () => ({ id: Date.now(), ...data, status: 'pending' }), { method: 'post', body: data })
+  return remoteOrDemo(() => friendApi.addFriend(data), () => ({ id: Date.now(), ...data, status: 'pending' }))
 }
 
 export function getGroups({ page = 1, size = 6 } = {}) {
-  return remoteOrDemo('/api/v1/groups', () => pageOf(state.groups, page, size), { params: { page, size } })
+  return remoteOrDemo(() => groupApi.getGroups({ page, size }), () => pageOf(state.groups, page, size))
 }
 
 export function createGroup(data) {
-  return remoteOrDemo('/api/v1/groups', () => {
+  return remoteOrDemo(() => groupApi.createGroup(data), () => {
     const item = { ...data, id: Date.now(), memberCount: 1, updatedAt: '刚刚' }
     state.groups.unshift(item)
     return item
-  }, { method: 'post', body: data })
+  })
 }
 
 export function getSessions() {
-  return remoteOrDemo('/api/v1/messages/sessions', () => state.sessions)
+  return remoteOrDemo(() => messageApi.getSessions(), () => state.sessions)
 }
 
 export function getMessages(sessionId) {
-  return remoteOrDemo('/api/v1/messages', () => state.messages[sessionId] || [], { params: { sessionId } })
+  return remoteOrDemo(() => messageApi.getMessages(messageTarget(sessionId)), () => state.messages[sessionId] || [])
 }
 
 export function sendMessage(sessionId, content) {
-  return remoteOrDemo('/api/v1/messages', () => {
+  return remoteOrDemo(() => messageApi.sendMessage({ ...messageTarget(sessionId), messageType: 'text', content }), () => {
     const message = { id: Date.now(), senderId: demoCurrentUser.id, senderName: demoCurrentUser.name, content, sentAt: '刚刚' }
     state.messages[sessionId] = [...(state.messages[sessionId] || []), message]
     const session = state.sessions.find((item) => item.id === sessionId)
@@ -218,19 +234,19 @@ export function sendMessage(sessionId, content) {
       session.lastTime = '刚刚'
     }
     return message
-  }, { method: 'post', body: { content, sessionId } })
+  })
 }
 
 export function getDocuments({ page = 1, size = 6, keyword = '' } = {}) {
-  return remoteOrDemo('/api/v1/documents', () => pageOf(searchRecords(state.documents, keyword, ['title', 'summary', 'author']), page, size), { params: { page, size, title: keyword } })
+  return remoteOrDemo(() => documentApi.getDocuments({ page, size, title: keyword }), () => pageOf(searchRecords(state.documents, keyword, ['title', 'summary', 'author']), page, size))
 }
 
 export function getDocument(id) {
-  return remoteOrDemo(`/api/v1/documents/${id}`, () => state.documents.find((document) => document.id === id), { params: {} })
+  return remoteOrDemo(() => documentApi.getDocument(id), () => state.documents.find((document) => document.id === id))
 }
 
 export function saveDocument(data, id) {
-  return remoteOrDemo(id ? `/api/v1/documents/${id}` : '/api/v1/documents', () => {
+  return remoteOrDemo(() => documentApi.saveDocument(data, id), () => {
     if (id) {
       const index = state.documents.findIndex((document) => document.id === id)
       state.documents[index] = { ...state.documents[index], ...data, updatedAt: '刚刚' }
@@ -239,17 +255,17 @@ export function saveDocument(data, id) {
     const item = { ...data, id: Date.now(), summary: data.content?.slice(0, 40) || '暂无摘要', updatedAt: '刚刚', author: demoCurrentUser.name }
     state.documents.unshift(item)
     return item
-  }, { method: id ? 'put' : 'post', body: data })
+  })
 }
 
 export function getSchedules({ page = 1, size = 6, keyword = '' } = {}) {
-  return remoteOrDemo('/api/v1/schedules', () => pageOf(searchRecords(state.schedules, keyword, ['title', 'content', 'owner']), page, size), { params: { page, size, keyword } })
+  return remoteOrDemo(() => scheduleApi.getSchedules({ page, size, keyword }), () => pageOf(searchRecords(state.schedules, keyword, ['title', 'content', 'owner']), page, size))
 }
 
 export function createSchedule(data) {
-  return remoteOrDemo('/api/v1/schedules', () => {
+  return remoteOrDemo(() => scheduleApi.createSchedule(data), () => {
     const item = { ...data, id: Date.now(), owner: demoCurrentUser.name }
     state.schedules.unshift(item)
     return item
-  }, { method: 'post', body: data })
+  })
 }
