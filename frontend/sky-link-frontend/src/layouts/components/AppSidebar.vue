@@ -49,6 +49,11 @@ const navItems = [
 
 <style scoped>
 .app-sidebar {
+  position: sticky;
+  top: 0;
+  box-sizing: border-box;
+  height: 100vh;
+  overflow-y: auto;
   padding: 1.25rem;
   border-right: 1px solid var(--color-border);
   background: rgba(250, 252, 255, 0.88);
@@ -77,6 +82,9 @@ const navItems = [
 
 @media (max-width: 900px) {
   .app-sidebar {
+    position: static;
+    height: auto;
+    overflow: visible;
     border-right: none;
     border-bottom: 1px solid var(--color-border);
   }

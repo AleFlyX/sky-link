@@ -21,6 +21,7 @@ import AppSidebar from './components/AppSidebar.vue'
 .layout {
   display: grid;
   grid-template-columns: 248px 1fr;
+  align-items: start;
   min-height: 100vh;
 }
 
