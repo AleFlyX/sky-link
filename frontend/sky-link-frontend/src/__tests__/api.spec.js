@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { login } from '../api/auth'
+import { login, refreshToken } from '../api/auth'
 import { downloadFile } from '../api/file'
 import { sendMessage } from '../api/message'
 import { updateRolePermissions } from '../api/role'
 import { assignUserRoles } from '../api/user'
-import { request } from '../utils/request'
+import { cookieRequest, request } from '../utils/request'
 
 vi.mock('../utils/request', () => ({
+  cookieRequest: {
+    post: vi.fn(),
+  },
   request: {
     delete: vi.fn(),
     download: vi.fn(),
@@ -57,5 +60,12 @@ describe('business API contracts', () => {
       account: 'demo',
       password: 'secret',
     })
+  })
+
+  it('refreshes access token through the http-only refresh cookie', () => {
+    refreshToken()
+
+    expect(cookieRequest.post).toHaveBeenCalledWith('/auth/refresh')
+    expect(request.post).not.toHaveBeenCalledWith('/auth/refresh')
   })
 })

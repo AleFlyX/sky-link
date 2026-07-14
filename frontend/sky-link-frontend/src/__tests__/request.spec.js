@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { request, service } from '../utils/request'
+import { cookieService, request, service } from '../utils/request'
 
 function respondWith(data) {
   return service.request({
@@ -97,5 +97,10 @@ describe('response business code handling', () => {
     await request.delete('/items/1', { adapter })
 
     expect(methods).toEqual(['get', 'post', 'put', 'delete'])
+  })
+
+  it('only enables credentials on the cookie-specific axios instance', () => {
+    expect(service.defaults.withCredentials).not.toBe(true)
+    expect(cookieService.defaults.withCredentials).toBe(true)
   })
 })
