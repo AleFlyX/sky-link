@@ -57,7 +57,7 @@ public class JwtProperties implements InitializingBean {
         if (refreshTtl == null || refreshTtl.isZero() || refreshTtl.isNegative()) {
             throw new IllegalStateException("JWT refresh token ttl must be positive");
         }
-        if (!refreshTtl.minus(ttl).isPositive()) {
+        if (refreshTtl.minus(ttl).isZero() || refreshTtl.minus(ttl).isNegative()) {
             throw new IllegalStateException("JWT refresh token ttl must be longer than access token ttl");
         }
         refreshCookie.validate();

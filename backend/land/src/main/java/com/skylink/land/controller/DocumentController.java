@@ -1,0 +1,57 @@
+package com.skylink.land.controller;
+
+import com.skylink.land.auth.AuthContext;
+import com.skylink.land.auth.RequirePermission;
+import com.skylink.land.dto.common.ApiResponse;
+import com.skylink.land.dto.common.PageResponse;
+import com.skylink.land.dto.document.DocumentDto;
+import com.skylink.land.service.document.DocumentService;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/documents")
+public class DocumentController {
+    private final DocumentService service;
+    public DocumentController(DocumentService service) { this.service = service; }
+
+    @PostMapping @RequirePermission("document:create")
+    public DocumentDto.DocumentDetailResponse create(@RequestBody DocumentDto.CreateDocumentRequest request) {
+        return service.createDocument(AuthContext.requireUserId(), request);
+    }
+    @GetMapping @RequirePermission("document:list")
+    public PageResponse<DocumentDto.DocumentSummaryResponse> list(DocumentDto.DocumentQueryRequest request) {
+        return service.listDocuments(AuthContext.requireUserId(), request);
+    }
+    @GetMapping("/{documentId}") @RequirePermission("document:get")
+    public DocumentDto.DocumentDetailResponse get(@PathVariable Long documentId) {
+        return service.getDocument(AuthContext.requireUserId(), documentId);
+    }
+    @PutMapping("/{documentId}") @RequirePermission("document:update")
+    public DocumentDto.DocumentDetailResponse update(@PathVariable Long documentId, @RequestBody DocumentDto.UpdateDocumentRequest request) {
+        return service.updateDocument(AuthContext.requireUserId(), documentId, request);
+    }
+    @DeleteMapping("/{documentId}") @RequirePermission("document:delete")
+    public ApiResponse<Void> delete(@PathVariable Long documentId) {
+        service.deleteDocument(AuthContext.requireUserId(), documentId); return ApiResponse.success("document deleted", null);
+    }
+    @PutMapping("/{documentId}/permissions/{userId}") @RequirePermission("document:permission:user:set")
+    public DocumentDto.DocumentPermissionResponse setUser(@PathVariable Long documentId, @PathVariable Long userId, @RequestBody DocumentDto.GrantDocumentPermissionRequest request) {
+        return service.setUserPermission(AuthContext.requireUserId(), documentId, userId, request.getPermissionType());
+    }
+    @PutMapping("/{documentId}/group-permissions/{groupId}") @RequirePermission("document:permission:group:set")
+    public DocumentDto.DocumentGroupPermissionResponse setGroup(@PathVariable Long documentId, @PathVariable Long groupId, @RequestBody DocumentDto.GrantDocumentGroupPermissionRequest request) {
+        return service.setGroupPermission(AuthContext.requireUserId(), documentId, groupId, request.getPermissionType());
+    }
+    @GetMapping("/{documentId}/permissions") @RequirePermission("document:permission:list")
+    public DocumentDto.DocumentPermissionListResponse permissions(@PathVariable Long documentId) {
+        return service.listPermissions(AuthContext.requireUserId(), documentId);
+    }
+    @DeleteMapping("/{documentId}/permissions/{userId}") @RequirePermission("document:permission:user:delete")
+    public ApiResponse<Void> removeUser(@PathVariable Long documentId, @PathVariable Long userId) {
+        service.removeUserPermission(AuthContext.requireUserId(), documentId, userId); return ApiResponse.success("permission removed", null);
+    }
+    @DeleteMapping("/{documentId}/group-permissions/{groupId}") @RequirePermission("document:permission:group:delete")
+    public ApiResponse<Void> removeGroup(@PathVariable Long documentId, @PathVariable Long groupId) {
+        service.removeGroupPermission(AuthContext.requireUserId(), documentId, groupId); return ApiResponse.success("group permission removed", null);
+    }
+}

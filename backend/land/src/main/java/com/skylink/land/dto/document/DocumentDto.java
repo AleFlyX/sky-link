@@ -75,6 +75,7 @@ public final class DocumentDto {
         private String creatorName;
         private LocalDateTime createTime;
         private LocalDateTime updateTime;
+        private String permission;
     }
 
     @Data
@@ -95,6 +96,7 @@ public final class DocumentDto {
         private LocalDateTime createTime;
         private LocalDateTime updateTime;
         private List<DocumentPermissionResponse> permissions;
+        private String permission;
     }
 
     @Data
@@ -120,11 +122,42 @@ public final class DocumentDto {
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private Long permissionId;
         private Long documentId;
         private Long userId;
         private String permissionType;
         private LocalDateTime createTime;
         private UserDto.UserSummaryResponse user;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GrantDocumentGroupPermissionRequest implements Serializable {
+        @Serial private static final long serialVersionUID = 1L;
+        private String permissionType;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DocumentGroupPermissionResponse implements Serializable {
+        @Serial private static final long serialVersionUID = 1L;
+        private Long documentId;
+        private Long groupId;
+        private String permissionType;
+        private LocalDateTime createTime;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DocumentPermissionListResponse implements Serializable {
+        @Serial private static final long serialVersionUID = 1L;
+        private List<DocumentPermissionResponse> users;
+        private List<DocumentGroupPermissionResponse> groups;
+    }
+
 }
