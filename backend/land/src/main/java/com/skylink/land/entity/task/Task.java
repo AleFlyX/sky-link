@@ -26,8 +26,6 @@ public class Task extends LogicDeleteEntity {
 
     private String content;
 
-    private String remark;
-
     private Long creatorId;
 
     private Long executorId;
@@ -35,8 +33,6 @@ public class Task extends LogicDeleteEntity {
     private Integer priority;
 
     private Integer status;
-
-    private Integer progressRate;
 
     private LocalDateTime startTime;
 

@@ -5,7 +5,7 @@ import com.skylink.land.dto.user.UserDto;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,8 +29,7 @@ public final class TaskDto {
         private String content;
         private Long executorId;
         private Integer priority;
-        private LocalDateTime deadline;
-        private List<Long> attachments;
+        private OffsetDateTime deadline;
     }
 
     @Data
@@ -46,8 +45,7 @@ public final class TaskDto {
         private String content;
         private Long executorId;
         private Integer priority;
-        private LocalDateTime deadline;
-        private List<Long> attachments;
+        private OffsetDateTime deadline;
     }
 
     @Data
@@ -89,49 +87,13 @@ public final class TaskDto {
         private Long taskId;
         private String title;
         private String content;
-        private String remark;
         private String status;
         private Integer priority;
-        private Integer progressRate;
         private LocalDateTime deadline;
         private LocalDateTime startTime;
         private LocalDateTime createTime;
         private LocalDateTime updateTime;
         private UserDto.UserSummaryResponse creator;
         private UserDto.UserSummaryResponse executor;
-        private List<TaskAttachmentInfo> attachments;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TaskAttachmentInfo implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private Long attachmentId;
-        private Long fileId;
-        private String fileName;
-        private String filePath;
-        private Long fileSize;
-        private String fileType;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TaskStatisticsResponse implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private Integer total;
-        private Integer completed;
-        private Integer inProgress;
-        private Integer notStarted;
-        private Double completionRate;
     }
 }

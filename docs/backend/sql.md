@@ -284,7 +284,6 @@ CREATE TABLE `task` (
   `task_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '任务ID',
   `title` VARCHAR(100) NOT NULL COMMENT '任务标题',
   `content` TEXT DEFAULT NULL COMMENT '任务描述',
-  `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
   `creator_id` BIGINT NOT NULL COMMENT '创建人ID',
   `executor_id` BIGINT DEFAULT NULL COMMENT '执行人ID',
   `priority` TINYINT NOT NULL DEFAULT 2 COMMENT '优先级 1-低 2-中 3-高',
