@@ -82,6 +82,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserVO updateUserStatus(Long userId, Integer status) {
+        if (status == null || (status != 0 && status != 1)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "status must be 0 or 1");
+        }
+
+        User user = getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user not found");
+        }
+
+        user.setStatus(status);
+        updateById(user);
+        return getUserVO(userId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteUser(Long userId) {
+        User user = getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user not found");
+        }
+        removeById(userId);
+    }
+
+    @Override
     public UserProfileVO getUserProfile(Long userId) {
         UserVO user = getUserVO(userId);
         if (user == null) {

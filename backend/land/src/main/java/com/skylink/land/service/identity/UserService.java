@@ -14,6 +14,10 @@ public interface UserService extends IService<User> {
 
     UserVO getUserVO(Long userId);
 
+    UserVO updateUserStatus(Long userId, Integer status);
+
+    void deleteUser(Long userId);
+
     UserProfileVO getUserProfile(Long userId);
 
     UserProfileVO updateProfile(Long userId, UserDto.UpdateProfileRequest request);
