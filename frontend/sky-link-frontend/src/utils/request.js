@@ -25,13 +25,15 @@ service.interceptors.response.use(
   (response) => {
     const payload = response.data
 
-    if (
-      payload &&
-      typeof payload === 'object' &&
-      'code' in payload &&
-      ![0, 200].includes(payload.code)
-    ) {
-      return Promise.reject(new Error(payload.message || 'Request failed'))
+    if (response.config.rawResponse) {
+      if (response.status !== 200) {
+        return Promise.reject(new Error(`Unexpected response status: ${response.status}`))
+      }
+      return payload
+    }
+
+    if (!payload || typeof payload !== 'object' || payload.code !== 200) {
+      return Promise.reject(new Error(payload?.message || 'Invalid response'))
     }
 
     return payload
@@ -69,6 +71,13 @@ export function request(urlOrConfig, options = {}) {
 
   return service(urlOrConfig)
 }
+
+request.get = (url, params, config = {}) => service.get(url, { ...config, params })
+request.post = (url, data, config = {}) => service.post(url, data, config)
+request.put = (url, data, config = {}) => service.put(url, data, config)
+request.delete = (url, config = {}) => service.delete(url, config)
+request.download = (url, params, config = {}) =>
+  service.get(url, { ...config, params, responseType: 'blob', rawResponse: true })
 
 export function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token)
