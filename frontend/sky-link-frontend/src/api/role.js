@@ -1,21 +1,21 @@
 import { request } from '../utils/request'
 
 export function getRoles(params) {
-  return request.get('/api/v1/roles', params)
+  return request.get('/roles', params)
 }
 
 export function createRole(data) {
-  return request.post('/api/v1/roles', data)
+  return request.post('/roles', data)
 }
 
 export function updateRole(roleId, data) {
-  return request.put(`/api/v1/roles/${roleId}`, data)
+  return request.put(`/roles/${roleId}`, data)
 }
 
 export function deleteRole(roleId) {
-  return request.delete(`/api/v1/roles/${roleId}`)
+  return request.delete(`/roles/${roleId}`)
 }
 
 export function updateRolePermissions(roleId, permissionCodes) {
-  return request.put(`/api/v1/roles/${roleId}/permissions`, { permissionCodes })
+  return request.put(`/roles/${roleId}/permissions`, { permissionCodes })
 }
