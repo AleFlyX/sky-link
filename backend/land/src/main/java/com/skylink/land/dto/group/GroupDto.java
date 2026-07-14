@@ -25,7 +25,6 @@ public final class GroupDto {
         private static final long serialVersionUID = 1L;
 
         private String groupName;
-        private String avatar;
         private String notice;
         private List<Long> memberIds;
     }
@@ -40,7 +39,6 @@ public final class GroupDto {
         private static final long serialVersionUID = 1L;
 
         private String groupName;
-        private String avatar;
         private String notice;
     }
 
@@ -65,7 +63,6 @@ public final class GroupDto {
 
         private Long groupId;
         private String groupName;
-        private String avatar;
         private String notice;
         private Long ownerId;
         private String ownerName;
@@ -84,7 +81,6 @@ public final class GroupDto {
 
         private Long groupId;
         private String groupName;
-        private String avatar;
         private String notice;
         private Long ownerId;
         private String ownerName;
@@ -105,7 +101,6 @@ public final class GroupDto {
         private Long userId;
         private String username;
         private String nickname;
-        private String avatar;
         private String role;
         private LocalDateTime joinTime;
     }

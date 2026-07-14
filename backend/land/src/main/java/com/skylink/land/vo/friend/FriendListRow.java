@@ -12,8 +12,6 @@ public class FriendListRow {
 
     private String nickname;
 
-    private String avatar;
-
     private String email;
 
     private String phone;

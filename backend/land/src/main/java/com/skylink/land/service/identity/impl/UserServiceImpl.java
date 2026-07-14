@@ -119,7 +119,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             .userId(user.getUserId())
             .username(user.getUsername())
             .nickname(user.getNickname())
-            .avatar(user.getAvatar())
             .email(user.getEmail())
             .phone(user.getPhone())
             .status(user.getStatus())
@@ -147,10 +146,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (request.getNickname() != null) {
             requireText("nickname", request.getNickname());
             user.setNickname(request.getNickname().trim());
-        }
-        if (request.getAvatar() != null) {
-            requireText("avatar", request.getAvatar());
-            user.setAvatar(request.getAvatar().trim());
         }
         if (request.getEmail() != null) {
             requireText("email", request.getEmail());

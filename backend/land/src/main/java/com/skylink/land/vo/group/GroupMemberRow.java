@@ -12,8 +12,6 @@ public class GroupMemberRow {
 
     private String nickname;
 
-    private String avatar;
-
     private Integer memberRole;
 
     private LocalDateTime joinTime;

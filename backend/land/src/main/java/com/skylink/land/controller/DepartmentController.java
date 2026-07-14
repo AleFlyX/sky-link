@@ -87,7 +87,6 @@ public class DepartmentController {
             .userId(user.getUserId())
             .username(user.getUsername())
             .nickname(user.getNickname())
-            .avatar(user.getAvatar())
             .email(user.getEmail())
             .phone(user.getPhone())
             .status(user.getStatus())

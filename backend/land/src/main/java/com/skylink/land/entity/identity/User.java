@@ -27,8 +27,6 @@ public class User extends LogicDeleteEntity {
 
     private String nickname;
 
-    private String avatar;
-
     private String email;
 
     private String phone;

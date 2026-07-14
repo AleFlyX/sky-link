@@ -47,7 +47,6 @@ public interface FriendshipMapper extends BaseMapper<Friendship> {
           END AS friend_user_id,
           u.username,
           u.nickname,
-          u.avatar,
           u.email,
           u.phone,
           u.status,

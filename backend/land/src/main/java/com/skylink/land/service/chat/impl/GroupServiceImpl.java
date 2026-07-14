@@ -63,7 +63,6 @@ public class GroupServiceImpl implements GroupService {
 
         ChatGroup group = new ChatGroup();
         group.setGroupName(request.getGroupName().trim());
-        group.setAvatar(trimToNull(request.getAvatar()));
         group.setNotice(trimToNull(request.getNotice()));
         group.setOwnerId(currentUserId);
         group.setStatus(GROUP_STATUS_NORMAL);
@@ -126,10 +125,6 @@ public class GroupServiceImpl implements GroupService {
         if (request.getGroupName() != null) {
             requireText("groupName", request.getGroupName());
             group.setGroupName(request.getGroupName().trim());
-            changed = true;
-        }
-        if (request.getAvatar() != null) {
-            group.setAvatar(trimToNull(request.getAvatar()));
             changed = true;
         }
         if (request.getNotice() != null) {
@@ -349,7 +344,6 @@ public class GroupServiceImpl implements GroupService {
         return GroupDto.GroupDetailResponse.builder()
             .groupId(group.getGroupId())
             .groupName(group.getGroupName())
-            .avatar(group.getAvatar())
             .notice(group.getNotice())
             .ownerId(group.getOwnerId())
             .ownerName(resolveDisplayName(owner))
@@ -420,7 +414,6 @@ public class GroupServiceImpl implements GroupService {
         return GroupDto.GroupSummaryResponse.builder()
             .groupId(row.getGroupId())
             .groupName(row.getGroupName())
-            .avatar(row.getAvatar())
             .notice(row.getNotice())
             .ownerId(row.getOwnerId())
             .ownerName(row.getOwnerName())
@@ -434,7 +427,6 @@ public class GroupServiceImpl implements GroupService {
             .userId(row.getUserId())
             .username(row.getUsername())
             .nickname(row.getNickname())
-            .avatar(row.getAvatar())
             .role(toRoleName(row.getMemberRole()))
             .joinTime(row.getJoinTime())
             .build();

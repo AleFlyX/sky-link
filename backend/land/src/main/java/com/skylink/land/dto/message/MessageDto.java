@@ -65,7 +65,6 @@ public final class MessageDto {
         private String sessionType;
         private Long targetId;
         private String targetName;
-        private String targetAvatar;
         private MessageResponse lastMessage;
         private Integer unreadCount;
         private LocalDateTime lastTime;
