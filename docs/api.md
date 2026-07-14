@@ -575,6 +575,14 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 - **描述**：删除指定群组的权限记录
 - **响应**：成功消息。
 
+### 8.11 获取协同编辑票据
+- **接口**：`POST /documents/{documentId}/collaboration-ticket`
+- **描述**：在完成文档对象权限校验后签发 60 秒有效、只能用于该文档的 WebSocket 票据。
+- **响应字段**：`token`、`websocketUrl`、`expiresAt`、`permission`。
+- **规则**：`read` 票据只能接收更新；`edit/manage` 可提交 Yjs 更新。票据通过 Provider 认证消息传递，不放入 URL。
+
+协同状态初始化后，`document.content` 是由 Y.Doc 派生的 Markdown 快照。此时 `PUT /documents/{id}` 携带 `content` 返回 409；标题和状态仍通过 REST 更新。
+
 ---
 
 ## 9. 任务管理（Task）

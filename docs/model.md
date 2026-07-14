@@ -232,6 +232,7 @@ SkyLink Database
 - `document_permission`：用户协作权限
 - `document_group_permission`：群组协作权限
 - `document_favorite`：文档收藏
+- `document_collaboration_state`：文档当前 Y.Doc 状态、状态向量和持久化修订号
 
 这对应 `spec.md` 中的文档创建、编辑、共享、收藏需求。
 
@@ -244,6 +245,8 @@ SkyLink Database
 - `document_group_permission` 用于将文档授权给群组，群成员通过群组关系获得相应权限。
 - `document_group_permission` 使用 `(document_id, group_id)` 复合主键，保证同一文档对同一群组只有一条授权。
 - `document_favorite` 承接文档收藏需求，便于个人中心快速访问常用文档。
+- 协同初始化后，`document_collaboration_state.ydoc_state` 是正文真相源；`document.content` 仅保存可检索、兼容旧接口的 Markdown 派生快照。
+- `document_collaboration_state` 与 `document` 一对一，删除文档时级联删除协同状态；`revision` 每次成功持久化后单调递增。
 
 ### 4.8 任务（Task）
 
