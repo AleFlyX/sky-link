@@ -303,31 +303,7 @@ CREATE TABLE `task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务表';
 
 -- ----------------------------
--- 17. 日程表
--- ----------------------------
-DROP TABLE IF EXISTS `schedule`;
-CREATE TABLE `schedule` (
-  `schedule_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日程ID',
-  `title` VARCHAR(100) NOT NULL COMMENT '日程标题',
-  `content` TEXT DEFAULT NULL COMMENT '日程描述',
-  `user_id` BIGINT NOT NULL COMMENT '所属用户ID',
-  `schedule_type` TINYINT NOT NULL DEFAULT 1 COMMENT '类型 1-会议 2-学习 3-工作 4-提醒',
-  `is_all_day` TINYINT NOT NULL DEFAULT 0 COMMENT '是否全天事件 0-否 1-是',
-  `start_time` DATETIME NOT NULL COMMENT '开始时间',
-  `end_time` DATETIME NOT NULL COMMENT '结束时间',
-  `remind_time` DATETIME DEFAULT NULL COMMENT '提醒时间',
-  `repeat_type` TINYINT NOT NULL DEFAULT 0 COMMENT '重复类型 0-不重复 1-每天 2-每周 3-每月',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
-  PRIMARY KEY (`schedule_id`),
-  KEY `idx_schedule_user_start_time` (`user_id`, `start_time`),
-  CONSTRAINT `ck_schedule_time` CHECK (`end_time` >= `start_time`),
-  CONSTRAINT `fk_schedule_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日程表';
-
--- ----------------------------
--- 18. 系统配置表
+-- 17. 系统配置表
 -- ----------------------------
 DROP TABLE IF EXISTS `system_config`;
 CREATE TABLE `system_config` (
