@@ -63,23 +63,12 @@ public final class AuthDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class RefreshTokenRequest implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private String refreshToken;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class TokenResponse implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
+        private String accessToken;
         private String token;
         private Long expiresIn;
         private LoginUserInfo userInfo;

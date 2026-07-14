@@ -1,8 +1,10 @@
 package com.skylink.land.service.auth.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.skylink.land.auth.JwtClaims;
 import com.skylink.land.auth.JwtProperties;
 import com.skylink.land.auth.JwtTokenProvider;
+import com.skylink.land.auth.TokenPair;
 import com.skylink.land.dto.auth.AuthDto;
 import com.skylink.land.entity.identity.Role;
 import com.skylink.land.entity.identity.User;
@@ -88,7 +90,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public AuthDto.TokenResponse login(AuthDto.LoginRequest request) {
+    public TokenPair login(AuthDto.LoginRequest request) {
         if (request == null || !StringUtils.hasText(request.getAccount()) || !StringUtils.hasText(request.getPassword())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "account and password are required");
         }
@@ -101,11 +103,31 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "user is disabled");
         }
 
-        List<String> roles = userService.listRoleCodes(user.getUserId());
-        String token = jwtTokenProvider.generateToken(user.getUserId(), user.getUsername(), roles);
+        return issueTokens(user);
+    }
 
-        return AuthDto.TokenResponse.builder()
-            .token(token)
+    @Override
+    public TokenPair refresh(String refreshToken) {
+        JwtClaims claims = jwtTokenProvider.parseRefreshToken(refreshToken);
+        User user = userMapper.selectById(claims.getUserId());
+        if (user == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, "invalid refresh token");
+        }
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "user is disabled");
+        }
+
+        return issueTokens(user);
+    }
+
+    private TokenPair issueTokens(User user) {
+        List<String> roles = userService.listRoleCodes(user.getUserId());
+        String accessToken = jwtTokenProvider.generateToken(user.getUserId(), user.getUsername(), roles);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
+
+        return TokenPair.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
             .expiresIn(jwtProperties.getTtl().toSeconds())
             .userInfo(AuthDto.LoginUserInfo.builder()
                 .userId(user.getUserId())

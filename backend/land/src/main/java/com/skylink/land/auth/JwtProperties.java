@@ -25,13 +25,19 @@ public class JwtProperties implements InitializingBean {
 
     private Duration ttl = Duration.ofHours(24);
 
+    private Duration refreshTtl = Duration.ofDays(7);
+
     private String header = "Authorization";
 
     private String tokenPrefix = "Bearer ";
 
+    private RefreshCookie refreshCookie = new RefreshCookie();
+
     private List<String> excludePaths = new ArrayList<>(List.of(
         "/api/v1/auth/login",
         "/api/v1/auth/register",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
         "/api/v1/health",
         "/error"
     ));
@@ -47,6 +53,44 @@ public class JwtProperties implements InitializingBean {
         }
         if (ttl == null || ttl.isZero() || ttl.isNegative()) {
             throw new IllegalStateException("JWT token ttl must be positive");
+        }
+        if (refreshTtl == null || refreshTtl.isZero() || refreshTtl.isNegative()) {
+            throw new IllegalStateException("JWT refresh token ttl must be positive");
+        }
+        if (!refreshTtl.minus(ttl).isPositive()) {
+            throw new IllegalStateException("JWT refresh token ttl must be longer than access token ttl");
+        }
+        refreshCookie.validate();
+    }
+
+    @Data
+    public static class RefreshCookie {
+
+        private String name = "skylink_refresh_token";
+
+        private String path = "/api/v1/auth";
+
+        private String domain;
+
+        private boolean httpOnly = true;
+
+        private boolean secure = false;
+
+        private String sameSite = "Lax";
+
+        public void validate() {
+            if (!StringUtils.hasText(name)) {
+                throw new IllegalStateException("JWT refresh cookie name must be configured");
+            }
+            if (!StringUtils.hasText(path)) {
+                throw new IllegalStateException("JWT refresh cookie path must be configured");
+            }
+            if (!List.of("Strict", "Lax", "None").contains(sameSite)) {
+                throw new IllegalStateException("JWT refresh cookie same-site must be Strict, Lax or None");
+            }
+            if ("None".equals(sameSite) && !secure) {
+                throw new IllegalStateException("JWT refresh cookie with SameSite=None must be secure");
+            }
         }
     }
 }

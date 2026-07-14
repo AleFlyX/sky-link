@@ -32,7 +32,7 @@ public class JwtAuthenticationInterceptor implements HandlerInterceptor {
         }
 
         String token = authorization.substring(properties.getTokenPrefix().length()).trim();
-        JwtClaims claims = tokenProvider.parseToken(token);
+        JwtClaims claims = tokenProvider.parseAccessToken(token);
         AuthContext.setCurrentUser(tokenProvider.toAuthenticatedUser(claims));
         return true;
     }

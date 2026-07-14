@@ -18,6 +18,8 @@ public class JwtClaims {
 
     private String username;
 
+    private String tokenType;
+
     @Builder.Default
     private List<String> roles = Collections.emptyList();
 
