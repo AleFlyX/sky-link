@@ -185,6 +185,18 @@ CREATE TABLE IF NOT EXISTS `document_permission` (
   CONSTRAINT `fk_document_permission_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档权限表';
 
+CREATE TABLE IF NOT EXISTS `document_collaboration_state` (
+  `document_id` BIGINT NOT NULL COMMENT '文档ID',
+  `ydoc_state` LONGBLOB NOT NULL COMMENT 'Y.Doc合并状态',
+  `state_vector` LONGBLOB NOT NULL COMMENT 'Yjs状态向量',
+  `revision` BIGINT NOT NULL DEFAULT 0 COMMENT '持久化修订号',
+  `updated_by` BIGINT DEFAULT NULL COMMENT '最后编辑用户ID',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`document_id`),
+  CONSTRAINT `fk_document_collaboration_document` FOREIGN KEY (`document_id`) REFERENCES `document` (`document_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_document_collaboration_user` FOREIGN KEY (`updated_by`) REFERENCES `user` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档协同当前状态';
+
 CREATE TABLE IF NOT EXISTS `document_group_permission` (
   `document_id` BIGINT NOT NULL,
   `group_id` BIGINT NOT NULL,

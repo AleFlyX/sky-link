@@ -15,6 +15,7 @@ import com.skylink.land.mapper.chat.ChatGroupMapper;
 import com.skylink.land.mapper.document.DocumentGroupPermissionMapper;
 import com.skylink.land.mapper.document.DocumentMapper;
 import com.skylink.land.mapper.document.DocumentPermissionMapper;
+import com.skylink.land.mapper.document.DocumentCollaborationStateMapper;
 import com.skylink.land.mapper.identity.UserMapper;
 import com.skylink.land.service.document.DocumentService;
 import com.skylink.land.service.identity.UserService;
@@ -43,6 +44,7 @@ public class DocumentServiceImpl implements DocumentService {
     private final UserMapper userMapper;
     private final UserService userService;
     private final ChatGroupMapper chatGroupMapper;
+    private final DocumentCollaborationStateMapper collaborationStateMapper;
 
     public DocumentServiceImpl(
         DocumentMapper documentMapper,
@@ -50,7 +52,8 @@ public class DocumentServiceImpl implements DocumentService {
         DocumentGroupPermissionMapper groupPermissionMapper,
         UserMapper userMapper,
         UserService userService,
-        ChatGroupMapper chatGroupMapper
+        ChatGroupMapper chatGroupMapper,
+        DocumentCollaborationStateMapper collaborationStateMapper
     ) {
         this.documentMapper = documentMapper;
         this.permissionMapper = permissionMapper;
@@ -58,6 +61,7 @@ public class DocumentServiceImpl implements DocumentService {
         this.userMapper = userMapper;
         this.userService = userService;
         this.chatGroupMapper = chatGroupMapper;
+        this.collaborationStateMapper = collaborationStateMapper;
     }
 
     @Override
@@ -119,6 +123,7 @@ public class DocumentServiceImpl implements DocumentService {
             .createTime(document.getCreateTime())
             .updateTime(document.getUpdateTime())
             .permission(permission)
+            .collaborative(collaborationStateMapper.selectById(documentId) != null)
             .permissions(List.of())
             .build();
     }
@@ -132,6 +137,9 @@ public class DocumentServiceImpl implements DocumentService {
             throw new BusinessException(ErrorCode.CONFLICT, "archived document is read-only");
         }
         if (request == null) throw badRequest("request body is required");
+        if (request.getContent() != null && collaborationStateMapper.selectById(documentId) != null) {
+            throw new BusinessException(ErrorCode.CONFLICT, "collaborative document content must be updated through Yjs");
+        }
         if (request.getTitle() != null) {
             validateTitle(request.getTitle());
             document.setTitle(request.getTitle().trim());

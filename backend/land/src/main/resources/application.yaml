@@ -63,6 +63,11 @@ skylink:
       - /error
   cors:
     allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+  collaboration:
+    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:}
+    ticket-ttl: 60s
+    websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://localhost:1234}
+    service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:}
   bootstrap:
     security-data-enabled: ${SKYLINK_SECURITY_DATA_INITIALIZATION_ENABLED:true}
     admin:

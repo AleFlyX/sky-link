@@ -16,7 +16,7 @@ class SchemaSqlTests {
     private static final Set<String> ACTIVE_TABLES = Set.of(
         "department", "user", "role", "permission", "user_role", "role_permission",
         "friend_request", "friendship", "chat_group", "group_member", "message",
-        "document", "document_permission", "document_group_permission", "document_favorite",
+        "document", "document_permission", "document_collaboration_state", "document_group_permission", "document_favorite",
         "task", "system_config"
     );
 

@@ -6,13 +6,17 @@ import com.skylink.land.dto.common.ApiResponse;
 import com.skylink.land.dto.common.PageResponse;
 import com.skylink.land.dto.document.DocumentDto;
 import com.skylink.land.service.document.DocumentService;
+import com.skylink.land.service.document.DocumentCollaborationService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/documents")
 public class DocumentController {
     private final DocumentService service;
-    public DocumentController(DocumentService service) { this.service = service; }
+    private final DocumentCollaborationService collaborationService;
+    public DocumentController(DocumentService service, DocumentCollaborationService collaborationService) {
+        this.service = service; this.collaborationService = collaborationService;
+    }
 
     @PostMapping @RequirePermission("document:create")
     public DocumentDto.DocumentDetailResponse create(@RequestBody DocumentDto.CreateDocumentRequest request) {
@@ -25,6 +29,10 @@ public class DocumentController {
     @GetMapping("/{documentId}") @RequirePermission("document:get")
     public DocumentDto.DocumentDetailResponse get(@PathVariable Long documentId) {
         return service.getDocument(AuthContext.requireUserId(), documentId);
+    }
+    @PostMapping("/{documentId}/collaboration-ticket") @RequirePermission("document:get")
+    public DocumentDto.CollaborationTicketResponse ticket(@PathVariable Long documentId) {
+        return collaborationService.issueTicket(AuthContext.requireUserId(), documentId);
     }
     @PutMapping("/{documentId}") @RequirePermission("document:update")
     public DocumentDto.DocumentDetailResponse update(@PathVariable Long documentId, @RequestBody DocumentDto.UpdateDocumentRequest request) {

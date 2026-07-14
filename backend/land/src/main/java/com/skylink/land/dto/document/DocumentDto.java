@@ -5,6 +5,7 @@ import com.skylink.land.dto.user.UserDto;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -97,6 +98,7 @@ public final class DocumentDto {
         private LocalDateTime updateTime;
         private List<DocumentPermissionResponse> permissions;
         private String permission;
+        private boolean collaborative;
     }
 
     @Data
@@ -158,6 +160,31 @@ public final class DocumentDto {
         @Serial private static final long serialVersionUID = 1L;
         private List<DocumentPermissionResponse> users;
         private List<DocumentGroupPermissionResponse> groups;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CollaborationTicketResponse implements Serializable {
+        @Serial private static final long serialVersionUID = 1L;
+        private String token;
+        private String websocketUrl;
+        private Instant expiresAt;
+        private String permission;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CollaborationAuthorizationRequest implements Serializable {
+        @Serial private static final long serialVersionUID = 1L;
+        private Long userId;
+        private Long documentId;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CollaborationAuthorizationResponse implements Serializable {
+        @Serial private static final long serialVersionUID = 1L;
+        private boolean allowed;
+        private String permission;
+        private String displayName;
+        private String documentStatus;
     }
 
 }

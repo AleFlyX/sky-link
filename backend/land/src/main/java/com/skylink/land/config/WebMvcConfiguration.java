@@ -3,6 +3,7 @@ package com.skylink.land.config;
 import com.skylink.land.auth.JwtAuthenticationInterceptor;
 import com.skylink.land.auth.JwtProperties;
 import com.skylink.land.auth.PermissionAuthorizationInterceptor;
+import com.skylink.land.collaboration.CollaborationProperties;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,7 +13,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, CollaborationProperties.class})
 public class WebMvcConfiguration implements WebMvcConfigurer {
 
     private static final long CORS_MAX_AGE_SECONDS = 3600;

@@ -6,10 +6,12 @@ import static org.mockito.Mockito.when;
 
 import com.skylink.land.dto.document.DocumentDto;
 import com.skylink.land.entity.document.Document;
+import com.skylink.land.entity.document.DocumentCollaborationState;
 import com.skylink.land.exception.BusinessException;
 import com.skylink.land.mapper.document.DocumentGroupPermissionMapper;
 import com.skylink.land.mapper.document.DocumentMapper;
 import com.skylink.land.mapper.document.DocumentPermissionMapper;
+import com.skylink.land.mapper.document.DocumentCollaborationStateMapper;
 import com.skylink.land.mapper.chat.ChatGroupMapper;
 import com.skylink.land.mapper.identity.UserMapper;
 import com.skylink.land.service.document.impl.DocumentServiceImpl;
@@ -30,6 +32,7 @@ class DocumentServiceImplTests {
     @Mock UserMapper userMapper;
     @Mock UserService userService;
     @Mock ChatGroupMapper chatGroupMapper;
+    @Mock DocumentCollaborationStateMapper collaborationStateMapper;
 
     private DocumentServiceImpl service;
 
@@ -41,7 +44,8 @@ class DocumentServiceImplTests {
             groupPermissionMapper,
             userMapper,
             userService,
-            chatGroupMapper
+            chatGroupMapper,
+            collaborationStateMapper
         );
     }
 
@@ -80,6 +84,21 @@ class DocumentServiceImplTests {
     @Test
     void creatorAlwaysReceivesManagePermission() {
         assertThat(service.resolvePermission(1L, document(10L, 1L, 1))).isEqualTo("manage");
+    }
+
+    @Test
+    void restCannotOverwriteInitializedCollaborativeContent() {
+        Document document = document(10L, 1L, 1);
+        DocumentCollaborationState state = new DocumentCollaborationState(); state.setDocumentId(10L);
+        when(documentMapper.selectById(10L)).thenReturn(document);
+        when(permissionMapper.selectEffectivePermission(10L, 2L)).thenReturn(3);
+        when(collaborationStateMapper.selectById(10L)).thenReturn(state);
+        DocumentDto.UpdateDocumentRequest request = new DocumentDto.UpdateDocumentRequest(); request.setContent("overwritten");
+
+        assertThatThrownBy(() -> service.updateDocument(2L, 10L, request))
+            .isInstanceOfSatisfying(BusinessException.class, exception ->
+                assertThat(exception.getErrorCode()).isEqualTo(com.skylink.land.exception.ErrorCode.CONFLICT))
+            .hasMessageContaining("Yjs");
     }
 
 
