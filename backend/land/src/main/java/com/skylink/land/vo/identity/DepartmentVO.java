@@ -4,7 +4,6 @@ import com.skylink.land.entity.identity.Department;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,8 +33,6 @@ public class DepartmentVO implements Serializable {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
-
-    private List<DepartmentVO> children;
 
     public static DepartmentVO from(Department department) {
         if (department == null) {

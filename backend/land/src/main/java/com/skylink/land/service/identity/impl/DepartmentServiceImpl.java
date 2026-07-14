@@ -46,7 +46,6 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
         if (request == null || !StringUtils.hasText(request.getDepartmentName())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "departmentName is required");
         }
-        validateParentId(request.getParentId());
         validateLeaderId(request.getLeaderId());
         ensureDepartmentNameUnique(request.getDepartmentName().trim(), null);
 
@@ -68,7 +67,6 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
         if (request == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
         }
-        validateParentId(request.getParentId());
 
         if (request.getDepartmentName() != null) {
             if (!StringUtils.hasText(request.getDepartmentName())) {
@@ -152,12 +150,6 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
             userVO.setDepartmentName(resolveDepartmentName(user.getDepartmentId()));
         }
         return userVO;
-    }
-
-    private void validateParentId(Long parentId) {
-        if (parentId != null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "parent department is not supported currently");
-        }
     }
 
     private void validateLeaderId(Long leaderId) {
