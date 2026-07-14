@@ -1,39 +1,46 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { login } from '../../api/workspace'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import { useAppStore } from '../../stores/app'
 import { setToken } from '../../utils/request'
+import { useLoginForm } from './composables/useLoginForm'
 
 const router = useRouter()
 const appStore = useAppStore()
 const loading = ref(false)
 const loginError = ref('')
-
-const form = reactive({
-  account: '',
-  password: '',
-  remember: true,
-})
+const { formRef, form, rules, sanitizeForm, getCredentials } = useLoginForm()
 
 async function handleLogin() {
-  if (!form.account || !form.password) {
-    ElMessage.warning('请输入账号和密码')
-    return
-  }
+  sanitizeForm()
+
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
 
   loading.value = true
   loginError.value = ''
   try {
-    const result = await login(form.account, form.password)
+    const credentials = getCredentials()
+    const result = await login(credentials.account, credentials.password)
+
+    if (!result?.token) {
+      throw new Error('登录接口未返回有效 token')
+    }
+
     setToken(result.token)
     if (result.userInfo) {
       appStore.currentUser = {
         ...appStore.currentUser,
+        id: result.userInfo.userId || result.userInfo.id || appStore.currentUser.id,
         name: result.userInfo.nickname || result.userInfo.name || appStore.currentUser.name,
-        account: result.userInfo.username || result.userInfo.account || form.account,
+        account: result.userInfo.username || result.userInfo.account || credentials.account,
+        avatar: result.userInfo.avatar || appStore.currentUser.avatar,
+        email: result.userInfo.email || appStore.currentUser.email,
+        phone: result.userInfo.phone || appStore.currentUser.phone,
+        roles: result.userInfo.roles || appStore.currentUser.roles,
       }
     }
     ElMessage.success('登录成功，正在进入工作台')
@@ -107,23 +114,34 @@ async function handleLogin() {
           class="login-card__feedback"
         />
 
-        <el-form label-position="top" class="login-card__form" @submit.prevent="handleLogin">
-          <el-form-item label="账号">
+        <el-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          label-position="top"
+          class="login-card__form"
+          @submit.prevent="handleLogin"
+        >
+          <el-form-item label="账号" prop="account">
             <el-input
               v-model="form.account"
               placeholder="请输入用户名或邮箱"
               size="large"
               clearable
+              autocomplete="username"
+              @blur="sanitizeForm"
             />
           </el-form-item>
 
-          <el-form-item label="密码">
+          <el-form-item label="密码" prop="password">
             <el-input
               v-model="form.password"
               type="password"
               placeholder="请输入密码"
               size="large"
               show-password
+              autocomplete="current-password"
+              @blur="sanitizeForm"
             />
           </el-form-item>
 
