@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { login } from '../api/auth'
 import { downloadFile } from '../api/file'
 import { sendMessage } from '../api/message'
 import { updateRolePermissions } from '../api/role'
@@ -24,13 +25,13 @@ describe('business API contracts', () => {
   it('assigns multiple roles with the documented payload', () => {
     assignUserRoles(10, [1, 2])
 
-    expect(request.post).toHaveBeenCalledWith('/api/v1/users/10/roles', { roleIds: [1, 2] })
+    expect(request.post).toHaveBeenCalledWith('/users/10/roles', { roleIds: [1, 2] })
   })
 
   it('updates role permissions by permission code', () => {
     updateRolePermissions(3, ['user:read', 'user:write'])
 
-    expect(request.put).toHaveBeenCalledWith('/api/v1/roles/3/permissions', {
+    expect(request.put).toHaveBeenCalledWith('/roles/3/permissions', {
       permissionCodes: ['user:read', 'user:write'],
     })
   })
@@ -40,12 +41,21 @@ describe('business API contracts', () => {
 
     sendMessage(data)
 
-    expect(request.post).toHaveBeenCalledWith('/api/v1/messages', data)
+    expect(request.post).toHaveBeenCalledWith('/messages', data)
   })
 
   it('uses the raw download helper for file content', () => {
     downloadFile(8)
 
-    expect(request.download).toHaveBeenCalledWith('/api/v1/files/8/download')
+    expect(request.download).toHaveBeenCalledWith('/files/8/download')
+  })
+
+  it('posts login credentials to the auth endpoint', () => {
+    login('demo', 'secret')
+
+    expect(request.post).toHaveBeenCalledWith('/auth/login', {
+      account: 'demo',
+      password: 'secret',
+    })
   })
 })
