@@ -27,23 +27,23 @@ public class DepartmentController {
     }
 
     @GetMapping
-    public List<DepartmentDto.DepartmentTreeResponse> listDepartments() {
+    public List<DepartmentDto.DepartmentResponse> listDepartments() {
         return departmentService.listDepartmentVO().stream()
-            .map(this::toDepartmentTreeResponse)
+            .map(this::toDepartmentResponse)
             .toList();
     }
 
     @PostMapping
-    public DepartmentDto.DepartmentTreeResponse createDepartment(@RequestBody DepartmentDto.SaveDepartmentRequest request) {
-        return toDepartmentTreeResponse(departmentService.createDepartment(request));
+    public DepartmentDto.DepartmentResponse createDepartment(@RequestBody DepartmentDto.SaveDepartmentRequest request) {
+        return toDepartmentResponse(departmentService.createDepartment(request));
     }
 
     @PutMapping("/{departmentId}")
-    public DepartmentDto.DepartmentTreeResponse updateDepartment(
+    public DepartmentDto.DepartmentResponse updateDepartment(
         @PathVariable Long departmentId,
         @RequestBody DepartmentDto.SaveDepartmentRequest request
     ) {
-        return toDepartmentTreeResponse(departmentService.updateDepartment(departmentId, request));
+        return toDepartmentResponse(departmentService.updateDepartment(departmentId, request));
     }
 
     @DeleteMapping("/{departmentId}")
@@ -65,18 +65,14 @@ public class DepartmentController {
             .build();
     }
 
-    private DepartmentDto.DepartmentTreeResponse toDepartmentTreeResponse(DepartmentVO department) {
-        return DepartmentDto.DepartmentTreeResponse.builder()
+    private DepartmentDto.DepartmentResponse toDepartmentResponse(DepartmentVO department) {
+        return DepartmentDto.DepartmentResponse.builder()
             .departmentId(department.getDepartmentId())
             .departmentName(department.getDepartmentName())
             .leaderId(department.getLeaderId())
             .leaderName(department.getLeaderName())
             .description(department.getDescription())
-            .parentId(null)
             .memberCount(department.getMemberCount())
-            .children(department.getChildren() == null
-                ? List.of()
-                : department.getChildren().stream().map(this::toDepartmentTreeResponse).toList())
             .build();
     }
 

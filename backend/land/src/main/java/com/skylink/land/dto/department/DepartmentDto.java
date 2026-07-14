@@ -1,10 +1,8 @@
 package com.skylink.land.dto.department;
 
 import com.skylink.land.dto.common.PageRequest;
-import com.skylink.land.dto.user.UserDto;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +17,7 @@ public final class DepartmentDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DepartmentTreeResponse implements Serializable {
+    public static class DepartmentResponse implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
@@ -29,9 +27,7 @@ public final class DepartmentDto {
         private Long leaderId;
         private String leaderName;
         private String description;
-        private Long parentId;
         private Integer memberCount;
-        private List<DepartmentTreeResponse> children;
     }
 
     @Data
@@ -46,7 +42,6 @@ public final class DepartmentDto {
         private String departmentName;
         private Long leaderId;
         private String description;
-        private Long parentId;
     }
 
     @Data
@@ -57,19 +52,5 @@ public final class DepartmentDto {
 
         @Serial
         private static final long serialVersionUID = 1L;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DepartmentMemberPageResponse implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private Long departmentId;
-        private String departmentName;
-        private List<UserDto.UserSummaryResponse> members;
     }
 }
