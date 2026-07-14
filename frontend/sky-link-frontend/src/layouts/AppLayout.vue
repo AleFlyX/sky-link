@@ -2,6 +2,8 @@
 import {
   Document,
   Bell,
+  Calendar,
+  ChatDotRound,
   FolderOpened,
   House,
   Memo,
@@ -26,6 +28,10 @@ const navItems = [
   { label: '文件中心', to: '/app/files', icon: FolderOpened },
   { label: '任务管理', to: '/app/tasks', icon: Memo },
   { label: '公告通知', to: '/app/notices', icon: Bell },
+  { label: '通讯录', to: '/app/contacts', icon: User },
+  { label: '消息中心', to: '/app/messages', icon: ChatDotRound },
+  { label: '在线文档', to: '/app/documents', icon: Document },
+  { label: '日程安排', to: '/app/schedules', icon: Calendar },
 ]
 
 const pageTitle = computed(() => route.meta.title || 'SkyLink')

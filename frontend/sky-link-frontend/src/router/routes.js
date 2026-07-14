@@ -92,6 +92,42 @@ const routes = [
           eyebrow: 'Announcements',
         },
       },
+      {
+        path: 'contacts',
+        name: 'contacts',
+        component: () => import('../views/contacts/ContactsView.vue'),
+        meta: {
+          title: '通讯录',
+          eyebrow: 'Friends & Groups',
+        },
+      },
+      {
+        path: 'messages',
+        name: 'messages',
+        component: () => import('../views/messages/MessageCenterView.vue'),
+        meta: {
+          title: '消息中心',
+          eyebrow: 'Message Center',
+        },
+      },
+      {
+        path: 'documents',
+        name: 'documents',
+        component: () => import('../views/documents/DocumentCenterView.vue'),
+        meta: {
+          title: '在线文档',
+          eyebrow: 'Document Workspace',
+        },
+      },
+      {
+        path: 'schedules',
+        name: 'schedules',
+        component: () => import('../views/schedules/ScheduleView.vue'),
+        meta: {
+          title: '日程安排',
+          eyebrow: 'Calendar & Schedule',
+        },
+      },
     ],
   },
   {
