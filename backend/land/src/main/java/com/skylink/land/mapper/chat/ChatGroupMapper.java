@@ -27,7 +27,6 @@ public interface ChatGroupMapper extends BaseMapper<ChatGroup> {
         SELECT
           g.group_id,
           g.group_name,
-          g.avatar,
           g.notice,
           g.owner_id,
           COALESCE(NULLIF(owner.nickname, ''), owner.username) AS owner_name,
@@ -46,7 +45,7 @@ public interface ChatGroupMapper extends BaseMapper<ChatGroup> {
           AND gm.member_role IN (1, 2, 3)
           AND g.is_deleted = 0
           AND g.status = 1
-        GROUP BY g.group_id, g.group_name, g.avatar, g.notice, g.owner_id, owner_name, g.create_time
+        GROUP BY g.group_id, g.group_name, g.notice, g.owner_id, owner_name, g.create_time
         ORDER BY g.update_time DESC
         LIMIT #{offset}, #{size}
         """)

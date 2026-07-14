@@ -44,7 +44,6 @@ public interface FriendRequestMapper extends BaseMapper<FriendRequest> {
           fr.status AS request_status,
           u.username,
           u.nickname,
-          u.avatar,
           u.email,
           u.phone,
           u.status,

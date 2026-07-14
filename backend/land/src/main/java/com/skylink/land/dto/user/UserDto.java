@@ -41,7 +41,6 @@ public final class UserDto {
         private Long userId;
         private String username;
         private String nickname;
-        private String avatar;
         private String email;
         private String phone;
         private Integer status;
@@ -62,7 +61,6 @@ public final class UserDto {
         private Long userId;
         private String username;
         private String nickname;
-        private String avatar;
         private String email;
         private String phone;
         private Integer status;
@@ -82,7 +80,6 @@ public final class UserDto {
         private static final long serialVersionUID = 1L;
 
         private String nickname;
-        private String avatar;
         private String email;
         private String phone;
     }
