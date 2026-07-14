@@ -1,4 +1,4 @@
-package com.skylink.land.entity.chat;
+package com.skylink.land.entity.document;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.skylink.land.entity.common.CreateTimeEntity;
@@ -9,14 +9,16 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@TableName("friendship")
+@TableName("document_group_permission")
 @EqualsAndHashCode(callSuper = true)
-public class Friendship extends CreateTimeEntity {
+public class DocumentGroupPermission extends CreateTimeEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long userId;
+    private Long documentId;
 
-    private Long friendUserId;
+    private Long groupId;
+
+    private Integer permissionType;
 }

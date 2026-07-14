@@ -34,7 +34,5 @@ public class Message implements Serializable {
     @TableField("send_time")
     private LocalDateTime sendTime;
 
-    private Integer readStatus;
-
     private Integer isRecalled;
 }
