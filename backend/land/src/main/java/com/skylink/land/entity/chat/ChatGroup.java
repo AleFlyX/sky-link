@@ -25,8 +25,6 @@ public class ChatGroup extends LogicDeleteEntity {
 
     private Long ownerId;
 
-    private String avatar;
-
     private String notice;
 
     private Integer status;

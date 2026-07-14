@@ -10,8 +10,6 @@ public class GroupSummaryRow {
 
     private String groupName;
 
-    private String avatar;
-
     private String notice;
 
     private Long ownerId;

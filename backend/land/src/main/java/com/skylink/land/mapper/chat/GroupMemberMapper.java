@@ -33,7 +33,6 @@ public interface GroupMemberMapper extends BaseMapper<GroupMember> {
           gm.user_id,
           u.username,
           u.nickname,
-          u.avatar,
           gm.member_role,
           gm.join_time
         FROM group_member gm
@@ -56,7 +55,6 @@ public interface GroupMemberMapper extends BaseMapper<GroupMember> {
           gm.user_id,
           u.username,
           u.nickname,
-          u.avatar,
           gm.member_role,
           gm.join_time
         FROM group_member gm

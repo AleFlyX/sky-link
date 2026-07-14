@@ -18,8 +18,6 @@ public class FriendRequestRow {
 
     private String nickname;
 
-    private String avatar;
-
     private String email;
 
     private String phone;

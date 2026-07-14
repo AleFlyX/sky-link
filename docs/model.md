@@ -125,7 +125,6 @@ SkyLink Database
 | email | VARCHAR(100) | 邮箱，唯一 |
 | phone | VARCHAR(20) | 手机号，唯一 |
 | nickname | VARCHAR(50) | 昵称 |
-| avatar | VARCHAR(255) | 头像 |
 | status | TINYINT | 状态码 |
 | department_id | BIGINT | 所属部门 |
 
@@ -204,7 +203,7 @@ SkyLink Database
 
 对应 SQL 设计说明：
 
-- `chat_group` 保存群本身的信息，包括 `group_name`、`avatar`、`notice`、`owner_id`。
+- `chat_group` 保存群本身的信息，包括 `group_name`、`owner_id`。
 - `owner_id` 指向群主，是群级权限的最高拥有者。
 - `group_member.member_role` 用数值区分群主、管理员、普通成员，便于权限判断。
 - `group_member` 的复合主键确保一个用户在同一个群里只有一条成员记录。
@@ -262,7 +261,6 @@ SkyLink Database
 - `priority` 用数值区分低、中、高优先级。
 - `status` 用数值表示未开始、进行中、已完成、已取消。
 - `start_time` 与 `deadline` 一起描述任务周期。
-- `remark` 用于存放补充说明、注意事项等文本。
 ### 4.9 系统配置（SystemConfig）
 
 `system_config` 使用 `config_key` / `config_value` 方式保存系统配置，适合开关项、默认值、展示文案等轻量配置。
@@ -312,7 +310,7 @@ erDiagram
 
 1. **文档收藏**：新增 `document_favorite`
 2. **系统配置**：新增 `system_config`
-3. **任务开始时间与备注**：`task.start_time`、`task.remark`
+3. **任务开始时间**：`task.start_time`
 4. **好友申请附言**：新增 `friend_request`
 5. **文档群组权限**：新增 `document_group_permission`
 

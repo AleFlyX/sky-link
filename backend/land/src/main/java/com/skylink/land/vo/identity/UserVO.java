@@ -25,8 +25,6 @@ public class UserVO implements Serializable {
 
     private String nickname;
 
-    private String avatar;
-
     private String email;
 
     private String phone;
@@ -49,7 +47,6 @@ public class UserVO implements Serializable {
             .userId(user.getUserId())
             .username(user.getUsername())
             .nickname(user.getNickname())
-            .avatar(user.getAvatar())
             .email(user.getEmail())
             .phone(user.getPhone())
             .status(user.getStatus())
