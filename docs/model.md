@@ -2,7 +2,7 @@
 
 ## 1. 设计原则
 
-SkyLink 面向企业团队、校园组织及项目团队，覆盖用户管理、组织架构、即时通讯、任务协作、在线文档、日程安排、公告通知与基础配置等核心场景。数据库采用 MySQL 关系模型设计，并遵循以下原则：
+SkyLink 面向企业团队、校园组织及项目团队，覆盖用户管理、组织架构、即时通讯、任务协作、在线文档、日程安排与基础配置等核心场景。数据库采用 MySQL 关系模型设计，并遵循以下原则：
 
 1. 满足第三范式（3NF），降低冗余并保证数据一致性。
 2. 主业务实体使用代理主键，统一采用 `BIGINT`。
@@ -16,7 +16,7 @@ SkyLink 面向企业团队、校园组织及项目团队，覆盖用户管理、
 
 ## 2. 数据库总体结构
 
-SkyLink 数据库共设计 **21 张核心数据表**：
+SkyLink 数据库共设计 **18 张核心数据表**：
 
 ```text
 SkyLink Database
@@ -50,11 +50,6 @@ SkyLink Database
 ├── 日程模块
 │   └── 日程(Schedule)
 │
-├── 公告通知模块
-│   ├── 公告通知(Notice)
-│   ├── 公告投放部门(NoticeDepartment)
-│   └── 公告已读(NoticeRead)
-│
 └── 系统管理模块
     └── 系统配置(SystemConfig)
 ```
@@ -77,7 +72,6 @@ SkyLink Database
 - `document`
 - `task`
 - `schedule`
-- `notice`
 - `system_config`
 
 这些表的数据记录本身具有独立生命周期，使用单列主键更方便被外部表引用。
@@ -107,12 +101,6 @@ SkyLink Database
 7. `document_favorite`
    主键为 `(user_id, document_id)`，表示某用户收藏某文档。
 
-8. `notice_department`
-   主键为 `(notice_id, department_id)`，表示某公告投放到某部门。
-
-9. `notice_read`
-   主键为 `(notice_id, user_id)`，表示某用户已读某公告，用于支撑未读数量统计。
-
 ---
 
 ## 4. 核心实体说明
@@ -131,7 +119,6 @@ SkyLink Database
 - 创建多个文档
 - 收藏文档
 - 创建多个日程
-- 查看公告与通知
 
 主要字段：
 
@@ -219,7 +206,7 @@ SkyLink Database
 
 对应 SQL 设计说明：
 
-- `chat_group` 保存群本身的信息，包括 `group_name`、`avatar`、`notice`、`owner_id`。
+- `chat_group` 保存群本身的信息，包括 `group_name`、`avatar`、`owner_id`。
 - `owner_id` 指向群主，是群级权限的最高拥有者。
 - `group_member.member_role` 用数值区分群主、管理员、普通成员，便于权限判断。
 - `group_member` 的复合主键确保一个用户在同一个群里只有一条成员记录。
@@ -294,32 +281,7 @@ SkyLink Database
 - `repeat_type` 用于承接每天、每周、每月等重复规则。
 - `user_id` 表示该日程归属哪个用户，适合个人日程场景。
 
-### 4.10 公告通知（Notice）
-
-`spec.md` 中明确存在：
-
-- 公告
-- 通知
-- 活动
-- 未读数量
-
-因此：
-
-- `notice` 使用 `notice_type` 区分类型
-- `notice_department` 保存公告与投放部门的关系
-- `notice_read` 保存成员已读关系，用于统计未读数量
-
-对应 SQL 设计说明：
-
-- `notice` 主表保存公告、通知、活动三类内容。
-- `publisher_id` 关联发布人，通常是管理员或超级管理员。
-- `status` 支持草稿、已发布、已撤回三个阶段。
-- `publish_time` 用于区分创建和正式发布的时间。
-- `notice_department` 通过 `(notice_id, department_id)` 支持一条公告投放到多个部门。
-- `notice_read` 通过 `(notice_id, user_id)` 标记某个用户是否已读某条公告。
-- 未读数量统计时，先按当前用户所属部门筛选公告，再排除 `notice_read` 中已有的记录。
-
-### 4.11 系统配置（SystemConfig）
+### 4.10 系统配置（SystemConfig）
 
 `system_config` 使用 `config_key` / `config_value` 方式保存系统配置，适合开关项、默认值、展示文案等轻量配置。
 
@@ -359,11 +321,6 @@ erDiagram
     USER ||--o{ TASK : creates
     USER o|--o{ TASK : executes
     USER ||--o{ SCHEDULE : owns
-    USER ||--o{ NOTICE : publishes
-    NOTICE ||--o{ NOTICE_DEPARTMENT : targets
-    DEPARTMENT ||--o{ NOTICE_DEPARTMENT : receives
-    NOTICE ||--o{ NOTICE_READ : read_by
-    USER ||--o{ NOTICE_READ : reads
 ```
 
 ---
@@ -374,13 +331,10 @@ erDiagram
 
 1. **文档收藏**：新增 `document_favorite`
 2. **系统配置**：新增 `system_config`
-3. **公告/通知/活动分类**：`notice.notice_type`
-4. **全天事件**：`schedule.is_all_day`
-5. **任务开始时间与备注**：`task.start_time`、`task.remark`
-6. **好友申请附言**：新增 `friend_request`
-7. **文档群组权限**：新增 `document_group_permission`
-8. **公告按部门投放**：新增 `notice_department`
-9. **公告未读数量**：新增 `notice_read`
+3. **全天事件**：`schedule.is_all_day`
+4. **任务开始时间与备注**：`task.start_time`、`task.remark`
+5. **好友申请附言**：新增 `friend_request`
+6. **文档群组权限**：新增 `document_group_permission`
 
 以下需求不单独建表，而由现有表或业务逻辑支撑：
 
@@ -410,7 +364,7 @@ erDiagram
 1. 让模型和 `spec.md` 的功能范围保持一致。
 2. 补齐了文档收藏、系统配置等缺失实体。
 3. 保留了关联表不用自增主键的规范设计。
-4. 让公告通知、任务、日程等字段更贴近实际需求。
+4. 让任务、日程等字段更贴近实际需求。
 5. 使核心实体和关联关系保持简洁、明确。
 
 这套模型现在更适合作为课程设计文档、建表依据和后续接口实现基础。

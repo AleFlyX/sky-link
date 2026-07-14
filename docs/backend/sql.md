@@ -162,7 +162,6 @@ CREATE TABLE `chat_group` (
   `group_name` VARCHAR(50) NOT NULL COMMENT '群聊名称',
   `owner_id` BIGINT NOT NULL COMMENT '群主ID',
   `avatar` VARCHAR(255) DEFAULT '/uploads/group/default.jpg' COMMENT '群头像相对路径',
-  `notice` VARCHAR(255) DEFAULT NULL COMMENT '群公告',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 0-停用 1-正常',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -328,57 +327,7 @@ CREATE TABLE `schedule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日程表';
 
 -- ----------------------------
--- 18. 公告通知表
--- ----------------------------
-DROP TABLE IF EXISTS `notice`;
-CREATE TABLE `notice` (
-  `notice_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '公告通知ID',
-  `title` VARCHAR(100) NOT NULL COMMENT '标题',
-  `content` TEXT NOT NULL COMMENT '内容',
-  `publisher_id` BIGINT NOT NULL COMMENT '发布者ID',
-  `notice_type` TINYINT NOT NULL DEFAULT 1 COMMENT '类型 1-公告 2-通知 3-活动',
-  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-草稿 1-已发布 2-已撤回',
-  `publish_time` DATETIME DEFAULT NULL COMMENT '发布时间',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
-  PRIMARY KEY (`notice_id`),
-  KEY `idx_notice_publisher_id` (`publisher_id`),
-  KEY `idx_notice_type_status` (`notice_type`, `status`),
-  KEY `idx_notice_publish_time` (`publish_time`),
-  CONSTRAINT `fk_notice_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告通知表';
-
--- ----------------------------
--- 19. 公告投放部门表
--- ----------------------------
-DROP TABLE IF EXISTS `notice_department`;
-CREATE TABLE `notice_department` (
-  `notice_id` BIGINT NOT NULL COMMENT '公告通知ID',
-  `department_id` BIGINT NOT NULL COMMENT '投放部门ID',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`notice_id`, `department_id`),
-  KEY `idx_notice_department_department_id` (`department_id`),
-  CONSTRAINT `fk_notice_department_notice` FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_notice_department_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告投放部门表';
-
--- ----------------------------
--- 20. 公告已读表
--- ----------------------------
-DROP TABLE IF EXISTS `notice_read`;
-CREATE TABLE `notice_read` (
-  `notice_id` BIGINT NOT NULL COMMENT '公告通知ID',
-  `user_id` BIGINT NOT NULL COMMENT '用户ID',
-  `read_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '已读时间',
-  PRIMARY KEY (`notice_id`, `user_id`),
-  KEY `idx_notice_read_user_id` (`user_id`),
-  CONSTRAINT `fk_notice_read_notice` FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_notice_read_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告已读表';
-
--- ----------------------------
--- 21. 系统配置表
+-- 18. 系统配置表
 -- ----------------------------
 DROP TABLE IF EXISTS `system_config`;
 CREATE TABLE `system_config` (
