@@ -394,7 +394,7 @@ Diagram Quick Read:
 | 安全记录 | 登录失败、密码修改、账号禁用写入运行日志；不记录明文密码和完整 Token |
 | 验收 | `/auth/register`、`/auth/login`、`/users/me`、`/users/me/password` 主路径和异常路径通过 |
 
-刷新 Token 与服务端 Token 黑名单未纳入 P0；`/auth/refresh`、`/auth/logout` 在 API 文档中标注为可选，不得成为前端 P0 的强依赖。
+刷新 Token 与服务端 Token 黑名单未纳入 P0；当前实现支持 `/auth/refresh` 通过 HttpOnly Cookie 中的 Refresh Token 轮换 Access Token，响应体不得返回 Refresh Token。`/auth/logout` 清除 Refresh Token Cookie，不提供服务端 Token 黑名单能力。
 
 ### 11.2 用户、部门与 RBAC（P0）
 

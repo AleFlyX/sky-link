@@ -26,11 +26,13 @@ async function handleLogin() {
     const credentials = getCredentials()
     const result = await login(credentials.account, credentials.password)
 
-    if (!result?.token) {
+    const token = result?.accessToken || result?.token
+
+    if (!token) {
       throw new Error('登录接口未返回有效 token')
     }
 
-    setToken(result.token)
+    setToken(token)
     if (result.userInfo) {
       appStore.currentUser = {
         ...appStore.currentUser,

@@ -2,6 +2,7 @@ package com.skylink.land.auth;
 
 import com.skylink.land.exception.UnauthorizedException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
@@ -17,6 +18,10 @@ import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtTokenProvider {
+
+    public static final String ACCESS_TOKEN_TYPE = "access";
+
+    public static final String REFRESH_TOKEN_TYPE = "refresh";
 
     private static final String HMAC_SHA256 = "HmacSHA256";
 
@@ -34,6 +39,22 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Long userId, String username, List<String> roles) {
+        return generateToken(userId, username, roles, ACCESS_TOKEN_TYPE, properties.getTtl());
+    }
+
+    public String generateRefreshToken(Long userId, String username, List<String> roles) {
+        return generateToken(userId, username, roles, REFRESH_TOKEN_TYPE, properties.getRefreshTtl());
+    }
+
+    public JwtClaims parseAccessToken(String token) {
+        return parseToken(token, ACCESS_TOKEN_TYPE);
+    }
+
+    public JwtClaims parseRefreshToken(String token) {
+        return parseToken(token, REFRESH_TOKEN_TYPE);
+    }
+
+    private String generateToken(Long userId, String username, List<String> roles, String tokenType, Duration ttl) {
         Instant now = Instant.now();
         Map<String, Object> header = Map.of(
             "alg", "HS256",
@@ -43,10 +64,11 @@ public class JwtTokenProvider {
         Map<String, Object> payload = new HashMap<>();
         payload.put("iss", properties.getIssuer());
         payload.put("sub", String.valueOf(userId));
+        payload.put("token_type", tokenType);
         payload.put("username", username);
         payload.put("roles", CollectionUtils.isEmpty(roles) ? List.of() : roles);
         payload.put("iat", now.getEpochSecond());
-        payload.put("exp", now.plus(properties.getTtl()).getEpochSecond());
+        payload.put("exp", now.plus(ttl).getEpochSecond());
 
         String encodedHeader = encodeJson(header);
         String encodedPayload = encodeJson(payload);
@@ -55,6 +77,10 @@ public class JwtTokenProvider {
     }
 
     public JwtClaims parseToken(String token) {
+        return parseToken(token, null);
+    }
+
+    private JwtClaims parseToken(String token, String expectedTokenType) {
         if (!StringUtils.hasText(token)) {
             throw new UnauthorizedException("Token 不能为空");
         }
@@ -73,6 +99,9 @@ public class JwtTokenProvider {
         if (!properties.getIssuer().equals(payload.get("iss"))) {
             throw new UnauthorizedException("Token 签发方无效");
         }
+        if (StringUtils.hasText(expectedTokenType) && !expectedTokenType.equals(payload.get("token_type"))) {
+            throw new UnauthorizedException("Token 类型无效");
+        }
 
         Instant expiresAt = Instant.ofEpochSecond(asLong(payload.get("exp")));
         if (Instant.now().isAfter(expiresAt)) {
@@ -82,6 +111,7 @@ public class JwtTokenProvider {
         return JwtClaims.builder()
             .userId(Long.valueOf(String.valueOf(payload.get("sub"))))
             .username(String.valueOf(payload.get("username")))
+            .tokenType(String.valueOf(payload.get("token_type")))
             .roles(asStringList(payload.get("roles")))
             .issuedAt(Instant.ofEpochSecond(asLong(payload.get("iat"))))
             .expiresAt(expiresAt)
