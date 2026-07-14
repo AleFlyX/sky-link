@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 const TOKEN_KEY = 'skylink_token'
+const UNAUTHORIZED_PATH = `${import.meta.env.BASE_URL}401`
 
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
@@ -21,13 +22,30 @@ service.interceptors.request.use(
 )
 
 service.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    const payload = response.data
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'code' in payload &&
+      ![0, 200].includes(payload.code)
+    ) {
+      return Promise.reject(new Error(payload.message || 'Request failed'))
+    }
+
+    return payload
+  },
   (error) => {
     if (axios.isAxiosError(error)) {
       const message = error.response?.data?.message || error.message || 'Request failed'
 
       if (error.response?.status === 401) {
         localStorage.removeItem(TOKEN_KEY)
+
+        if (window.location.pathname !== UNAUTHORIZED_PATH) {
+          window.location.replace(UNAUTHORIZED_PATH)
+        }
       }
 
       return Promise.reject(new Error(message))

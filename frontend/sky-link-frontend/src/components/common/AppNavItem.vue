@@ -1,4 +1,6 @@
 <script setup>
+import { ElIcon } from 'element-plus'
+
 defineProps({
   to: {
     type: String,
@@ -8,12 +10,18 @@ defineProps({
     type: String,
     required: true,
   },
+  icon: {
+    type: Object,
+    default: null,
+  },
 })
 </script>
 
 <template>
   <RouterLink :to="to" class="nav-item">
-    <span class="nav-item__dot"></span>
+    <ElIcon v-if="icon" class="nav-item__icon">
+      <component :is="icon" />
+    </ElIcon>
     <span>{{ label }}</span>
   </RouterLink>
 </template>
@@ -29,22 +37,26 @@ defineProps({
   transition: 0.2s ease;
 }
 
-.nav-item__dot {
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 999px;
-  background: #c6d2e4;
+.nav-item__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
   transition: 0.2s ease;
+}
+
+.nav-item__icon :deep(svg) {
+  display: block;
+  width: 1rem;
+  height: 1rem;
 }
 
 .nav-item.router-link-active {
   background: var(--color-primary-soft);
   color: var(--color-primary);
   font-weight: 600;
-}
-
-.nav-item.router-link-active .nav-item__dot {
-  background: var(--color-primary);
 }
 
 .nav-item:hover {

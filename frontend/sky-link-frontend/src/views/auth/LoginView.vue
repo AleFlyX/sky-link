@@ -1,10 +1,16 @@
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { login } from '../../api/workspace'
+import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import { useAppStore } from '../../stores/app'
+import { setToken } from '../../utils/request'
 
 const router = useRouter()
+const appStore = useAppStore()
+const loading = ref(false)
+const loginError = ref('')
 
 const form = reactive({
   account: '',
@@ -12,14 +18,32 @@ const form = reactive({
   remember: true,
 })
 
-function handleLogin() {
+async function handleLogin() {
   if (!form.account || !form.password) {
     ElMessage.warning('请输入账号和密码')
     return
   }
 
-  ElMessage.success('登录页已就绪，后续可直接对接真实接口')
-  router.push('/app/dashboard')
+  loading.value = true
+  loginError.value = ''
+  try {
+    const result = await login(form.account, form.password)
+    setToken(result.token)
+    if (result.userInfo) {
+      appStore.currentUser = {
+        ...appStore.currentUser,
+        name: result.userInfo.nickname || result.userInfo.name || appStore.currentUser.name,
+        account: result.userInfo.username || result.userInfo.account || form.account,
+      }
+    }
+    ElMessage.success('登录成功，正在进入工作台')
+    await router.push('/app/dashboard')
+  } catch (error) {
+    loginError.value = error.message || '登录失败，请检查账号和密码'
+    ElMessage.error(loginError.value)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -29,10 +53,10 @@ function handleLogin() {
       <div class="login-page__badge">SkyLink Workspace</div>
       <h1>更轻、更快的团队协作工作台</h1>
       <p>
-        面向课程项目与小型组织的协同平台，把成员、消息、文件、任务和公告统一在一个清晰的工作入口里。
+        面向项目与小型组织的协同平台，把成员、消息、文件、任务和公告统一在一个清晰的工作入口里。
       </p>
 
-      <div class="login-page__summary">
+      <!-- <div class="login-page__summary">
         <div class="login-page__summary-card">
           <div class="login-page__summary-label">当前版本重点</div>
           <div class="login-page__summary-value">登录、任务、文件、公告</div>
@@ -59,7 +83,7 @@ function handleLogin() {
         <div>统一身份与权限管理</div>
         <div>文件、任务与公告集中流转</div>
         <div>适合课程答辩展示的企业化界面</div>
-      </div>
+      </div> -->
     </section>
 
     <section class="login-page__panel">
@@ -73,6 +97,15 @@ function handleLogin() {
         </div>
 
         <div class="login-card__switch">账号密码登录</div>
+
+        <el-alert
+          v-if="loginError"
+          :title="loginError"
+          type="error"
+          show-icon
+          :closable="false"
+          class="login-card__feedback"
+        />
 
         <el-form label-position="top" class="login-card__form" @submit.prevent="handleLogin">
           <el-form-item label="账号">
@@ -99,9 +132,17 @@ function handleLogin() {
             <a href="/">忘记密码</a>
           </div>
 
-          <el-button type="primary" size="large" class="login-card__submit" @click="handleLogin">
+          <AppButton
+            variant="primary"
+            size="large"
+            block
+            class="login-card__submit"
+            :loading="loading"
+            :disabled="loading"
+            @click="handleLogin"
+          >
             登录工作台
-          </el-button>
+          </AppButton>
         </el-form>
 
         <div class="login-card__footer">

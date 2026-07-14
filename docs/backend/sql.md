@@ -122,27 +122,39 @@ CREATE TABLE `role_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色权限关联表';
 
 -- ----------------------------
--- 7. 好友关系表
+-- 7. 好友申请表
 -- ----------------------------
+DROP TABLE IF EXISTS `friend_request`;
+CREATE TABLE `friend_request` (
+  `request_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '好友申请ID',
+  `requester_id` BIGINT NOT NULL COMMENT '申请人ID',
+  `receiver_id` BIGINT NOT NULL COMMENT '接收人ID',
+  `message` VARCHAR(255) DEFAULT NULL COMMENT '申请附言',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-待处理 1-已同意 2-已拒绝',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '申请时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '处理时间',
+  PRIMARY KEY (`request_id`),
+  KEY `idx_friend_request_users` (`requester_id`, `receiver_id`),
+  KEY `idx_friend_request_receiver_status` (`receiver_id`, `status`),
+  CONSTRAINT `ck_friend_request_users` CHECK (`requester_id` <> `receiver_id`),
+  CONSTRAINT `fk_friend_request_requester` FOREIGN KEY (`requester_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_friend_request_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='好友申请表';
+
+-- 8. 好友关系表，仅保存已经建立的关系
 DROP TABLE IF EXISTS `friendship`;
 CREATE TABLE `friendship` (
   `user_id` BIGINT NOT NULL COMMENT '用户ID，恒小于 friend_user_id',
   `friend_user_id` BIGINT NOT NULL COMMENT '好友用户ID',
-  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-待确认 1-已成为好友 2-已拒绝 3-软删除',
-  `initiator_id` BIGINT NOT NULL COMMENT '发起人ID',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '成为好友时间',
   PRIMARY KEY (`user_id`, `friend_user_id`),
-  KEY `idx_friendship_initiator_id` (`initiator_id`),
-  KEY `idx_friendship_status` (`status`),
   CONSTRAINT `ck_friendship_user_order` CHECK (`user_id` < `friend_user_id`),
   CONSTRAINT `fk_friendship_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_friendship_friend_user` FOREIGN KEY (`friend_user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_friendship_initiator` FOREIGN KEY (`initiator_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT
+  CONSTRAINT `fk_friendship_friend_user` FOREIGN KEY (`friend_user_id`) REFERENCES `user` (`user_id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='好友关系表';
 
 -- ----------------------------
--- 8. 群聊表
+-- 9. 群聊表
 -- ----------------------------
 DROP TABLE IF EXISTS `chat_group`;
 CREATE TABLE `chat_group` (
@@ -161,13 +173,13 @@ CREATE TABLE `chat_group` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='群聊表';
 
 -- ----------------------------
--- 9. 群成员表
+-- 10. 群成员表
 -- ----------------------------
 DROP TABLE IF EXISTS `group_member`;
 CREATE TABLE `group_member` (
   `group_id` BIGINT NOT NULL COMMENT '群聊ID',
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
-  `member_role` TINYINT NOT NULL DEFAULT 3 COMMENT '成员角色 1-群主 2-管理员 3-普通成员',
+  `member_role` TINYINT NOT NULL DEFAULT 3 COMMENT '成员角色 1-群主 2-管理员 3-普通成员 4-已退出',
   `join_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
   PRIMARY KEY (`group_id`, `user_id`),
   KEY `idx_group_member_user_id` (`user_id`),
@@ -176,7 +188,7 @@ CREATE TABLE `group_member` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='群成员表';
 
 -- ----------------------------
--- 10. 消息表
+-- 11. 消息表
 -- ----------------------------
 DROP TABLE IF EXISTS `message`;
 CREATE TABLE `message` (
@@ -187,7 +199,6 @@ CREATE TABLE `message` (
   `message_type` TINYINT NOT NULL COMMENT '消息类型 1-文本 2-图片 3-文件 4-系统 5-emoji',
   `content` TEXT NOT NULL COMMENT '消息内容或资源路径',
   `send_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
-  `read_status` TINYINT NOT NULL DEFAULT 0 COMMENT '已读状态 0-未读 1-已读',
   `is_recalled` TINYINT NOT NULL DEFAULT 0 COMMENT '是否撤回 0-否 1-是',
   PRIMARY KEY (`message_id`),
   KEY `idx_message_sender_id` (`sender_id`),
@@ -204,7 +215,7 @@ CREATE TABLE `message` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='消息表';
 
 -- ----------------------------
--- 11. 文件表
+-- 12. 文件表
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_file`;
 CREATE TABLE `sys_file` (
@@ -225,7 +236,7 @@ CREATE TABLE `sys_file` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件表';
 
 -- ----------------------------
--- 12. 文件共享表
+-- 13. 文件共享表
 -- ----------------------------
 DROP TABLE IF EXISTS `file_share`;
 CREATE TABLE `file_share` (
@@ -251,7 +262,7 @@ CREATE TABLE `file_share` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件共享表';
 
 -- ----------------------------
--- 13. 文件收藏表
+-- 14. 文件收藏表
 -- ----------------------------
 DROP TABLE IF EXISTS `file_favorite`;
 CREATE TABLE `file_favorite` (
@@ -265,7 +276,7 @@ CREATE TABLE `file_favorite` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件收藏表';
 
 -- ----------------------------
--- 14. 文件日志表
+-- 15. 文件日志表
 -- ----------------------------
 DROP TABLE IF EXISTS `file_log`;
 CREATE TABLE `file_log` (
@@ -284,7 +295,7 @@ CREATE TABLE `file_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件日志表';
 
 -- ----------------------------
--- 15. 在线文档表
+-- 16. 在线文档表
 -- ----------------------------
 DROP TABLE IF EXISTS `document`;
 CREATE TABLE `document` (
@@ -303,7 +314,7 @@ CREATE TABLE `document` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='在线文档表';
 
 -- ----------------------------
--- 16. 文档权限表
+-- 17. 文档权限表
 -- ----------------------------
 DROP TABLE IF EXISTS `document_permission`;
 CREATE TABLE `document_permission` (
@@ -318,7 +329,22 @@ CREATE TABLE `document_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档权限表';
 
 -- ----------------------------
--- 17. 文档收藏表
+-- 18. 文档群组权限表
+-- ----------------------------
+DROP TABLE IF EXISTS `document_group_permission`;
+CREATE TABLE `document_group_permission` (
+  `document_id` BIGINT NOT NULL COMMENT '文档ID',
+  `group_id` BIGINT NOT NULL COMMENT '群组ID',
+  `permission_type` TINYINT NOT NULL COMMENT '权限 1-只读 2-评论 3-编辑 4-管理',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`document_id`, `group_id`),
+  KEY `idx_document_group_permission_group_id` (`group_id`),
+  CONSTRAINT `fk_document_group_permission_document` FOREIGN KEY (`document_id`) REFERENCES `document` (`document_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_document_group_permission_group` FOREIGN KEY (`group_id`) REFERENCES `chat_group` (`group_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档群组权限表';
+
+-- ----------------------------
+-- 19. 文档收藏表
 -- ----------------------------
 DROP TABLE IF EXISTS `document_favorite`;
 CREATE TABLE `document_favorite` (
@@ -332,7 +358,7 @@ CREATE TABLE `document_favorite` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档收藏表';
 
 -- ----------------------------
--- 18. 任务表
+-- 20. 任务表
 -- ----------------------------
 DROP TABLE IF EXISTS `task`;
 CREATE TABLE `task` (
@@ -360,7 +386,7 @@ CREATE TABLE `task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务表';
 
 -- ----------------------------
--- 19. 任务附件表
+-- 21. 任务附件表
 -- ----------------------------
 DROP TABLE IF EXISTS `task_attachment`;
 CREATE TABLE `task_attachment` (
@@ -376,7 +402,7 @@ CREATE TABLE `task_attachment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务附件表';
 
 -- ----------------------------
--- 20. 日程表
+-- 22. 日程表
 -- ----------------------------
 DROP TABLE IF EXISTS `schedule`;
 CREATE TABLE `schedule` (
@@ -400,7 +426,7 @@ CREATE TABLE `schedule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日程表';
 
 -- ----------------------------
--- 21. 公告通知表
+-- 23. 公告通知表
 -- ----------------------------
 DROP TABLE IF EXISTS `notice`;
 CREATE TABLE `notice` (
@@ -422,7 +448,21 @@ CREATE TABLE `notice` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告通知表';
 
 -- ----------------------------
--- 22. 公告已读表
+-- 24. 公告投放部门表
+-- ----------------------------
+DROP TABLE IF EXISTS `notice_department`;
+CREATE TABLE `notice_department` (
+  `notice_id` BIGINT NOT NULL COMMENT '公告通知ID',
+  `department_id` BIGINT NOT NULL COMMENT '投放部门ID',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`notice_id`, `department_id`),
+  KEY `idx_notice_department_department_id` (`department_id`),
+  CONSTRAINT `fk_notice_department_notice` FOREIGN KEY (`notice_id`) REFERENCES `notice` (`notice_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_notice_department_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告投放部门表';
+
+-- ----------------------------
+-- 25. 公告已读表
 -- ----------------------------
 DROP TABLE IF EXISTS `notice_read`;
 CREATE TABLE `notice_read` (
@@ -436,7 +476,7 @@ CREATE TABLE `notice_read` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告已读表';
 
 -- ----------------------------
--- 23. 登录日志表
+-- 26. 登录日志表
 -- ----------------------------
 DROP TABLE IF EXISTS `login_log`;
 CREATE TABLE `login_log` (
@@ -454,7 +494,7 @@ CREATE TABLE `login_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录日志表';
 
 -- ----------------------------
--- 24. 操作日志表
+-- 27. 操作日志表
 -- ----------------------------
 DROP TABLE IF EXISTS `operation_log`;
 CREATE TABLE `operation_log` (
@@ -472,7 +512,7 @@ CREATE TABLE `operation_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
 -- ----------------------------
--- 25. 删除日志表
+-- 28. 删除日志表
 -- ----------------------------
 DROP TABLE IF EXISTS `delete_log`;
 CREATE TABLE `delete_log` (
@@ -489,7 +529,7 @@ CREATE TABLE `delete_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='删除日志表';
 
 -- ----------------------------
--- 26. 系统配置表
+-- 29. 系统配置表
 -- ----------------------------
 DROP TABLE IF EXISTS `system_config`;
 CREATE TABLE `system_config` (
