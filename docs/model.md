@@ -16,7 +16,7 @@ SkyLink 面向企业团队、校园组织及项目团队，覆盖用户管理、
 
 ## 2. 数据库总体结构
 
-SkyLink 数据库共设计 **26 张核心数据表**：
+SkyLink 数据库共设计 **29 张核心数据表**：
 
 ```text
 SkyLink Database
@@ -32,6 +32,7 @@ SkyLink Database
 │   └── 部门(Department)
 │
 ├── 即时通讯模块
+│   ├── 好友申请(FriendRequest)
 │   ├── 好友关系(Friendship)
 │   ├── 群聊(ChatGroup)
 │   ├── 群成员(GroupMember)
@@ -46,6 +47,7 @@ SkyLink Database
 ├── 在线文档模块
 │   ├── 文档(Document)
 │   ├── 文档权限(DocumentPermission)
+│   ├── 文档群组权限(DocumentGroupPermission)
 │   └── 文档收藏(DocumentFavorite)
 │
 ├── 任务协作模块
@@ -57,6 +59,7 @@ SkyLink Database
 │
 ├── 公告通知模块
 │   ├── 公告通知(Notice)
+│   ├── 公告投放部门(NoticeDepartment)
 │   └── 公告已读(NoticeRead)
 │
 └── 系统管理模块
@@ -78,6 +81,7 @@ SkyLink Database
 - `department`
 - `role`
 - `permission`
+- `friend_request`
 - `chat_group`
 - `message`
 - `sys_file`
@@ -111,16 +115,22 @@ SkyLink Database
 4. `document_permission`
    主键为 `(document_id, user_id)`，表示某用户拥有某文档权限。
 
-5. `friendship`
+5. `document_group_permission`
+   主键为 `(document_id, group_id)`，表示某群组拥有某文档权限。
+
+6. `friendship`
    好友关系属于对称关系，主键应为 `(user_id, friend_user_id)`，并约束 `user_id < friend_user_id`，避免 A-B 与 B-A 重复。
 
-6. `file_favorite`
+7. `file_favorite`
    主键为 `(user_id, file_id)`，表示某用户收藏某文件。
 
-7. `document_favorite`
+8. `document_favorite`
    主键为 `(user_id, document_id)`，表示某用户收藏某文档。
 
-8. `notice_read`
+9. `notice_department`
+   主键为 `(notice_id, department_id)`，表示某公告投放到某部门。
+
+10. `notice_read`
    主键为 `(notice_id, user_id)`，表示某用户已读某公告，用于支撑未读数量统计。
 
 ---
@@ -202,20 +212,22 @@ SkyLink Database
 - `user_role` 是用户和角色的中间表，复合主键防止重复授权。
 - `role_permission` 是角色和权限的中间表，复合主键防止重复分配。
 
-### 4.4 好友关系（Friendship）
+### 4.4 好友申请（FriendRequest）与好友关系（Friendship）
 
-好友关系是用户与用户之间的对称关系。为避免重复：
+好友申请和已建立的好友关系分开保存：
 
-- 同一对用户仅允许一条记录
-- 存储时统一按用户 ID 排序
-- 使用 `initiator_id` 记录发起人
+- `friend_request` 保存申请人、接收人、申请附言和处理状态
+- `friendship` 只保存已经建立的对称好友关系
+- 好友关系存储时统一按用户 ID 排序，同一对用户仅允许一条记录
 
 对应 SQL 设计说明：
 
+- `friend_request.request_id` 是好友申请的独立主键，供申请处理接口使用。
+- `friend_request.message` 保存申请附言，`status` 表示待处理、已同意或已拒绝。
+- 好友申请允许保留历史记录；业务层需保证同一对用户同时最多存在一条待处理申请。
 - `friendship` 使用 `(user_id, friend_user_id)` 作为复合主键，不再额外引入自增 ID。
 - `CHECK (user_id < friend_user_id)` 用来避免同一好友关系被存成两条方向相反的数据。
-- `status` 可表示待确认、已成为好友、已拒绝、已拉黑等状态。
-- `initiator_id` 表示谁发起了好友申请，便于还原业务动作。
+- 好友申请被同意后，由业务事务更新申请状态并创建 `friendship` 记录。
 
 ### 4.5 群聊（ChatGroup）与群成员（GroupMember）
 
@@ -241,14 +253,11 @@ SkyLink Database
 - 单聊时 `receiver_id` 非空、`group_id` 为空
 - 群聊时 `group_id` 非空、`receiver_id` 为空
 
-消息未读数量可以通过 `read_status` 和查询维度统计，不单独建汇总表。
-
 对应 SQL 设计说明：
 
 - `message_type` 区分文本、图片、文件、系统消息、Emoji。
 - `content` 统一存消息正文或资源路径，简化消息表结构。
 - `sender_id` 在系统消息场景下可为空。
-- `read_status` 用于单聊已读统计，也可作为未读数量的基础数据来源。
 - `is_recalled` 用于支持消息撤回，而不是直接物理删除消息。
 - `CHECK` 约束保证一条消息只能属于单聊或群聊其中一种场景。
 
@@ -280,7 +289,8 @@ SkyLink Database
 文档模块由以下表组成：
 
 - `document`：文档主体
-- `document_permission`：协作权限
+- `document_permission`：用户协作权限
+- `document_group_permission`：群组协作权限
 - `document_favorite`：文档收藏
 
 这对应 `spec.md` 中的文档创建、编辑、共享、收藏需求。
@@ -289,8 +299,10 @@ SkyLink Database
 
 - `document.title` 和 `document.content` 分别存标题和正文，正文可保存 Markdown 或富文本 JSON。
 - `document.status` 区分私有、团队共享、归档状态。
-- `document_permission` 用于控制协作者对文档的只读、评论、编辑、管理权限。
+- `document_permission` 用于控制单个协作者对文档的只读、评论、编辑、管理权限。
 - `document_permission` 的复合主键防止同一用户对同一文档出现重复授权。
+- `document_group_permission` 用于将文档授权给群组，群成员通过群组关系获得相应权限。
+- `document_group_permission` 使用 `(document_id, group_id)` 复合主键，保证同一文档对同一群组只有一条授权。
 - `document_favorite` 承接文档收藏需求，便于个人中心快速访问常用文档。
 
 ### 4.9 任务（Task）与任务附件（TaskAttachment）
@@ -345,6 +357,7 @@ SkyLink Database
 因此：
 
 - `notice` 使用 `notice_type` 区分类型
+- `notice_department` 保存公告与投放部门的关系
 - `notice_read` 保存成员已读关系，用于统计未读数量
 
 对应 SQL 设计说明：
@@ -353,8 +366,9 @@ SkyLink Database
 - `publisher_id` 关联发布人，通常是管理员或超级管理员。
 - `status` 支持草稿、已发布、已撤回三个阶段。
 - `publish_time` 用于区分创建和正式发布的时间。
+- `notice_department` 通过 `(notice_id, department_id)` 支持一条公告投放到多个部门。
 - `notice_read` 通过 `(notice_id, user_id)` 标记某个用户是否已读某条公告。
-- 未读数量统计时，只需要比较发布范围和 `notice_read` 中已有的记录即可。
+- 未读数量统计时，先按当前用户所属部门筛选公告，再排除 `notice_read` 中已有的记录。
 
 ### 4.12 日志与系统配置
 
@@ -387,9 +401,10 @@ erDiagram
     ROLE ||--o{ ROLE_PERMISSION : owns
     PERMISSION ||--o{ ROLE_PERMISSION : granted_to
 
+    USER ||--o{ FRIEND_REQUEST : requests
+    USER ||--o{ FRIEND_REQUEST : receives
     USER ||--o{ FRIENDSHIP : user_side
     USER ||--o{ FRIENDSHIP : friend_side
-    USER ||--o{ FRIENDSHIP : initiates
 
     USER ||--o{ CHAT_GROUP : owns
     CHAT_GROUP ||--o{ GROUP_MEMBER : has
@@ -411,6 +426,8 @@ erDiagram
     USER ||--o{ DOCUMENT : creates
     DOCUMENT ||--o{ DOCUMENT_PERMISSION : authorizes
     USER ||--o{ DOCUMENT_PERMISSION : receives
+    DOCUMENT ||--o{ DOCUMENT_GROUP_PERMISSION : authorizes_group
+    CHAT_GROUP ||--o{ DOCUMENT_GROUP_PERMISSION : receives
     USER ||--o{ DOCUMENT_FAVORITE : favorites
     DOCUMENT ||--o{ DOCUMENT_FAVORITE : favorited_by
 
@@ -421,6 +438,8 @@ erDiagram
 
     USER ||--o{ SCHEDULE : owns
     USER ||--o{ NOTICE : publishes
+    NOTICE ||--o{ NOTICE_DEPARTMENT : targets
+    DEPARTMENT ||--o{ NOTICE_DEPARTMENT : receives
     NOTICE ||--o{ NOTICE_READ : read_by
     USER ||--o{ NOTICE_READ : reads
 
@@ -445,12 +464,14 @@ erDiagram
 8. **公告/通知/活动分类**：`notice.notice_type`
 9. **全天事件**：`schedule.is_all_day`
 10. **任务开始时间与备注**：`task.start_time`、`task.remark`
+11. **好友申请附言**：新增 `friend_request`
+12. **文档群组权限**：新增 `document_group_permission`
+13. **公告按部门投放**：新增 `notice_department`
 
 以下需求不单独建表，而由现有表或业务逻辑支撑：
 
 - 用户登录 JWT：由认证服务生成，不依赖专门业务表
 - 在线人数、消息数、文件数、任务完成率等统计：由业务数据聚合得到
-- 消息未读数量：由 `message.read_status` 按用户维度统计
 
 ---
 
