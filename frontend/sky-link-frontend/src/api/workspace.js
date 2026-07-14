@@ -77,7 +77,14 @@ const state = {
   schedules: [...demoSchedules],
 }
 
-const remoteEnabled = Boolean(import.meta.env.VITE_API_BASE_URL)
+// 数据源配置: 是实际远程接口数据，还是本地模拟数据。可选值: "remote" | "mock"
+const dataSource = import.meta.env.VITE_DATA_SOURCE || 'remote'
+// 验证数据源配置是否合法
+if (!['remote', 'mock'].includes(dataSource)) {
+  throw new Error(`Invalid VITE_DATA_SOURCE: ${dataSource}. Expected "remote" or "mock".`)
+}
+
+const mockEnabled = dataSource === 'mock'
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
@@ -95,17 +102,12 @@ function demoResult(factory) {
 }
 
 async function remoteOrDemo(remoteRequest, factory) {
-  if (!remoteEnabled) {
+  if (mockEnabled) {
     return demoResult(factory)
   }
 
-  try {
-    const payload = await remoteRequest()
-    return { data: payload?.data ?? payload, source: 'remote', degraded: false }
-  } catch (error) {
-    const result = await demoResult(factory)
-    return { ...result, degraded: true, error: error.message || '接口请求失败' }
-  }
+  const payload = await remoteRequest()
+  return { data: payload?.data ?? payload, source: 'remote', degraded: false }
 }
 
 function searchRecords(records, keyword, fields) {
@@ -121,11 +123,11 @@ function messageTarget(sessionId) {
 }
 
 export function isDemoMode() {
-  return !remoteEnabled
+  return mockEnabled
 }
 
 export async function login(account, password) {
-  if (remoteEnabled) {
+  if (!mockEnabled) {
     const payload = await authApi.login(account, password)
     return payload?.data ?? payload
   }

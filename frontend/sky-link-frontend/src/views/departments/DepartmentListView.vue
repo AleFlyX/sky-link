@@ -1,16 +1,18 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
-import { departments } from '../../mock/workspace'
+import { getDepartments } from '../../api/workspace'
 
 const keyword = ref('')
 const page = ref(1)
 const pageSize = 4
 const dialogVisible = ref(false)
+const rows = ref([])
+const total = ref(0)
 
 const columns = [
   { key: 'name', label: '部门名称' },
@@ -20,18 +22,18 @@ const columns = [
   { key: 'description', label: '说明' },
 ]
 
-const filteredRows = computed(() =>
-  departments.filter((item) =>
-    [item.name, item.leader, item.roleScope].some((text) =>
-      text.toLowerCase().includes(keyword.value.toLowerCase()),
-    ),
-  ),
-)
+async function loadData() {
+  const result = await getDepartments({ page: page.value, size: pageSize, keyword: keyword.value })
+  rows.value = result.data?.records || []
+  total.value = result.data?.total || 0
+}
 
-const pagedRows = computed(() => {
-  const start = (page.value - 1) * pageSize
-  return filteredRows.value.slice(start, start + pageSize)
+watch(keyword, () => {
+  page.value = 1
+  loadData()
 })
+
+onMounted(loadData)
 
 function openDialog() {
   dialogVisible.value = true
@@ -46,8 +48,8 @@ function openDialog() {
         <AppButton variant="primary" @click="openDialog">新建部门</AppButton>
       </div>
 
-      <AppDataTable :columns="columns" :rows="pagedRows" empty-text="暂无部门数据" />
-      <AppPagination v-model:page="page" :page-size="pageSize" :total="filteredRows.length" />
+      <AppDataTable :columns="columns" :rows="rows" empty-text="暂无部门数据" />
+      <AppPagination v-model:page="page" :page-size="pageSize" :total="total" @update:page="loadData" />
     </AppCard>
 
     <AppFormDialog
