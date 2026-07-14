@@ -167,7 +167,7 @@ DROP TABLE IF EXISTS `group_member`;
 CREATE TABLE `group_member` (
   `group_id` BIGINT NOT NULL COMMENT '群聊ID',
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
-  `member_role` TINYINT NOT NULL DEFAULT 3 COMMENT '成员角色 1-群主 2-管理员 3-普通成员',
+  `member_role` TINYINT NOT NULL DEFAULT 3 COMMENT '成员角色 1-群主 2-管理员 3-普通成员 4-已退出',
   `join_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
   PRIMARY KEY (`group_id`, `user_id`),
   KEY `idx_group_member_user_id` (`user_id`),
