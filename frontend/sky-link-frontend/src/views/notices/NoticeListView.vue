@@ -1,13 +1,13 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
+import { createNotice, getNotices, isDemoMode, markNoticeRead } from '../../api/workspace'
 import { noticeTypeMap, noticeTypeOptions } from '../../constants/enums'
-import { notices } from '../../mock/workspace'
 import { useAppStore } from '../../stores/app'
 
 const appStore = useAppStore()
@@ -16,6 +16,10 @@ const type = ref('')
 const page = ref(1)
 const pageSize = 5
 const dialogVisible = ref(false)
+const rows = ref([])
+const loading = ref(false)
+const loadError = ref('')
+const demoData = ref(isDemoMode())
 
 const columns = [
   { key: 'title', label: '公告标题' },
@@ -26,7 +30,7 @@ const columns = [
 ]
 
 const filteredRows = computed(() =>
-  notices.filter((item) => {
+  rows.value.filter((item) => {
     const matchKeyword = [item.title, item.publisher].some((text) =>
       text.toLowerCase().includes(keyword.value.toLowerCase()),
     )
@@ -43,6 +47,34 @@ const pagedRows = computed(() => {
 function handlePublish() {
   dialogVisible.value = true
 }
+
+async function loadData() {
+  loading.value = true
+  loadError.value = ''
+  const result = await getNotices({ page: 1, size: 100 })
+  rows.value = result.data.records || []
+  demoData.value = result.source === 'demo'
+  if (result.degraded) loadError.value = `接口暂不可用，已切换演示数据：${result.error}`
+  loading.value = false
+}
+
+async function handleSubmit(form) {
+  const result = await createNotice(form)
+  ElMessage[result.degraded ? 'warning' : 'success'](
+    result.degraded ? '接口暂不可用，已保存到演示数据' : '公告已发布',
+  )
+  dialogVisible.value = false
+  await loadData()
+}
+
+async function handleRead(id) {
+  await markNoticeRead(id)
+  const notice = rows.value.find((item) => item.id === id)
+  if (notice) notice.read = true
+  appStore.markNotificationsRead()
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -67,13 +99,31 @@ function handlePublish() {
         <AppButton variant="primary" @click="handlePublish">发布公告</AppButton>
       </div>
 
-      <AppDataTable :columns="columns" :rows="pagedRows" empty-text="暂无公告数据">
+      <el-alert
+        v-if="demoData"
+        title="当前为演示数据模式，发布和已读状态会即时反馈"
+        type="info"
+        show-icon
+        :closable="false"
+        class="page-feedback"
+      />
+
+      <AppDataTable
+        :columns="columns"
+        :rows="pagedRows"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无公告数据"
+        @retry="loadData"
+      >
         <template #type="{ value }">
           <AppStatusTag :label="noticeTypeMap[value].label" :tone="noticeTypeMap[value].tone" />
         </template>
 
-        <template #read="{ value }">
-          <AppStatusTag :label="value ? '已读' : '未读'" :tone="value ? 'info' : 'warning'" />
+        <template #read="{ value, row }">
+          <button type="button" class="notice-read" @click="!value && handleRead(row.id)">
+            <AppStatusTag :label="value ? '已读' : '未读'" :tone="value ? 'info' : 'warning'" />
+          </button>
         </template>
       </AppDataTable>
 
@@ -90,7 +140,16 @@ function handlePublish() {
         { key: 'content', label: '公告内容', type: 'textarea' },
       ]"
       :form-data="{ title: '', type: 'system', content: '' }"
-      @submit="() => {}"
+      @submit="handleSubmit"
     />
   </div>
 </template>
+
+<style scoped>
+.notice-read {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+</style>

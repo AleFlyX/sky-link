@@ -1,19 +1,23 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
+import { createUser, getUsers, isDemoMode } from '../../api/workspace'
 import { userStatusMap, userStatusOptions } from '../../constants/enums'
-import { users } from '../../mock/workspace'
 
 const keyword = ref('')
 const status = ref('')
 const page = ref(1)
 const pageSize = 5
 const dialogVisible = ref(false)
+const rows = ref([])
+const loading = ref(false)
+const loadError = ref('')
+const demoData = ref(isDemoMode())
 
 const columns = [
   { key: 'name', label: '姓名' },
@@ -26,7 +30,7 @@ const columns = [
 ]
 
 const filteredRows = computed(() =>
-  users.filter((item) => {
+  rows.value.filter((item) => {
     const matchKeyword = [item.name, item.account, item.department].some((text) =>
       text.toLowerCase().includes(keyword.value.toLowerCase()),
     )
@@ -43,6 +47,28 @@ const pagedRows = computed(() => {
 function openDialog() {
   dialogVisible.value = true
 }
+
+async function loadData() {
+  loading.value = true
+  loadError.value = ''
+  const result = await getUsers({ page: 1, size: 100 })
+  rows.value = result.data.records || []
+  demoData.value = result.source === 'demo'
+  if (result.degraded) loadError.value = `接口暂不可用，已切换演示数据：${result.error}`
+  loading.value = false
+}
+
+async function handleSubmit(form) {
+  const result = await createUser(form)
+  if (result.degraded) {
+    ElMessage.warning('接口暂不可用，已保存到演示数据')
+  } else {
+    ElMessage.success('用户已创建')
+  }
+  await loadData()
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -67,7 +93,23 @@ function openDialog() {
         <AppButton variant="primary" @click="openDialog">新增用户</AppButton>
       </div>
 
-      <AppDataTable :columns="columns" :rows="pagedRows" empty-text="暂无用户数据">
+      <el-alert
+        v-if="demoData"
+        title="当前为演示数据模式，配置 VITE_API_BASE_URL 后将自动切换真实接口"
+        type="info"
+        show-icon
+        :closable="false"
+        class="page-feedback"
+      />
+
+      <AppDataTable
+        :columns="columns"
+        :rows="pagedRows"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无用户数据"
+        @retry="loadData"
+      >
         <template #roles="{ row }">
           <div class="table-tags">
             <span v-for="role in row.roles" :key="role" class="table-chip">{{ role }}</span>
@@ -93,7 +135,7 @@ function openDialog() {
         { key: 'status', label: '用户状态', type: 'select', options: userStatusOptions },
       ]"
       :form-data="{ name: '', account: '', department: '', status: 'active' }"
-      @submit="() => {}"
+      @submit="handleSubmit"
     />
   </div>
 </template>

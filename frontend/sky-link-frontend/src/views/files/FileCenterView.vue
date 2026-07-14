@@ -1,16 +1,20 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
-import { files } from '../../mock/workspace'
+import { createFile, getFiles, isDemoMode } from '../../api/workspace'
 
 const keyword = ref('')
 const page = ref(1)
 const pageSize = 5
 const dialogVisible = ref(false)
+const rows = ref([])
+const loading = ref(false)
+const loadError = ref('')
+const demoData = ref(isDemoMode())
 
 const columns = [
   { key: 'name', label: '文件名称' },
@@ -22,7 +26,7 @@ const columns = [
 ]
 
 const filteredRows = computed(() =>
-  files.filter((item) =>
+  rows.value.filter((item) =>
     [item.name, item.category, item.owner].some((text) =>
       text.toLowerCase().includes(keyword.value.toLowerCase()),
     ),
@@ -33,6 +37,27 @@ const pagedRows = computed(() => {
   const start = (page.value - 1) * pageSize
   return filteredRows.value.slice(start, start + pageSize)
 })
+
+async function loadData() {
+  loading.value = true
+  loadError.value = ''
+  const result = await getFiles({ page: 1, size: 100 })
+  rows.value = result.data.records || []
+  demoData.value = result.source === 'demo'
+  if (result.degraded) loadError.value = `接口暂不可用，已切换演示数据：${result.error}`
+  loading.value = false
+}
+
+async function handleSubmit(form) {
+  const result = await createFile(form)
+  ElMessage[result.degraded ? 'warning' : 'success'](
+    result.degraded ? '接口暂不可用，已保存到演示数据' : '文件记录已创建',
+  )
+  dialogVisible.value = false
+  await loadData()
+}
+
+onMounted(loadData)
 </script>
 
 <template>
@@ -47,7 +72,23 @@ const pagedRows = computed(() => {
         <AppButton variant="primary" @click="dialogVisible = true">上传文件</AppButton>
       </div>
 
-      <AppDataTable :columns="columns" :rows="pagedRows" empty-text="暂无文件数据" />
+      <el-alert
+        v-if="demoData"
+        title="当前为演示数据模式，上传入口会先保存文件记录"
+        type="info"
+        show-icon
+        :closable="false"
+        class="page-feedback"
+      />
+
+      <AppDataTable
+        :columns="columns"
+        :rows="pagedRows"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无文件数据"
+        @retry="loadData"
+      />
       <AppPagination v-model:page="page" :page-size="pageSize" :total="filteredRows.length" />
     </AppCard>
 
@@ -61,7 +102,7 @@ const pagedRows = computed(() => {
         { key: 'visibility', label: '可见范围' },
       ]"
       :form-data="{ name: '', category: '', visibility: '团队可见' }"
-      @submit="() => {}"
+      @submit="handleSubmit"
     />
   </div>
 </template>
