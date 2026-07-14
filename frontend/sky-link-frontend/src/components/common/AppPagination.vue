@@ -40,7 +40,7 @@ function setPage(page) {
     </div>
 
     <div class="app-pagination__actions">
-      <AppButton @click="setPage(page - 1)">
+      <AppButton :disabled="page <= 1" @click="setPage(page - 1)">
         上一页
       </AppButton>
 
@@ -48,12 +48,13 @@ function setPage(page) {
         v-for="pageNumber in pages"
         :key="pageNumber"
         :active="pageNumber === page"
+        :disabled="pageNumber === page"
         @click="setPage(pageNumber)"
       >
         {{ pageNumber }}
       </AppButton>
 
-      <AppButton @click="setPage(page + 1)">
+      <AppButton :disabled="page >= totalPages" @click="setPage(page + 1)">
         下一页
       </AppButton>
     </div>

@@ -33,6 +33,10 @@
   flex: 1;
 }
 
+.page-feedback {
+  margin-bottom: 1rem;
+}
+
 .page-toolbar .el-input,
 .page-toolbar .el-select {
   max-width: 280px;

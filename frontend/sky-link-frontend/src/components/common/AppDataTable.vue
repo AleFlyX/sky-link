@@ -16,12 +16,37 @@ defineProps({
     type: String,
     default: '暂无数据',
   },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+  error: {
+    type: String,
+    default: '',
+  },
 })
+
+defineEmits(['retry'])
 </script>
 
 <template>
   <div class="app-table">
-    <table v-if="rows.length">
+    <el-skeleton v-if="loading" :rows="4" animated />
+
+    <el-alert
+      v-else-if="error"
+      :title="error"
+      type="error"
+      show-icon
+      :closable="false"
+      class="app-table__error"
+    >
+      <template #default>
+        <button type="button" class="app-table__retry" @click="$emit('retry')">重新加载</button>
+      </template>
+    </el-alert>
+
+    <table v-else-if="rows.length">
       <thead>
         <tr>
           <th
@@ -54,7 +79,10 @@ defineProps({
       </tbody>
     </table>
 
-    <div v-else class="app-table__empty">{{ emptyText }}</div>
+    <div v-else class="app-table__empty">
+      <span>{{ emptyText }}</span>
+      <small>调整筛选条件后再试试</small>
+    </div>
   </div>
 </template>
 
@@ -92,10 +120,31 @@ tbody tr:hover {
 }
 
 .app-table__empty {
+  display: grid;
+  gap: 0.35rem;
   padding: 2rem 1rem;
   border: 1px dashed var(--color-border);
   border-radius: 16px;
   color: var(--color-text-muted);
   text-align: center;
+}
+
+.app-table__empty small {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.app-table__error {
+  margin: 0.25rem 0;
+}
+
+.app-table__retry {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 </style>
