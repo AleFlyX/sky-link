@@ -81,9 +81,9 @@ CREATE DATABASE skylink
 USE skylink;
 ```
 
-然后在该数据库中执行 [docs/backend/sql.md](docs/backend/sql.md) 代码块内的建表语句。该脚本定义了用户权限、组织、聊天、文件、文档、任务、日程、公告和日志等 26 张核心表。
+数据库创建完成后不需要手动建表。后端启动时会自动执行 `src/main/resources/schema.sql`，以 `CREATE TABLE IF NOT EXISTS` 幂等创建当前需求范围内的 17 张核心表，不会删除已有表或数据。数据库本身仍需提前创建。仓库中其他实体属于需求缩减后的保留代码，不参与自动建表。
 
-> 建表文档包含 `DROP TABLE IF EXISTS`，请勿直接用于保存重要数据的环境。
+[docs/backend/sql.md](docs/backend/sql.md) 保留为数据模型参考，其中包含重建表用的 `DROP TABLE IF EXISTS`，请勿直接用于保存重要数据的环境。
 
 ### 2. 启动后端
 

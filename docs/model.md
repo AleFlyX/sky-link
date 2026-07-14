@@ -204,7 +204,7 @@ SkyLink Database
 
 对应 SQL 设计说明：
 
-- `chat_group` 保存群本身的信息，包括 `group_name`、`avatar`、`owner_id`。
+- `chat_group` 保存群本身的信息，包括 `group_name`、`avatar`、`notice`、`owner_id`。
 - `owner_id` 指向群主，是群级权限的最高拥有者。
 - `group_member.member_role` 用数值区分群主、管理员、普通成员，便于权限判断。
 - `group_member` 的复合主键确保一个用户在同一个群里只有一条成员记录。
