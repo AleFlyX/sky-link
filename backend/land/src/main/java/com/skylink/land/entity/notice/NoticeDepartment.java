@@ -1,4 +1,4 @@
-package com.skylink.land.entity.chat;
+package com.skylink.land.entity.notice;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.skylink.land.entity.common.CreateTimeEntity;
@@ -9,14 +9,14 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@TableName("friendship")
+@TableName("notice_department")
 @EqualsAndHashCode(callSuper = true)
-public class Friendship extends CreateTimeEntity {
+public class NoticeDepartment extends CreateTimeEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Long userId;
+    private Long noticeId;
 
-    private Long friendUserId;
+    private Long departmentId;
 }

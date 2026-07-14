@@ -15,7 +15,7 @@ public interface FriendService {
 
     PageResponse<FriendDto.FriendItemResponse> listFriends(Long currentUserId, FriendDto.FriendListQueryRequest request);
 
-    void deleteFriend(Long currentUserId, Long friendId);
+    void deleteFriend(Long currentUserId, Long friendUserId);
 
     PageResponse<FriendDto.FriendRequestItemResponse> listIncomingRequests(
         Long currentUserId,

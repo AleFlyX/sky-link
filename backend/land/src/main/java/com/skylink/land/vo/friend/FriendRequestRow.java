@@ -6,7 +6,13 @@ import lombok.Data;
 @Data
 public class FriendRequestRow {
 
+    private Long requestId;
+
     private Long requestUserId;
+
+    private String message;
+
+    private Integer requestStatus;
 
     private String username;
 

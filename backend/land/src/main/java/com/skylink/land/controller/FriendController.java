@@ -48,9 +48,9 @@ public class FriendController {
         return friendService.listFriends(AuthContext.requireUserId(), request);
     }
 
-    @DeleteMapping("/{friendId}")
-    public ApiResponse<Void> deleteFriend(@PathVariable Long friendId) {
-        friendService.deleteFriend(AuthContext.requireUserId(), friendId);
+    @DeleteMapping("/{friendUserId}")
+    public ApiResponse<Void> deleteFriend(@PathVariable Long friendUserId) {
+        friendService.deleteFriend(AuthContext.requireUserId(), friendUserId);
         return ApiResponse.success("friend deleted", null);
     }
 

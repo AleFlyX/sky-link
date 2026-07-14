@@ -76,7 +76,7 @@ public final class FriendDto {
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private Long friendId;
+        private Long friendUserId;
         private UserDto.UserSummaryResponse friendUser;
     }
 
