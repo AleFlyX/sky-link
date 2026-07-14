@@ -8,7 +8,7 @@ const appStore = useAppStore()
 
 <template>
   <div class="page-grid page-grid--profile">
-    <AppCard variant="hero" title="个人中心" subtitle="个人资料、角色展示与最近通知统一收口">
+    <AppCard variant="hero" title="个人中心" subtitle="个人资料与角色展示统一收口">
       <div class="profile-hero">
         <div class="profile-hero__avatar">{{ appStore.currentUser.name.slice(0, 1) }}</div>
         <div class="profile-hero__copy">
@@ -40,19 +40,6 @@ const appStore = useAppStore()
           :label="role"
           tone="primary"
         />
-      </div>
-    </AppCard>
-
-    <AppCard title="通知概览" subtitle="铃铛按钮和这里共用同一份未读通知数据">
-      <div class="notice-list">
-        <article
-          v-for="item in appStore.notifications"
-          :key="item.id"
-          :class="['notice-item', { 'notice-item--unread': !item.read }]"
-        >
-          <strong>{{ item.title }}</strong>
-          <span>{{ item.time }}</span>
-        </article>
       </div>
     </AppCard>
   </div>
@@ -108,8 +95,7 @@ const appStore = useAppStore()
 }
 
 .info-list,
-.role-list,
-.notice-list {
+.role-list {
   display: grid;
   gap: 0.9rem;
 }
@@ -135,34 +121,9 @@ const appStore = useAppStore()
   grid-template-columns: repeat(auto-fit, minmax(120px, max-content));
 }
 
-.notice-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.95rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-}
-
-.notice-item strong {
-  font-size: 0.95rem;
-}
-
-.notice-item span {
-  color: var(--color-text-muted);
-  font-size: 0.86rem;
-}
-
-.notice-item--unread {
-  border-color: rgba(51, 112, 255, 0.26);
-  background: rgba(51, 112, 255, 0.05);
-}
-
 @media (max-width: 720px) {
   .profile-hero,
-  .info-list div,
-  .notice-item {
+  .info-list div {
     flex-direction: column;
     align-items: flex-start;
   }

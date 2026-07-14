@@ -15,12 +15,9 @@ const pageEyebrow = computed(
 )
 const unreadCount = computed(() => appStore.unreadNotificationCount)
 
-/**
- * 跳转到通知查看页面的时候顺便清空未读消息
- */
-function goToNotices() {
+function goToTasks() {
   appStore.markNotificationsRead()
-  router.push('/app/notices')
+  router.push('/app/tasks')
 }
 </script>
 
@@ -29,14 +26,14 @@ function goToNotices() {
     <div class="app-header__copy">
       <div class="app-header__eyebrow">{{ pageEyebrow }}</div>
       <h1 class="app-header__title">{{ pageTitle }}</h1>
-      <p class="app-header__summary">统一沟通、任务、文件与公告的工作台</p>
+      <p class="app-header__summary">统一沟通、任务与文档的协作工作台</p>
     </div>
 
     <div class="app-header__actions">
       <button
         type="button"
         :class="['app-header__notify', { 'app-header__notify--active': unreadCount > 0 }]"
-        @click="goToNotices"
+        @click="goToTasks"
       >
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99">
           <Bell class="app-header__notify-icon" />
