@@ -2,16 +2,13 @@ server:
   port: 8080
 
 spring:
-  # 配置文件来源，目前指定application-dev，若无则使用当前的
-  profiles:
-    active: dev
   application:
     name: land
   # 数据源（MySQL，与项目规格一致）
   datasource:
     url: jdbc:mysql://localhost:3306/skylink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 # MyBatis-Plus 配置
@@ -23,8 +20,6 @@ mybatis-plus:
   configuration:
     # 下划线字段自动转驼峰（默认开启，显式声明更清晰）
     map-underscore-to-camel-case: true
-    # 开发期打印 SQL，生产环境建议注释掉
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       # 主键策略：雪花算法（对应规格 BIGINT 主键）
@@ -37,12 +32,12 @@ mybatis-plus:
 logging:
   level:
     root: INFO
-    com.skylink.land: DEBUG
+    com.skylink.land: INFO
 
 skylink:
   jwt:
     issuer: sky-link
-    secret: ${JWT_SECRET:change-me-to-a-long-random-secret-at-least-32-bytes}
+    secret: ${JWT_SECRET}
     ttl: 24h
     header: Authorization
     token-prefix: "Bearer "
