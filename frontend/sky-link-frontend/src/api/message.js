@@ -1,25 +1,25 @@
 import { request } from '../utils/request'
 
 export function getSessions() {
-  return request.get('/api/v1/messages/sessions')
+  return request.get('/messages/sessions')
 }
 
 export function getMessages(params) {
-  return request.get('/api/v1/messages', params)
+  return request.get('/messages', params)
 }
 
 export function sendMessage(data) {
-  return request.post('/api/v1/messages', data)
+  return request.post('/messages', data)
 }
 
 export function recallMessage(messageId) {
-  return request.delete(`/api/v1/messages/${messageId}`)
+  return request.delete(`/messages/${messageId}`)
 }
 
 export function markMessagesRead(data) {
-  return request.put('/api/v1/messages/read', data)
+  return request.put('/messages/read', data)
 }
 
 export function getUnreadMessageCount() {
-  return request.get('/api/v1/messages/unread/count')
+  return request.get('/messages/unread/count')
 }

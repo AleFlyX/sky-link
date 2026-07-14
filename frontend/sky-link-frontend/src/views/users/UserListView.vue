@@ -95,7 +95,7 @@ onMounted(loadData)
 
       <el-alert
         v-if="demoData"
-        title="当前为演示数据模式，配置 VITE_API_BASE_URL 后将自动切换真实接口"
+        title="当前为演示数据模式，请将 VITE_DATA_SOURCE 设置为 remote 后再请求真实接口"
         type="info"
         show-icon
         :closable="false"

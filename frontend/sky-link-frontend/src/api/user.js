@@ -1,41 +1,41 @@
 import { request } from '../utils/request'
 
 export function getCurrentUser() {
-  return request.get('/api/v1/users/me')
+  return request.get('/users/me')
 }
 
 export function updateCurrentUser(data) {
-  return request.put('/api/v1/users/me', data)
+  return request.put('/users/me', data)
 }
 
 export function changePassword(data) {
-  return request.put('/api/v1/users/me/password', data)
+  return request.put('/users/me/password', data)
 }
 
 export function getUsers(params) {
-  return request.get('/api/v1/users', params)
+  return request.get('/users', params)
 }
 
 export function createUser(data) {
-  return request.post('/api/v1/users', data)
+  return request.post('/users', data)
 }
 
 export function getUser(userId) {
-  return request.get(`/api/v1/users/${userId}`)
+  return request.get(`/users/${userId}`)
 }
 
 export function updateUserStatus(userId, status) {
-  return request.put(`/api/v1/users/${userId}/status`, { status })
+  return request.put(`/users/${userId}/status`, { status })
 }
 
 export function deleteUser(userId) {
-  return request.delete(`/api/v1/users/${userId}`)
+  return request.delete(`/users/${userId}`)
 }
 
 export function assignUserRoles(userId, roleIds) {
-  return request.post(`/api/v1/users/${userId}/roles`, { roleIds })
+  return request.post(`/users/${userId}/roles`, { roleIds })
 }
 
 export function removeUserRole(userId, roleId) {
-  return request.delete(`/api/v1/users/${userId}/roles/${roleId}`)
+  return request.delete(`/users/${userId}/roles/${roleId}`)
 }

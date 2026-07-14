@@ -1,25 +1,25 @@
 import { request } from '../utils/request'
 
 export function getNotices(params) {
-  return request.get('/api/v1/notices', params)
+  return request.get('/notices', params)
 }
 
 export function createNotice(data) {
-  return request.post('/api/v1/notices', data)
+  return request.post('/notices', data)
 }
 
 export function markNoticeRead(id) {
-  return request.post(`/api/v1/notices/${id}/read`)
+  return request.post(`/notices/${id}/read`)
 }
 
 export function getNotice(noticeId) {
-  return request.get(`/api/v1/notices/${noticeId}`)
+  return request.get(`/notices/${noticeId}`)
 }
 
 export function deleteNotice(noticeId) {
-  return request.delete(`/api/v1/notices/${noticeId}`)
+  return request.delete(`/notices/${noticeId}`)
 }
 
 export function getUnreadNoticeCount() {
-  return request.get('/api/v1/notices/unread/count')
+  return request.get('/notices/unread/count')
 }

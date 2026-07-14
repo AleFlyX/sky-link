@@ -1,21 +1,21 @@
 import { request } from '../utils/request'
 
 export function getFriends(params) {
-  return request.get('/api/v1/friends', params)
+  return request.get('/friends', params)
 }
 
 export function addFriend(data) {
-  return request.post('/api/v1/friends/requests', data)
+  return request.post('/friends/requests', data)
 }
 
 export function handleFriendRequest(requestId, data) {
-  return request.put(`/api/v1/friends/requests/${requestId}`, data)
+  return request.put(`/friends/requests/${requestId}`, data)
 }
 
 export function deleteFriend(friendId) {
-  return request.delete(`/api/v1/friends/${friendId}`)
+  return request.delete(`/friends/${friendId}`)
 }
 
 export function getFriendRequests(params) {
-  return request.get('/api/v1/friends/requests', params)
+  return request.get('/friends/requests', params)
 }
