@@ -20,7 +20,7 @@ public class MybatisPlusConfiguration {
     @Value("${mybatis-plus.configuration.map-underscore-to-camel-case:true}")
     private boolean mapUnderscoreToCamelCase;
 
-    @Value("${mybatis-plus.configuration.log-impl:org.apache.ibatis.logging.stdout.StdOutImpl}")
+    @Value("${mybatis-plus.configuration.log-impl:org.apache.ibatis.logging.nologging.NoLoggingImpl}")
     private Class<? extends Log> logImpl;
 
     @Bean

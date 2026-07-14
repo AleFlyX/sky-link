@@ -8,16 +8,17 @@ SkyLink 是一个面向企业团队、校园组织和项目团队的轻量级协
 
 - 前端已经搭建登录、工作台、个人中心、用户、部门、通讯录、消息、文件、文档、任务、日程和公告等主要页面，并提供演示数据与接口降级能力。
 - 后端已经建立统一响应、异常处理、JWT 鉴权、MyBatis-Plus 数据访问等基础能力，并实现认证、当前用户和好友关系等首批接口。
-- `docs/` 中描述的是系统完整目标范围；部分业务接口仍在逐步落地，请以代码和接口文档的最新状态为准。
+- `docs/spec-current.md` 是当前缩减后的交付与验收基线；`docs/spec.md` 保留最初完整愿景。当前业务范围以缩减版需求和接口文档为准。
 
 ## 核心能力
 
-- **身份与权限**：注册登录、JWT 身份认证、个人资料、用户与部门管理、RBAC 角色权限。
-- **团队沟通**：通讯录、好友关系、单聊、群聊、消息已读与撤回。
-- **内容协作**：Markdown 文档、协作权限、收藏、文件上传下载与共享。
-- **工作管理**：任务分配、优先级、进度、附件、个人与团队日程。
-- **信息触达**：公告、通知、活动以及未读状态管理。
-- **系统治理**：登录日志、操作日志、文件日志、删除日志、系统配置与数据统计。
+- **身份与组织**：注册登录、JWT 身份认证、个人资料、用户与部门管理。
+- **权限治理**：RBAC 角色权限、安全基础数据和显式超级管理员引导。
+- **团队沟通**：通讯录、好友关系、群组、REST 单聊/群聊消息与撤回。
+- **内容协作**：Markdown 文档及用户/群组授权。
+- **工作管理**：任务创建、分配、筛选与状态推进。
+
+独立文件中心、日程、系统公告、业务日志查询和统计看板已从本期需求中移出，保留为后续候选能力。
 
 ## 技术栈
 
@@ -81,19 +82,19 @@ CREATE DATABASE skylink
 USE skylink;
 ```
 
-然后在该数据库中执行 [docs/backend/sql.md](docs/backend/sql.md) 代码块内的建表语句。该脚本定义了用户权限、组织、聊天、文件、文档、任务、日程、公告和日志等 26 张核心表。
+数据库创建完成后不需要手动建表。后端启动时会自动执行 `src/main/resources/schema.sql`，以 `CREATE TABLE IF NOT EXISTS` 幂等创建当前数据边界内的 17 张表，不会删除已有表或数据。数据库本身仍需提前创建。文件、日程、系统公告、任务附件和业务审计已因工期从本期需求中移出，对应保留实体不参与自动建表。
 
-> 建表文档包含 `DROP TABLE IF EXISTS`，请勿直接用于保存重要数据的环境。
+[docs/backend/sql.md](docs/backend/sql.md) 保留为数据模型参考，其中包含重建表用的 `DROP TABLE IF EXISTS`，请勿直接用于保存重要数据的环境。
 
 ### 2. 启动后端
 
-后端默认连接 `localhost:3306/skylink`，默认端口为 `8080`。建议通过环境变量覆盖数据库凭据和 JWT 密钥：
+后端默认连接 `localhost:3306/skylink`，默认端口为 `8080`。数据库凭据和 JWT 密钥没有默认值，启动前必须显式设置：
 
-| 环境变量 | 说明 | 开发默认值 |
+| 环境变量 | 说明 | 是否必填 |
 | --- | --- | --- |
-| `DB_USERNAME` | MySQL 用户名 | `root` |
-| `DB_PASSWORD` | MySQL 密码 | `root` |
-| `JWT_SECRET` | JWT 签名密钥，至少 32 字节 | 仅供本地占位的默认值 |
+| `DB_USERNAME` | MySQL 用户名 | 是 |
+| `DB_PASSWORD` | MySQL 密码 | 是 |
+| `JWT_SECRET` | JWT 签名密钥，至少 32 字节，不能使用示例值 | 是 |
 
 PowerShell 示例：
 
@@ -101,9 +102,28 @@ PowerShell 示例：
 cd backend/land
 $env:DB_USERNAME = "root"
 $env:DB_PASSWORD = "your-password"
-$env:JWT_SECRET = "replace-with-a-long-random-secret"
+$jwtBytes = New-Object byte[] 48
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($jwtBytes)
+$rng.Dispose()
+$env:JWT_SECRET = [Convert]::ToBase64String($jwtBytes)
 .\mvnw.cmd spring-boot:run
 ```
+
+应用启动时会幂等创建 `ROLE_USER`、`ROLE_ADMIN`、`ROLE_SUPER_ADMIN`、当前接口权限及角色权限关系。新注册用户会自动获得 `ROLE_USER`；如果初始化数据缺失，注册事务会回滚，不会产生无角色账号。
+
+首次部署可通过以下环境变量显式创建超级管理员。管理员成功创建后，应删除这些环境变量，并保持 `SKYLINK_BOOTSTRAP_ADMIN_ENABLED=false`：
+
+```powershell
+$env:SKYLINK_BOOTSTRAP_ADMIN_ENABLED = "true"
+$env:SKYLINK_BOOTSTRAP_ADMIN_USERNAME = "admin"
+$env:SKYLINK_BOOTSTRAP_ADMIN_PASSWORD = "replace-with-a-strong-password"
+$env:SKYLINK_BOOTSTRAP_ADMIN_NICKNAME = "System Admin"
+$env:SKYLINK_BOOTSTRAP_ADMIN_EMAIL = "admin@example.com"
+$env:SKYLINK_BOOTSTRAP_ADMIN_PHONE = "13800000000"
+```
+
+引导密码至少 12 个字符并同时包含字母和数字。系统不会覆盖已有管理员的密码，也不会把第一个注册用户自动提升为管理员。
 
 启动后可访问健康检查：`GET http://localhost:8080/api/v1/health`。
 
@@ -158,7 +178,8 @@ npm run format
 
 ## 项目文档
 
-- [需求分析](docs/spec.md)：项目目标、角色、功能与非功能需求。
+- [当前需求规格](docs/spec-current.md)：当前缩减后的 P0 范围、规则、权限和验收基线。
+- [原始需求分析](docs/spec.md)：项目最初的完整产品愿景，不作为当前范围验收依据。
 - [数据模型](docs/model.md)：26 张核心表的设计原则、实体关系与约束。
 - [接口文档](docs/api.md)：REST API、认证、分页、错误码与枚举约定。
 - [数据库脚本](docs/backend/sql.md)：与需求和模型对齐的 MySQL DDL。
