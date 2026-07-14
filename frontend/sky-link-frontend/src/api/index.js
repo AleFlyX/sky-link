@@ -1,5 +1,15 @@
-import { request } from '../utils/request'
-
-export function getOverview() {
-  return request('/api/v1/statistics/overview')
-}
+export * from './auth'
+export * from './department'
+export * from './document'
+export * from './file'
+export * from './friend'
+export * from './group'
+export * from './log'
+export * from './message'
+export * from './notice'
+export * from './permission'
+export * from './role'
+export * from './schedule'
+export * from './statistics'
+export * from './task'
+export * from './user'
