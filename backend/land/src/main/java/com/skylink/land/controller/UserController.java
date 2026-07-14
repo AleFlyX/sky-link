@@ -1,14 +1,18 @@
 package com.skylink.land.controller;
 
 import com.skylink.land.auth.AuthContext;
+import com.skylink.land.dto.common.PageResponse;
 import com.skylink.land.dto.user.UserDto;
 import com.skylink.land.exception.BusinessException;
 import com.skylink.land.exception.ErrorCode;
 import com.skylink.land.service.identity.UserService;
 import com.skylink.land.vo.identity.RoleVO;
 import com.skylink.land.vo.identity.UserProfileVO;
+import com.skylink.land.vo.identity.UserVO;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +41,33 @@ public class UserController {
     @PutMapping("/me/password")
     public void changePassword(@RequestBody UserDto.ChangePasswordRequest request) {
         userService.changePassword(AuthContext.requireUserId(), request);
+    }
+
+    @GetMapping
+    public PageResponse<UserDto.UserSummaryResponse> pageUsers(UserDto.UserQueryRequest request) {
+        PageResponse<UserVO> page = userService.pageUsers(request);
+        return PageResponse.<UserDto.UserSummaryResponse>builder()
+            .total(page.getTotal())
+            .page(page.getPage())
+            .size(page.getSize())
+            .records(page.getRecords().stream().map(this::toUserSummaryResponse).toList())
+            .build();
+    }
+
+    @PutMapping("/{userId}/status")
+    public UserDto.UserSummaryResponse updateUserStatus(
+        @PathVariable Long userId,
+        @RequestBody UserDto.UpdateUserStatusRequest request
+    ) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
+        }
+        return toUserSummaryResponse(userService.updateUserStatus(userId, request.getStatus()));
+    }
+
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable Long userId) {
+        userService.deleteUser(userId);
     }
 
     private UserDto.UserProfileResponse toProfileResponse(UserProfileVO profile) {
@@ -69,5 +100,20 @@ public class UserController {
                 .roleCode(role.getRoleCode())
                 .build())
             .toList();
+    }
+
+    private UserDto.UserSummaryResponse toUserSummaryResponse(UserVO user) {
+        return UserDto.UserSummaryResponse.builder()
+            .userId(user.getUserId())
+            .username(user.getUsername())
+            .nickname(user.getNickname())
+            .avatar(user.getAvatar())
+            .email(user.getEmail())
+            .phone(user.getPhone())
+            .status(user.getStatus())
+            .departmentId(user.getDepartmentId())
+            .departmentName(user.getDepartmentName())
+            .createTime(user.getCreateTime())
+            .build();
     }
 }
