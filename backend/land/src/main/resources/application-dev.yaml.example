@@ -13,6 +13,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
       continue-on-error: false
 
 mybatis-plus:
@@ -60,7 +61,7 @@ skylink:
   collaboration:
     ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:replace-with-a-random-collaboration-secret}
     ticket-ttl: 60s
-    websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://localhost:8180}
+    websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://127.0.0.1:8180}
     service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:replace-with-a-random-service-token}
   bootstrap:
     security-data-enabled: ${SKYLINK_SECURITY_DATA_INITIALIZATION_ENABLED:true}

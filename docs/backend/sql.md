@@ -81,15 +81,12 @@ CREATE TABLE `permission` (
   `permission_name` VARCHAR(50) NOT NULL COMMENT '权限名称',
   `permission_code` VARCHAR(100) NOT NULL COMMENT '权限编码，如 user:add',
   `permission_type` TINYINT NOT NULL DEFAULT 1 COMMENT '权限类型 1-菜单 2-按钮 3-接口',
-  `parent_id` BIGINT DEFAULT NULL COMMENT '父权限ID',
   `sort_no` INT NOT NULL DEFAULT 0 COMMENT '排序号',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
   PRIMARY KEY (`permission_id`),
-  UNIQUE KEY `uk_permission_code` (`permission_code`),
-  KEY `idx_permission_parent_id` (`parent_id`),
-  CONSTRAINT `fk_permission_parent` FOREIGN KEY (`parent_id`) REFERENCES `permission` (`permission_id`) ON DELETE SET NULL
+  UNIQUE KEY `uk_permission_code` (`permission_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限表';
 
 -- ----------------------------
@@ -220,7 +217,7 @@ CREATE TABLE `document` (
   `title` VARCHAR(100) NOT NULL COMMENT '文档标题',
   `content` LONGTEXT COMMENT '文档内容，建议 Markdown 或富文本 JSON',
   `creator_id` BIGINT NOT NULL COMMENT '创建者ID',
-  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1-私有 2-团队共享 3-归档',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1-私有 2-部门可见 3-归档',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
@@ -335,10 +332,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 ## 安全初始化
 
-应用启动时由 `SecurityDataInitializer` 幂等创建基础角色、接口权限和角色权限关系，因此不要再依赖固定用户 ID 的授权脚本。首次超级管理员必须通过 `SKYLINK_BOOTSTRAP_ADMIN_*` 环境变量显式创建，创建完成后关闭引导开关并移除引导密码。
+应用启动时会先执行 `backend/land/src/main/resources/data.sql`，幂等插入基础角色、接口权限和角色权限关系；随后 `SecurityDataInitializer` 会继续修复缺失或被逻辑删除的安全数据，并为已启用但缺少 `user_role` 的历史用户补绑默认 `ROLE_USER`。首次超级管理员仍需通过 `SKYLINK_BOOTSTRAP_ADMIN_*` 环境变量显式创建，创建完成后关闭引导开关并移除引导密码。
 
 ## 自动建表
 
-应用默认启用 Spring SQL 初始化并执行 `backend/land/src/main/resources/schema.sql`。运行时脚本只使用 `CREATE TABLE IF NOT EXISTS`，不会执行本文件中的 `DROP TABLE`；数据库本身仍需由部署环境提前创建。
+应用默认启用 Spring SQL 初始化并按顺序执行 `backend/land/src/main/resources/schema.sql` 和 `backend/land/src/main/resources/data.sql`。运行时脚本只使用 `CREATE TABLE IF NOT EXISTS` 与幂等 `INSERT IGNORE`，不会删除已有业务数据；数据库本身仍需由部署环境提前创建。
 
 当前自动建表范围以 `docs/spec-current.md` 定义的数据边界和本文件中的 17 张表为准。文件、日程、系统公告、任务附件和业务审计已因工期从本期需求中移出；仓库中对应保留实体不参与当前 schema 初始化。

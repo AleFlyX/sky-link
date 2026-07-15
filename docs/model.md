@@ -167,7 +167,7 @@ SkyLink Database
 
 - `role` 表保存角色元数据，`role_name` 用于显示，`role_code` 用于程序判断。
 - `permission` 表保存权限点，`permission_type` 区分菜单、按钮、接口。
-- `permission.parent_id` 用于构建树形权限结构，支持菜单层级。
+- `permission` 当前采用平铺权限模型，不再维护 `parent_id` 自关联字段。
 - `permission.sort_no` 用于前端菜单展示排序。
 - `user_role` 是用户和角色的中间表，复合主键防止重复授权。
 - `role_permission` 是角色和权限的中间表，复合主键防止重复分配。
@@ -239,7 +239,7 @@ SkyLink Database
 对应 SQL 设计说明：
 
 - `document.title` 和 `document.content` 分别存标题和正文，正文可保存 Markdown 或富文本 JSON。
-- `document.status` 区分私有、团队共享、归档状态。
+- `document.status` 区分私有、部门可见、归档状态；接口兼容值 `team` 表示创建者所在部门可读。
 - `document_permission` 用于控制单个协作者对文档的只读、评论、编辑、管理权限。
 - `document_permission` 的复合主键防止同一用户对同一文档出现重复授权。
 - `document_group_permission` 用于将文档授权给群组，群成员通过群组关系获得相应权限。

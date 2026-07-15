@@ -84,7 +84,6 @@ public class PermissionController {
             .permissionName(permission.getPermissionName())
             .permissionCode(permission.getPermissionCode())
             .permissionType(permission.getPermissionType())
-            .parentId(permission.getParentId())
             .sortNo(permission.getSortNo())
             .children(toPermissionResponses(permission.getChildren()))
             .build();
