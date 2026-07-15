@@ -5,7 +5,7 @@ INSERT IGNORE INTO `role`
 VALUES
     ('Super Administrator', 'ROLE_SUPER_ADMIN', 'Has full access to all system permissions', 1, NOW(), NOW(), 0),
     ('Administrator', 'ROLE_ADMIN', 'Manages users, departments, documents, and tasks', 1, NOW(), NOW(), 0),
-    ('Project Leader', 'ROLE_PROJECT_LEADER', 'Manages project tasks and task progress', 1, NOW(), NOW(), 0),
+    ('Project Leader', 'ROLE_PROJECT_LEADER', 'Base user permissions plus project task management', 1, NOW(), NOW(), 0),
     ('User', 'ROLE_USER', 'Default role for regular authenticated users', 1, NOW(), NOW(), 0);
 
 INSERT IGNORE INTO `permission`
@@ -20,6 +20,14 @@ VALUES
     ('Delete User', 'user:delete', 3, 16, NOW(), NOW(), 0),
     ('Assign User Roles', 'user:role:add', 3, 17, NOW(), NOW(), 0),
     ('Remove User Role', 'user:role:delete', 3, 18, NOW(), NOW(), 0),
+    ('List Friends', 'friend:list', 3, 20, NOW(), NOW(), 0),
+    ('List Friend Requests', 'friend:request:list', 3, 21, NOW(), NOW(), 0),
+    ('Send Friend Request', 'friend:request:create', 3, 22, NOW(), NOW(), 0),
+    ('Delete Friend', 'friend:delete', 3, 23, NOW(), NOW(), 0),
+    ('List Messages', 'message:list', 3, 24, NOW(), NOW(), 0),
+    ('Send Message', 'message:send', 3, 25, NOW(), NOW(), 0),
+    ('Recall Message', 'message:recall', 3, 26, NOW(), NOW(), 0),
+    ('List Groups', 'group:list', 3, 27, NOW(), NOW(), 0),
     ('List Departments', 'department:list', 3, 30, NOW(), NOW(), 0),
     ('Create Department', 'department:create', 3, 31, NOW(), NOW(), 0),
     ('Update Department', 'department:update', 3, 32, NOW(), NOW(), 0),
@@ -74,6 +82,14 @@ FROM (
     SELECT 'ROLE_ADMIN', 'user:delete' UNION ALL
     SELECT 'ROLE_ADMIN', 'user:role:add' UNION ALL
     SELECT 'ROLE_ADMIN', 'user:role:delete' UNION ALL
+    SELECT 'ROLE_ADMIN', 'friend:list' UNION ALL
+    SELECT 'ROLE_ADMIN', 'friend:request:list' UNION ALL
+    SELECT 'ROLE_ADMIN', 'friend:request:create' UNION ALL
+    SELECT 'ROLE_ADMIN', 'friend:delete' UNION ALL
+    SELECT 'ROLE_ADMIN', 'message:list' UNION ALL
+    SELECT 'ROLE_ADMIN', 'message:send' UNION ALL
+    SELECT 'ROLE_ADMIN', 'message:recall' UNION ALL
+    SELECT 'ROLE_ADMIN', 'group:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'department:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'department:create' UNION ALL
     SELECT 'ROLE_ADMIN', 'department:update' UNION ALL
@@ -104,15 +120,47 @@ FROM (
     SELECT 'ROLE_ADMIN', 'task:update' UNION ALL
     SELECT 'ROLE_ADMIN', 'task:status:update' UNION ALL
     SELECT 'ROLE_ADMIN', 'task:delete' UNION ALL
-    SELECT 'ROLE_PROJECT_LEADER', 'task:create' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'user:me:get' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'user:me:update' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'user:password:update' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'user:get' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'friend:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'friend:request:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'friend:request:create' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'friend:delete' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'message:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'message:send' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'message:recall' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'group:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'department:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'department:members:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:create' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:get' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:update' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:delete' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:permission:user:set' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:permission:group:set' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:permission:list' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:permission:user:delete' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'document:permission:group:delete' UNION ALL
     SELECT 'ROLE_PROJECT_LEADER', 'task:list' UNION ALL
     SELECT 'ROLE_PROJECT_LEADER', 'task:get' UNION ALL
+    SELECT 'ROLE_PROJECT_LEADER', 'task:create' UNION ALL
     SELECT 'ROLE_PROJECT_LEADER', 'task:update' UNION ALL
     SELECT 'ROLE_PROJECT_LEADER', 'task:status:update' UNION ALL
     SELECT 'ROLE_USER', 'user:me:get' UNION ALL
     SELECT 'ROLE_USER', 'user:me:update' UNION ALL
     SELECT 'ROLE_USER', 'user:password:update' UNION ALL
     SELECT 'ROLE_USER', 'user:get' UNION ALL
+    SELECT 'ROLE_USER', 'friend:list' UNION ALL
+    SELECT 'ROLE_USER', 'friend:request:list' UNION ALL
+    SELECT 'ROLE_USER', 'friend:request:create' UNION ALL
+    SELECT 'ROLE_USER', 'friend:delete' UNION ALL
+    SELECT 'ROLE_USER', 'message:list' UNION ALL
+    SELECT 'ROLE_USER', 'message:send' UNION ALL
+    SELECT 'ROLE_USER', 'message:recall' UNION ALL
+    SELECT 'ROLE_USER', 'group:list' UNION ALL
     SELECT 'ROLE_USER', 'department:list' UNION ALL
     SELECT 'ROLE_USER', 'department:members:list' UNION ALL
     SELECT 'ROLE_USER', 'document:create' UNION ALL

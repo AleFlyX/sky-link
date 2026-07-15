@@ -15,6 +15,7 @@ const emptyUser = {
   bio: '',
   lastLoginAt: '',
   roles: [],
+  permissions: [],
 }
 
 function normalizeUser(user = {}) {
@@ -24,6 +25,7 @@ function normalizeUser(user = {}) {
     ...emptyUser,
     ...rest,
     roles: Array.isArray(rest.roles) ? [...rest.roles] : [],
+    permissions: Array.isArray(rest.permissions) ? [...rest.permissions] : [],
   }
 }
 

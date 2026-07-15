@@ -62,6 +62,7 @@ const routes = [
         meta: {
           title: '用户管理',
           eyebrow: 'Member Directory',
+          permissions: ['user:list'],
         },
       },
       {
@@ -71,6 +72,7 @@ const routes = [
         meta: {
           title: '部门管理',
           eyebrow: 'Department Structure',
+          permissions: ['department:list'],
         },
       },
       {
@@ -80,6 +82,7 @@ const routes = [
         meta: {
           title: '文件中心',
           eyebrow: 'File Workspace',
+          permissions: ['document:list'],
         },
       },
       {
@@ -89,6 +92,7 @@ const routes = [
         meta: {
           title: '任务管理',
           eyebrow: 'Task Delivery',
+          permissions: ['task:list'],
         },
       },
       {
@@ -107,6 +111,7 @@ const routes = [
         meta: {
           title: '通讯录',
           eyebrow: 'Friends & Groups',
+          permissions: ['friend:list', 'group:list'],
         },
       },
       {
@@ -116,6 +121,7 @@ const routes = [
         meta: {
           title: '消息中心',
           eyebrow: 'Message Center',
+          permissions: ['message:list'],
         },
       },
       {
@@ -125,6 +131,7 @@ const routes = [
         meta: {
           title: '在线文档',
           eyebrow: 'Document Workspace',
+          permissions: ['document:list'],
         },
       },
       {

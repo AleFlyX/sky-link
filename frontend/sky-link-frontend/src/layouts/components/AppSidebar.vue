@@ -32,8 +32,8 @@ const navItems = [
   { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
   { label: '部门管理', to: '/app/departments', icon: OfficeBuilding, permissions: ['department:list'] },
   { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
-  { label: '通讯录', to: '/app/contacts', icon: User },
-  { label: '消息中心', to: '/app/messages', icon: ChatDotRound },
+  { label: '通讯录', to: '/app/contacts', icon: User, permissions: ['friend:list', 'group:list'] },
+  { label: '消息中心', to: '/app/messages', icon: ChatDotRound, permissions: ['message:list'] },
   { label: '在线文档', to: '/app/documents', icon: Document, permissions: ['document:list'] },
 ]
 
