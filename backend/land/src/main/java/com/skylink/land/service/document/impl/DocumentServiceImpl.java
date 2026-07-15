@@ -226,6 +226,7 @@ public class DocumentServiceImpl implements DocumentService {
         if (Objects.equals(document.getCreatorId(), userId) || isAdministrator(userId)) level = PERMISSION_MANAGE;
         else {
             Integer granted = permissionMapper.selectEffectivePermission(document.getDocumentId(), userId);
+            if (granted == null && isSameDepartmentShared(userId, document)) granted = PERMISSION_READ;
             if (granted == null) return null;
             level = granted;
         }
@@ -246,6 +247,16 @@ public class DocumentServiceImpl implements DocumentService {
     private boolean isAdministrator(Long userId) {
         List<String> roles = userService.listRoleCodes(userId);
         return roles != null && (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_SUPER_ADMIN"));
+    }
+
+    private boolean isSameDepartmentShared(Long userId, Document document) {
+        if (document.getStatus() != STATUS_TEAM) return false;
+        User viewer = userMapper.selectById(userId);
+        User creator = userMapper.selectById(document.getCreatorId());
+        return viewer != null
+            && creator != null
+            && viewer.getDepartmentId() != null
+            && Objects.equals(viewer.getDepartmentId(), creator.getDepartmentId());
     }
 
     private Document requireDocument(Long documentId) {

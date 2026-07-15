@@ -39,7 +39,23 @@ class SchemaSqlTests {
         assertThat(properties)
             .containsEntry("spring.sql.init.mode", "always")
             .containsEntry("spring.sql.init.schema-locations", "classpath:schema.sql")
+            .containsEntry("spring.sql.init.data-locations", "classpath:data.sql")
             .containsEntry("spring.sql.init.continue-on-error", false);
+    }
+
+    @Test
+    void dataSeedIsPresentAndContainsCoreSecurityRecords() throws Exception {
+        String data = new ClassPathResource("data.sql")
+            .getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(data)
+            .contains("INSERT IGNORE INTO `role`")
+            .contains("ROLE_SUPER_ADMIN")
+            .contains("ROLE_ADMIN")
+            .contains("ROLE_USER")
+            .contains("document:list")
+            .contains("permission:list")
+            .contains("INSERT IGNORE INTO `role_permission`");
     }
 
     private Set<String> schemaTables(String schema) {

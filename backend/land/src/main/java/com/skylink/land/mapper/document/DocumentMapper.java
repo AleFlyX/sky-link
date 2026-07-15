@@ -14,12 +14,24 @@ public interface DocumentMapper extends BaseMapper<Document> {
         <script>
         SELECT DISTINCT d.*
         FROM document d
+        LEFT JOIN `user` creator ON creator.user_id = d.creator_id
+        LEFT JOIN `user` viewer ON viewer.user_id = #{userId}
         LEFT JOIN document_permission dp ON dp.document_id = d.document_id AND dp.user_id = #{userId}
         LEFT JOIN document_group_permission dgp ON dgp.document_id = d.document_id
         LEFT JOIN group_member gm ON gm.group_id = dgp.group_id
           AND gm.user_id = #{userId} AND gm.member_role IN (1, 2, 3)
         WHERE d.is_deleted = 0
-          AND (#{administrator} = TRUE OR d.creator_id = #{userId} OR dp.user_id IS NOT NULL OR gm.user_id IS NOT NULL)
+          AND (
+            #{administrator} = TRUE
+            OR d.creator_id = #{userId}
+            OR dp.user_id IS NOT NULL
+            OR gm.user_id IS NOT NULL
+            OR (
+              d.status = 2
+              AND creator.department_id IS NOT NULL
+              AND creator.department_id = viewer.department_id
+            )
+          )
         <if test="title != null and title != ''">
           AND d.title LIKE CONCAT('%', #{title}, '%')
         </if>

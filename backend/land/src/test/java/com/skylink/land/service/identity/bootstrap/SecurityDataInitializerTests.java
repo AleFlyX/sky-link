@@ -7,9 +7,13 @@ import static org.mockito.Mockito.when;
 
 import com.skylink.land.entity.identity.Permission;
 import com.skylink.land.entity.identity.Role;
+import com.skylink.land.entity.identity.User;
+import com.skylink.land.entity.identity.UserRole;
 import com.skylink.land.mapper.identity.PermissionMapper;
 import com.skylink.land.mapper.identity.RoleMapper;
 import com.skylink.land.mapper.identity.RolePermissionMapper;
+import com.skylink.land.mapper.identity.UserMapper;
+import com.skylink.land.mapper.identity.UserRoleMapper;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,12 @@ class SecurityDataInitializerTests {
     private RolePermissionMapper rolePermissionMapper;
 
     @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private UserRoleMapper userRoleMapper;
+
+    @Mock
     private BootstrapAdminService bootstrapAdminService;
 
     @Test
@@ -49,6 +59,11 @@ class SecurityDataInitializerTests {
         });
         when(permissionMapper.selectList(any())).thenAnswer(invocation -> List.copyOf(permissions.values()));
         when(rolePermissionMapper.selectList(any())).thenReturn(List.of());
+        User orphanUser = new User();
+        orphanUser.setUserId(99L);
+        orphanUser.setStatus(1);
+        when(userMapper.selectList(any())).thenReturn(List.of(orphanUser));
+        when(userRoleMapper.selectList(any())).thenReturn(List.of());
         when(roleMapper.selectByRoleCodeIncludingDeleted(anyString())).thenAnswer(invocation -> {
             Role role = new Role();
             role.setRoleId((long) invocation.getArgument(0, String.class).hashCode() & Integer.MAX_VALUE);
@@ -62,12 +77,15 @@ class SecurityDataInitializerTests {
             roleMapper,
             permissionMapper,
             rolePermissionMapper,
+            userMapper,
+            userRoleMapper,
             bootstrapAdminService
         );
         initializer.run(null);
 
         verify(permissionMapper).restoreSystemPermission(1L);
         verify(roleMapper).restoreSystemRole(any());
+        verify(userRoleMapper).insert(any(UserRole.class));
         verify(bootstrapAdminService).bootstrap(any(Role.class));
     }
 }

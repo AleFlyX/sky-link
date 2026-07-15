@@ -35,7 +35,7 @@ class CollaborationTicketProviderTests {
         CollaborationProperties properties = new CollaborationProperties();
         properties.setTicketSecret("01234567890123456789012345678901");
         properties.setTicketTtl(Duration.ofSeconds(60));
-        properties.setWebsocketUrl("ws://localhost:1234");
+        properties.setWebsocketUrl("ws://127.0.0.1:8180");
         properties.setServiceToken("service-token-at-least-32-characters");
         return properties;
     }
