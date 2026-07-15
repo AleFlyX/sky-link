@@ -96,6 +96,25 @@ public final class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class CreateUserRequest implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private String username;
+        private String password;
+        private String nickname;
+        private String email;
+        private String phone;
+        private Integer status;
+        private Long departmentId;
+        private List<Long> roleIds;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UpdateProfileRequest implements Serializable {
 
         @Serial

@@ -73,6 +73,12 @@ public class UserController {
             .build();
     }
 
+    @PostMapping
+    @RequirePermission("user:create")
+    public UserDto.UserSummaryResponse createUser(@RequestBody UserDto.CreateUserRequest request) {
+        return toUserSummaryResponse(userService.createUser(request));
+    }
+
     @PutMapping("/{userId}/status")
     @RequirePermission("user:status:update")
     public UserDto.UserSummaryResponse updateUserStatus(

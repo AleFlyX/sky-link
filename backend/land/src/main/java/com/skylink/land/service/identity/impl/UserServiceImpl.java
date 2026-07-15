@@ -20,6 +20,7 @@ import com.skylink.land.mapper.identity.RolePermissionMapper;
 import com.skylink.land.mapper.identity.UserMapper;
 import com.skylink.land.mapper.identity.UserRoleMapper;
 import com.skylink.land.service.identity.UserService;
+import com.skylink.land.service.identity.bootstrap.SecurityBootstrapCatalog;
 import com.skylink.land.vo.identity.RoleVO;
 import com.skylink.land.vo.identity.UserProfileVO;
 import com.skylink.land.vo.identity.UserVO;
@@ -74,6 +75,60 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .orderByDesc(User::getCreateTime)
         );
         return PageResponse.of(page.convert(this::toUserVO));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserVO createUser(UserDto.CreateUserRequest request) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
+        }
+        if (!StringUtils.hasText(request.getUsername())
+            || !StringUtils.hasText(request.getPassword())
+            || !StringUtils.hasText(request.getEmail())
+            || !StringUtils.hasText(request.getPhone())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "username, password, email and phone are required");
+        }
+        if (!isValidPassword(request.getPassword())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "password must be at least 8 characters and contain letters and numbers");
+        }
+
+        String username = request.getUsername().trim();
+        String email = request.getEmail().trim();
+        String phone = request.getPhone().trim();
+        ensureUniqueUsername(username, null);
+        ensureUniqueEmail(email, null);
+        ensureUniquePhone(phone, null);
+        if (request.getDepartmentId() != null) {
+            ensureDepartmentExists(request.getDepartmentId());
+        }
+
+        Integer status = request.getStatus() == null ? 1 : request.getStatus();
+        if (status != 0 && status != 1) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "status must be 0 or 1");
+        }
+
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setNickname(StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : username);
+        user.setEmail(email);
+        user.setPhone(phone);
+        user.setStatus(status);
+        user.setDepartmentId(request.getDepartmentId());
+        save(user);
+
+        List<Long> roleIds = normalizeIds("roleIds", request.getRoleIds());
+        if (CollectionUtils.isEmpty(roleIds)) {
+            bindDefaultRole(user.getUserId());
+        } else {
+            ensureRolesExist(roleIds);
+            roleIds.stream()
+                .map(roleId -> buildUserRole(user.getUserId(), roleId))
+                .forEach(userRoleMapper::insert);
+        }
+
+        return getUserVO(user.getUserId());
     }
 
     @Override
@@ -332,6 +387,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
     }
 
+    private void bindDefaultRole(Long userId) {
+        Role role = roleMapper.selectOne(
+            new LambdaQueryWrapper<Role>().eq(Role::getRoleCode, SecurityBootstrapCatalog.ROLE_USER).last("limit 1")
+        );
+        if (role == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "default role is not initialized");
+        }
+        userRoleMapper.insert(buildUserRole(userId, role.getRoleId()));
+    }
+
+    private void ensureDepartmentExists(Long departmentId) {
+        Department department = departmentMapper.selectById(departmentId);
+        if (department == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "department not found");
+        }
+    }
+
     private List<Long> normalizeIds(String fieldName, List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return List.of();
@@ -342,6 +414,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return ids.stream()
             .distinct()
             .toList();
+    }
+
+    private void ensureUniqueUsername(String username, Long excludeUserId) {
+        Long count = baseMapper.selectCount(
+            new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, username)
+                .ne(excludeUserId != null, User::getUserId, excludeUserId)
+        );
+        if (count != null && count > 0) {
+            throw new BusinessException(ErrorCode.CONFLICT, "username already exists");
+        }
     }
 
     private void ensureUniqueEmail(String email, Long excludeUserId) {

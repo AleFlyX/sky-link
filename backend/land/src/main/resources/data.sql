@@ -20,6 +20,7 @@ VALUES
     ('Delete User', 'user:delete', 3, 16, NOW(), NOW(), 0),
     ('Assign User Roles', 'user:role:add', 3, 17, NOW(), NOW(), 0),
     ('Remove User Role', 'user:role:delete', 3, 18, NOW(), NOW(), 0),
+    ('Create User', 'user:create', 3, 19, NOW(), NOW(), 0),
     ('List Friends', 'friend:list', 3, 20, NOW(), NOW(), 0),
     ('List Friend Requests', 'friend:request:list', 3, 21, NOW(), NOW(), 0),
     ('Send Friend Request', 'friend:request:create', 3, 22, NOW(), NOW(), 0),
@@ -84,6 +85,7 @@ FROM (
     SELECT 'ROLE_ADMIN', 'user:delete' UNION ALL
     SELECT 'ROLE_ADMIN', 'user:role:add' UNION ALL
     SELECT 'ROLE_ADMIN', 'user:role:delete' UNION ALL
+    SELECT 'ROLE_ADMIN', 'user:create' UNION ALL
     SELECT 'ROLE_ADMIN', 'friend:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'friend:request:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'friend:request:create' UNION ALL
