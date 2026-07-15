@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   variant: {
     type: String,
@@ -16,19 +18,40 @@ const props = defineProps({
     type: String,
     default: 'md',
   },
+  interactive: {
+    type: Boolean,
+    default: false,
+  },
+  bodyClass: {
+    type: [String, Array, Object],
+    default: '',
+  },
+  headerClass: {
+    type: [String, Array, Object],
+    default: '',
+  },
+  footerClass: {
+    type: [String, Array, Object],
+    default: '',
+  },
 })
 
-const hasHeader = props.title || props.subtitle
+const hasHeader = computed(() => Boolean(props.title || props.subtitle))
 </script>
 
 <template>
   <el-card
     shadow="never"
     :body-style="{ padding: '0' }"
-    :class="['app-card', `app-card--${variant}`, `app-card--padding-${padding}`]"
+    :class="[
+      'app-card',
+      `app-card--${variant}`,
+      `app-card--padding-${padding}`,
+      { 'app-card--interactive': interactive },
+    ]"
   >
-    <div v-if="hasHeader || $slots.header" class="app-card__header">
-      <slot name="header">
+    <div v-if="hasHeader || $slots.header" :class="['app-card__header', headerClass]">
+      <slot name="header" :title="title" :subtitle="subtitle">
         <div class="app-card__title-wrap">
           <h3 v-if="title" class="app-card__title">{{ title }}</h3>
           <p v-if="subtitle" class="app-card__subtitle">{{ subtitle }}</p>
@@ -36,11 +59,11 @@ const hasHeader = props.title || props.subtitle
       </slot>
     </div>
 
-    <div class="app-card__body">
+    <div :class="['app-card__body', bodyClass]">
       <slot />
     </div>
 
-    <div v-if="$slots.footer" class="app-card__footer">
+    <div v-if="$slots.footer" :class="['app-card__footer', footerClass]">
       <slot name="footer" />
     </div>
   </el-card>
@@ -53,6 +76,10 @@ const hasHeader = props.title || props.subtitle
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .app-card--soft {
@@ -61,8 +88,10 @@ const hasHeader = props.title || props.subtitle
 
 .app-card--hero {
   background:
+    radial-gradient(circle at top right, rgba(51, 112, 255, 0.12), transparent 32%),
     linear-gradient(135deg, rgba(51, 112, 255, 0.08), rgba(51, 112, 255, 0.02)),
     var(--color-surface);
+  border-color: rgba(51, 112, 255, 0.12);
 }
 
 .app-card--elevated {
@@ -72,6 +101,12 @@ const hasHeader = props.title || props.subtitle
 .app-card--ghost {
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(10px);
+}
+
+.app-card--interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(51, 112, 255, 0.22);
+  box-shadow: 0 16px 28px rgba(31, 35, 41, 0.08);
 }
 
 .app-card__header,
