@@ -1,9 +1,11 @@
 package com.skylink.land.service.identity.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.skylink.land.dto.common.PageResponse;
+import com.skylink.land.dto.common.PageRequest;
 import com.skylink.land.dto.department.DepartmentDto;
 import com.skylink.land.entity.identity.Department;
 import com.skylink.land.entity.identity.User;
@@ -14,7 +16,9 @@ import com.skylink.land.mapper.identity.UserMapper;
 import com.skylink.land.service.identity.DepartmentService;
 import com.skylink.land.vo.identity.DepartmentVO;
 import com.skylink.land.vo.identity.UserVO;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -126,6 +130,62 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
         return PageResponse.of(page.convert(this::toUserVO));
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PageResponse<UserVO> addDepartmentMembers(Long departmentId, List<Long> userIds) {
+        Department department = getById(departmentId);
+        if (department == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "department not found");
+        }
+
+        Set<Long> normalizedUserIds = normalizeUserIds(userIds);
+        List<User> users = userMapper.selectBatchIds(normalizedUserIds);
+        if (users.size() != normalizedUserIds.size()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "some users do not exist");
+        }
+
+        for (User user : users) {
+            userMapper.update(
+                null,
+                new LambdaUpdateWrapper<User>()
+                    .eq(User::getUserId, user.getUserId())
+                    .set(User::getDepartmentId, departmentId)
+            );
+        }
+
+        DepartmentDto.DepartmentMemberQueryRequest request = new DepartmentDto.DepartmentMemberQueryRequest();
+        request.setPage(PageRequest.DEFAULT_PAGE);
+        request.setSize(Math.max(PageRequest.DEFAULT_SIZE, normalizedUserIds.size()));
+        return pageDepartmentMembers(departmentId, request);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeDepartmentMember(Long departmentId, Long userId) {
+        Department department = getById(departmentId);
+        if (department == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "department not found");
+        }
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "userId is required");
+        }
+
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user not found");
+        }
+        if (!departmentId.equals(user.getDepartmentId())) {
+            throw new BusinessException(ErrorCode.CONFLICT, "user is not in this department");
+        }
+
+        userMapper.update(
+            null,
+            new LambdaUpdateWrapper<User>()
+                .eq(User::getUserId, userId)
+                .set(User::getDepartmentId, null)
+        );
+    }
+
     private DepartmentVO toDepartmentVO(Department department) {
         DepartmentVO departmentVO = DepartmentVO.from(department);
         if (departmentVO == null) {
@@ -156,6 +216,24 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
         if (leaderId != null && userMapper.selectById(leaderId) == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "leader user does not exist");
         }
+    }
+
+    private Set<Long> normalizeUserIds(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "userIds are required");
+        }
+
+        Set<Long> normalizedUserIds = new LinkedHashSet<>();
+        for (Long userId : userIds) {
+            if (userId == null) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "userId cannot be null");
+            }
+            normalizedUserIds.add(userId);
+        }
+        if (normalizedUserIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "userIds are required");
+        }
+        return normalizedUserIds;
     }
 
     private void ensureDepartmentNameUnique(String departmentName, Long excludeDepartmentId) {

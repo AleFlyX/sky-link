@@ -292,6 +292,24 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 - **Query 参数**：分页参数
 - **响应**：分页用户列表（简要信息）。
 
+### 4.6 加入部门成员（管理员）
+- **接口**：`POST /departments/{departmentId}/members`
+- **描述**：将指定用户加入该部门；用户已有部门时视为迁移部门
+- **权限**：`department:members:add`
+- **请求体**：
+```json
+{
+  "userIds": [1001, 1002]
+}
+```
+- **响应**：返回该部门最新成员分页列表。
+
+### 4.7 移出部门成员（管理员）
+- **接口**：`DELETE /departments/{departmentId}/members/{userId}`
+- **描述**：将指定用户从该部门移出，用户部门归属置空
+- **权限**：`department:members:remove`
+- **响应**：成功消息。
+
 ---
 
 ## 5. 好友管理（Friend）

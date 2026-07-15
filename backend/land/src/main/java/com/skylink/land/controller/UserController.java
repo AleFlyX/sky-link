@@ -143,21 +143,6 @@ public class UserController {
             .build();
     }
 
-    private UserDto.UserDetailResponse toDetailResponse(UserVO user, List<RoleVO> roles) {
-        return UserDto.UserDetailResponse.builder()
-            .userId(user.getUserId())
-            .username(user.getUsername())
-            .nickname(user.getNickname())
-            .email(user.getEmail())
-            .status(user.getStatus())
-            .departmentId(user.getDepartmentId())
-            .departmentName(user.getDepartmentName())
-            .createTime(user.getCreateTime())
-            .updateTime(user.getUpdateTime())
-            .roles(toRoleInfos(roles))
-            .build();
-    }
-
     private List<UserDto.UserRoleInfo> toRoleInfos(List<RoleVO> roles) {
         if (roles == null) {
             return List.of();

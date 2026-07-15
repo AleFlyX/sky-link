@@ -4,6 +4,8 @@ import com.skylink.land.auth.RequirePermission;
 import com.skylink.land.dto.common.PageResponse;
 import com.skylink.land.dto.department.DepartmentDto;
 import com.skylink.land.dto.user.UserDto;
+import com.skylink.land.exception.BusinessException;
+import com.skylink.land.exception.ErrorCode;
 import com.skylink.land.service.identity.DepartmentService;
 import com.skylink.land.vo.identity.DepartmentVO;
 import com.skylink.land.vo.identity.UserVO;
@@ -69,6 +71,31 @@ public class DepartmentController {
             .size(page.getSize())
             .records(page.getRecords().stream().map(this::toUserSummaryResponse).toList())
             .build();
+    }
+
+    @PostMapping("/{departmentId}/members")
+    @RequirePermission("department:members:add")
+    public PageResponse<UserDto.UserSummaryResponse> addDepartmentMembers(
+        @PathVariable Long departmentId,
+        @RequestBody DepartmentDto.AddDepartmentMembersRequest request
+    ) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
+        }
+
+        PageResponse<UserVO> page = departmentService.addDepartmentMembers(departmentId, request.getUserIds());
+        return PageResponse.<UserDto.UserSummaryResponse>builder()
+            .total(page.getTotal())
+            .page(page.getPage())
+            .size(page.getSize())
+            .records(page.getRecords().stream().map(this::toUserSummaryResponse).toList())
+            .build();
+    }
+
+    @DeleteMapping("/{departmentId}/members/{userId}")
+    @RequirePermission("department:members:remove")
+    public void removeDepartmentMember(@PathVariable Long departmentId, @PathVariable Long userId) {
+        departmentService.removeDepartmentMember(departmentId, userId);
     }
 
     private DepartmentDto.DepartmentResponse toDepartmentResponse(DepartmentVO department) {
