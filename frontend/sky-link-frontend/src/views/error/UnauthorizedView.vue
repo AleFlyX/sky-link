@@ -5,24 +5,24 @@ import AppCard from '../../components/common/AppCard.vue'
 <template>
   <div class="error-page">
     <section class="error-page__intro">
-      <div class="error-page__badge">Access Control</div>
+      <div class="error-page__badge">401</div>
       <h1>当前访问未通过身份校验</h1>
       <p>
         登录状态可能已失效，或当前账号暂时没有访问该页面的权限。请重新登录，或联系管理员确认角色配置。
       </p>
 
       <div class="error-page__tips">
-        <div>接口返回 401 时会自动引导到当前页面</div>
-        <div>适合作为登录失效、权限缺失的统一反馈入口</div>
+        <div>请重新登录后再试</div>
+        <div>如仍无权限，请联系管理员</div>
       </div>
     </section>
 
     <section class="error-page__panel">
       <AppCard variant="elevated" padding="lg" class="error-card">
         <div class="error-card__code">401</div>
-        <div class="error-card__title">身份已过期或无权访问</div>
+        <div class="error-card__title">无权访问当前页面</div>
         <p class="error-card__text">
-          为了保证工作台数据安全，系统已中止本次访问。你可以重新登录后继续操作。
+          当前登录状态无效，或账号没有对应权限。请重新登录后再试。
         </p>
 
         <div class="error-card__actions">
@@ -30,7 +30,7 @@ import AppCard from '../../components/common/AppCard.vue'
             <el-button type="primary" size="large">返回登录</el-button>
           </router-link>
           <router-link to="/app/dashboard">
-            <el-button size="large" plain>前往工作台首页</el-button>
+            <el-button size="large" plain>前往首页</el-button>
           </router-link>
         </div>
       </AppCard>

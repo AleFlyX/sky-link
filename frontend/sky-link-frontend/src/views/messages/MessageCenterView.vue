@@ -6,6 +6,7 @@ import { useUserStore } from '../../stores/user'
 import { TOKEN_KEY } from '../../utils/request'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import {
   getMessages,
   getSessions,
@@ -63,10 +64,11 @@ function buildWebSocketUrl() {
     return null
   }
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin
+  const explicitWebSocketUrl = import.meta.env.VITE_WS_URL
+  const apiBase = explicitWebSocketUrl || import.meta.env.VITE_API_BASE_URL || window.location.origin
   const url = new URL(apiBase, window.location.origin)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  url.pathname = '/ws/messages'
+  url.pathname = explicitWebSocketUrl ? url.pathname : '/ws/messages'
   url.search = ''
   url.searchParams.set('token', token)
   return url.toString()
@@ -131,6 +133,13 @@ function scheduleReconnect() {
 function connectSocket() {
   if (demoData.value || !currentUserId.value) {
     connectionState.value = demoData.value ? 'connected' : 'disconnected'
+    return
+  }
+
+  if (socket.value && (
+    socket.value.readyState === WebSocket.OPEN
+    || socket.value.readyState === WebSocket.CONNECTING
+  )) {
     return
   }
 
@@ -455,7 +464,7 @@ onBeforeUnmount(() => {
                 <el-radio-button label="emoji">Emoji</el-radio-button>
               </el-radio-group>
             </div>
-            <el-input
+            <AppInput
               v-model="draft"
               type="textarea"
               :rows="2"

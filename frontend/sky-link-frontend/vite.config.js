@@ -32,12 +32,18 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      host:'0.0.0.0',
       port: 5573,
       proxy: {
         '/api/v1': {
           target: 'http://localhost:8080',
           changeOrigin: true,
           // rewrite: (path) => path.replace(/^\/api\/v1/, ''),
+        },
+        '/ws': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          ws: true,
         },
       },
     },

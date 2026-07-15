@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
@@ -80,7 +81,7 @@ onMounted(loadData)
     >
       <div class="page-toolbar">
         <div class="page-toolbar__filters">
-          <el-input v-model="keyword" placeholder="搜索姓名 / 账号 / 部门" clearable />
+          <AppInput v-model="keyword" placeholder="搜索姓名 / 账号 / 部门" clearable />
           <el-select v-model="status" placeholder="筛选状态" clearable>
             <el-option
               v-for="item in userStatusOptions"

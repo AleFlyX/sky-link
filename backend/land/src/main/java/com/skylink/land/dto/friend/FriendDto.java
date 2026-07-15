@@ -118,4 +118,20 @@ public final class FriendDto {
         private String status;
         private LocalDateTime requestTime;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SentFriendRequestItemResponse implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private Long requestId;
+        private UserDto.UserSummaryResponse targetUser;
+        private String message;
+        private String status;
+        private LocalDateTime requestTime;
+    }
 }

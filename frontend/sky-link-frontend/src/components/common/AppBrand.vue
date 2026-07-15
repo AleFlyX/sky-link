@@ -12,7 +12,7 @@ defineProps({
     <div class="brand__mark">S</div>
     <div class="brand__content">
       <div class="brand__name">SkyLink</div>
-      <div class="brand__sub">Team Workspace</div>
+      <div class="brand__sub">团队协作系统</div>
     </div>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, useId } from 'vue'
+import AppInput from './AppInput.vue'
 
 const props = defineProps({
   modelValue: {
@@ -62,7 +63,7 @@ function getFieldId(field) {
         />
       </el-select>
 
-      <el-input
+      <AppInput
         v-else
         :id="getFieldId(field)"
         :model-value="modelValue[field.key]"
