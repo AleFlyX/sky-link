@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -56,8 +57,34 @@ public class FriendController {
 
     @GetMapping("/requests")
     public PageResponse<FriendDto.FriendRequestItemResponse> listIncomingRequests(
-        FriendDto.FriendRequestQueryRequest request
+        @RequestParam(required = false) Integer page,
+        @RequestParam(required = false) Integer size
     ) {
+        FriendDto.FriendRequestQueryRequest request = new FriendDto.FriendRequestQueryRequest();
+        request.setPage(page);
+        request.setSize(size);
         return friendService.listIncomingRequests(AuthContext.requireUserId(), request);
+    }
+
+    @GetMapping("/requests/sent")
+    public PageResponse<FriendDto.SentFriendRequestItemResponse> listOutgoingRequests(
+        @RequestParam(required = false) Integer page,
+        @RequestParam(required = false) Integer size
+    ) {
+        FriendDto.FriendRequestQueryRequest request = new FriendDto.FriendRequestQueryRequest();
+        request.setPage(page);
+        request.setSize(size);
+        return friendService.listOutgoingRequests(AuthContext.requireUserId(), request);
+    }
+
+    @GetMapping("/requests/outgoing")
+    public PageResponse<FriendDto.SentFriendRequestItemResponse> listOutgoingRequestsAlias(
+        @RequestParam(required = false) Integer page,
+        @RequestParam(required = false) Integer size
+    ) {
+        FriendDto.FriendRequestQueryRequest request = new FriendDto.FriendRequestQueryRequest();
+        request.setPage(page);
+        request.setSize(size);
+        return friendService.listOutgoingRequests(AuthContext.requireUserId(), request);
     }
 }

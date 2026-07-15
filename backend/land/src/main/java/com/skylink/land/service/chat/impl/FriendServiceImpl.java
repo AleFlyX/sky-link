@@ -15,6 +15,7 @@ import com.skylink.land.mapper.identity.UserMapper;
 import com.skylink.land.service.chat.FriendService;
 import com.skylink.land.vo.friend.FriendListRow;
 import com.skylink.land.vo.friend.FriendRequestRow;
+import com.skylink.land.vo.friend.SentFriendRequestRow;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -218,6 +219,34 @@ public class FriendServiceImpl implements FriendService {
             .build();
     }
 
+    @Override
+    public PageResponse<FriendDto.SentFriendRequestItemResponse> listOutgoingRequests(
+        Long currentUserId,
+        FriendDto.FriendRequestQueryRequest request
+    ) {
+        FriendDto.FriendRequestQueryRequest query = request == null ? new FriendDto.FriendRequestQueryRequest() : request;
+        long total = friendRequestMapper.countOutgoingRequests(currentUserId);
+        if (total == 0) {
+            return PageResponse.empty(query);
+        }
+
+        int page = query.pageOrDefault();
+        int size = query.sizeOrDefault();
+        long offset = (long) (page - 1) * size;
+        List<FriendDto.SentFriendRequestItemResponse> records = friendRequestMapper
+            .selectOutgoingRequests(currentUserId, offset, size)
+            .stream()
+            .map(this::toSentFriendRequestItemResponse)
+            .toList();
+
+        return PageResponse.<FriendDto.SentFriendRequestItemResponse>builder()
+            .total(total)
+            .page(page)
+            .size(size)
+            .records(records)
+            .build();
+    }
+
     private FriendDto.FriendItemResponse toFriendItemResponse(FriendListRow row) {
         return FriendDto.FriendItemResponse.builder()
             .friendId(row.getFriendUserId())
@@ -230,6 +259,16 @@ public class FriendServiceImpl implements FriendService {
         return FriendDto.FriendRequestItemResponse.builder()
             .requestId(row.getRequestId())
             .requestUser(toUserSummary(row))
+            .message(row.getMessage())
+            .status(toStatusName(row.getRequestStatus()))
+            .requestTime(row.getRequestTime())
+            .build();
+    }
+
+    private FriendDto.SentFriendRequestItemResponse toSentFriendRequestItemResponse(SentFriendRequestRow row) {
+        return FriendDto.SentFriendRequestItemResponse.builder()
+            .requestId(row.getRequestId())
+            .targetUser(toUserSummary(row))
             .message(row.getMessage())
             .status(toStatusName(row.getRequestStatus()))
             .requestTime(row.getRequestTime())
@@ -266,6 +305,20 @@ public class FriendServiceImpl implements FriendService {
     private UserDto.UserSummaryResponse toUserSummary(FriendRequestRow row) {
         return UserDto.UserSummaryResponse.builder()
             .userId(row.getRequestUserId())
+            .username(row.getUsername())
+            .nickname(row.getNickname())
+            .email(row.getEmail())
+            .phone(row.getPhone())
+            .status(row.getStatus())
+            .departmentId(row.getDepartmentId())
+            .departmentName(row.getDepartmentName())
+            .createTime(row.getCreateTime())
+            .build();
+    }
+
+    private UserDto.UserSummaryResponse toUserSummary(SentFriendRequestRow row) {
+        return UserDto.UserSummaryResponse.builder()
+            .userId(row.getTargetUserId())
             .username(row.getUsername())
             .nickname(row.getNickname())
             .email(row.getEmail())

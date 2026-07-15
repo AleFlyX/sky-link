@@ -21,4 +21,9 @@ public interface FriendService {
         Long currentUserId,
         FriendDto.FriendRequestQueryRequest request
     );
+
+    PageResponse<FriendDto.SentFriendRequestItemResponse> listOutgoingRequests(
+        Long currentUserId,
+        FriendDto.FriendRequestQueryRequest request
+    );
 }
