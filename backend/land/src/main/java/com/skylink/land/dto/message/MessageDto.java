@@ -28,7 +28,6 @@ public final class MessageDto {
         private Long groupId;
         private String messageType;
         private String content;
-        private Long fileId;
     }
 
     @Data
@@ -47,9 +46,7 @@ public final class MessageDto {
         private Long groupId;
         private String messageType;
         private String content;
-        private Long fileId;
         private Boolean recalled;
-        private Boolean read;
         private LocalDateTime sendTime;
     }
 
@@ -66,14 +63,11 @@ public final class MessageDto {
         private Long targetId;
         private String targetName;
         private MessageResponse lastMessage;
-        private Integer unreadCount;
         private LocalDateTime lastTime;
     }
 
     @Data
-    @Builder
     @NoArgsConstructor
-    @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     public static class MessageHistoryQueryRequest extends PageRequest {
 
@@ -89,37 +83,38 @@ public final class MessageDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MarkReadRequest implements Serializable {
+    public static class MessageRealtimeEvent implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private Long receiverId;
-        private Long groupId;
+        private String type;
+        private MessageResponse message;
+        private MessageSessionResponse session;
     }
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MarkReadResponse implements Serializable {
+    public static class RecallMessageResponse implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private Integer readCount;
-        private List<Long> messageIds;
+        private MessageResponse message;
+        private MessageSessionResponse session;
     }
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class UnreadCountResponse implements Serializable {
+    public static class MessageSessionListResponse implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private Integer totalUnread;
+        private List<MessageSessionResponse> sessions;
     }
 }

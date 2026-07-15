@@ -1,5 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
@@ -7,6 +9,7 @@ import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
 import { addFriend, createGroup, getFriends, getGroups, isDemoMode } from '../../api/workspace'
 
+const router = useRouter()
 const keyword = ref('')
 const page = ref(1)
 const pageSize = 6
@@ -24,6 +27,7 @@ const friendColumns = [
   { key: 'department', label: '部门' },
   { key: 'status', label: '状态' },
   { key: 'lastSeen', label: '最近活跃' },
+  { key: 'actions', label: '操作', width: '120px', align: 'center', slot: 'actions' },
 ]
 
 const groupColumns = [
@@ -31,7 +35,40 @@ const groupColumns = [
   { key: 'memberCount', label: '成员数' },
   { key: 'notice', label: '群公告' },
   { key: 'updatedAt', label: '最近更新' },
+  { key: 'actions', label: '操作', width: '120px', align: 'center', slot: 'actions' },
 ]
+
+function openSingleChat(friend) {
+  const targetId = friend.userId ?? friend.id
+  if (!targetId) {
+    return
+  }
+
+  router.push({
+    path: '/app/messages',
+    query: {
+      type: 'single',
+      id: targetId,
+      name: friend.name || `用户#${targetId}`,
+    },
+  })
+}
+
+function openGroupChat(group) {
+  const targetId = group.id ?? group.groupId
+  if (!targetId) {
+    return
+  }
+
+  router.push({
+    path: '/app/messages',
+    query: {
+      type: 'group',
+      id: targetId,
+      name: group.name || `群聊#${targetId}`,
+    },
+  })
+}
 
 async function loadData() {
   loading.value = true
@@ -73,7 +110,11 @@ onMounted(loadData)
       </div>
 
       <el-alert v-if="demoData" title="当前为演示数据模式，好友申请会即时反馈" type="info" show-icon :closable="false" class="page-feedback" />
-      <AppDataTable :columns="friendColumns" :rows="friends" :loading="loading" :error="loadError" empty-text="暂无好友" @retry="loadData" />
+      <AppDataTable :columns="friendColumns" :rows="friends" :loading="loading" :error="loadError" empty-text="暂无好友" @retry="loadData">
+        <template #actions="{ row }">
+          <AppButton size="small" variant="primary" @click="openSingleChat(row)">发消息</AppButton>
+        </template>
+      </AppDataTable>
       <AppPagination v-model:page="page" :page-size="pageSize" :total="friends.length" />
     </AppCard>
 
@@ -82,7 +123,11 @@ onMounted(loadData)
         <span class="section-hint">共 {{ groups.length }} 个群聊</span>
         <AppButton variant="primary" @click="groupDialog = true">创建群聊</AppButton>
       </div>
-      <AppDataTable :columns="groupColumns" :rows="groups" :loading="loading" empty-text="暂无群聊" />
+      <AppDataTable :columns="groupColumns" :rows="groups" :loading="loading" empty-text="暂无群聊">
+        <template #actions="{ row }">
+          <AppButton size="small" variant="primary" @click="openGroupChat(row)">发消息</AppButton>
+        </template>
+      </AppDataTable>
     </AppCard>
 
     <AppFormDialog
