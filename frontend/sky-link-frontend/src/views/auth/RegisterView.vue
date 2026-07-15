@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import { register } from '../../api/workspace'
 import { useRegisterForm } from './composables/useRegisterForm'
 
@@ -42,10 +43,10 @@ async function handleRegister() {
 <template>
   <div class="register-page">
     <section class="register-page__intro">
-      <div class="register-page__badge">Create Your Workspace Identity</div>
-      <h1>创建你的 SkyLink 团队账号</h1>
+      <div class="register-page__badge">账号注册</div>
+      <h1>注册账号</h1>
       <p>
-        完成基础信息填写后即可加入协作空间，开始使用消息、文件、任务与文档能力。
+        填写基础信息后即可登录系统。
       </p>
     </section>
 
@@ -55,11 +56,11 @@ async function handleRegister() {
           <div class="register-card__logo">S</div>
           <div>
             <div class="register-card__title">注册 SkyLink</div>
-            <div class="register-card__subtitle">先创建账号，再进入团队工作台</div>
+            <div class="register-card__subtitle">请填写账号信息</div>
           </div>
         </div>
 
-        <div class="register-card__switch">账号注册</div>
+        <div class="register-card__switch">注册</div>
 
         <el-alert
           v-if="registerError"
@@ -79,7 +80,7 @@ async function handleRegister() {
           @submit.prevent="handleRegister"
         >
           <el-form-item label="账号" prop="username">
-            <el-input
+            <AppInput
               v-model="form.username"
               placeholder="请输入用户名"
               size="large"
@@ -90,7 +91,7 @@ async function handleRegister() {
           </el-form-item>
 
           <el-form-item label="昵称" prop="nickname">
-            <el-input
+            <AppInput
               v-model="form.nickname"
               placeholder="不填则默认使用账号名"
               size="large"
@@ -101,7 +102,7 @@ async function handleRegister() {
           </el-form-item>
 
           <el-form-item label="邮箱" prop="email">
-            <el-input
+            <AppInput
               v-model="form.email"
               placeholder="请输入邮箱"
               size="large"
@@ -112,7 +113,7 @@ async function handleRegister() {
           </el-form-item>
 
           <el-form-item label="手机号" prop="phone">
-            <el-input
+            <AppInput
               v-model="form.phone"
               placeholder="请输入 11 位手机号"
               size="large"
@@ -123,7 +124,7 @@ async function handleRegister() {
           </el-form-item>
 
           <el-form-item label="密码" prop="password">
-            <el-input
+            <AppInput
               v-model="form.password"
               type="password"
               placeholder="至少 8 位，需包含字母和数字"
@@ -135,7 +136,7 @@ async function handleRegister() {
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input
+            <AppInput
               v-model="form.confirmPassword"
               type="password"
               placeholder="请再次输入密码"

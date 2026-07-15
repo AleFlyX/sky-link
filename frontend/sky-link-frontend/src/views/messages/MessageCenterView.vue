@@ -6,6 +6,7 @@ import { useUserStore } from '../../stores/user'
 import { TOKEN_KEY } from '../../utils/request'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import {
   getMessages,
   getSessions,
@@ -455,7 +456,7 @@ onBeforeUnmount(() => {
                 <el-radio-button label="emoji">Emoji</el-radio-button>
               </el-radio-group>
             </div>
-            <el-input
+            <AppInput
               v-model="draft"
               type="textarea"
               :rows="2"

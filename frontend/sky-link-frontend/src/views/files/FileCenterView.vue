@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
@@ -68,7 +69,7 @@ onMounted(loadData)
       subtitle="成员 B 联调：文件列表、上传入口与可见范围展示已就绪"
     >
       <div class="page-toolbar">
-        <el-input v-model="keyword" placeholder="搜索文件名 / 分类 / 上传人" clearable />
+        <AppInput v-model="keyword" placeholder="搜索文件名 / 分类 / 上传人" clearable />
         <AppButton variant="primary" @click="dialogVisible = true">上传文件</AppButton>
       </div>
 

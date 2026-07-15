@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
@@ -46,9 +47,9 @@ onMounted(loadData)
 
 <template>
   <div class="page-shell">
-    <AppCard title="日程安排" subtitle="查看近期日程并快速创建个人或团队安排">
+    <AppCard title="日程安排" subtitle="查看和创建日程">
       <div class="page-toolbar">
-        <el-input v-model="keyword" clearable placeholder="搜索日程主题 / 内容" @keyup.enter="loadData" />
+        <AppInput v-model="keyword" clearable placeholder="搜索日程主题 / 内容" @keyup.enter="loadData" />
         <AppButton variant="primary" @click="dialogVisible = true">创建日程</AppButton>
       </div>
 

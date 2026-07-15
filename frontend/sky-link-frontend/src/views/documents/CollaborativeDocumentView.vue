@@ -7,6 +7,7 @@ import { EditorContent } from '@tiptap/vue-3'
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '../../components/common/AppButton.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import { getDocument, updateDocument } from '../../api/document'
 import { useUserStore } from '../../stores/user'
 import { useCollaborationSession } from './composables/useCollaborationSession'
@@ -55,7 +56,7 @@ onBeforeUnmount(() => editor.value?.destroy())
   <div class="collaboration-page">
     <header class="collaboration-header">
       <AppButton variant="secondary" @click="router.push('/app/documents')">返回文档</AppButton>
-      <el-input v-if="document" v-model="document.title" class="document-title-input" :disabled="session.permission.value === 'read'" @blur="saveTitle" />
+      <AppInput v-if="document" v-model="document.title" class="document-title-input" :disabled="session.permission.value === 'read'" @blur="saveTitle" />
       <div class="sync-status" :class="`sync-status--${session.status.value}`">
         <span>{{ statusCopy }}</span>
         <small v-if="session.savedAt.value">{{ new Date(session.savedAt.value).toLocaleTimeString() }}</small>

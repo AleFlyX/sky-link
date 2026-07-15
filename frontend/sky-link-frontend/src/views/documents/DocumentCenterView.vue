@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
@@ -59,9 +60,9 @@ onMounted(loadData)
 
 <template>
   <div class="page-shell">
-    <AppCard title="在线文档" subtitle="创建文档、管理协作者并进入实时协同编辑">
+    <AppCard title="在线文档" subtitle="查看文档列表并管理协作者">
       <div class="page-toolbar">
-        <el-input v-model="keyword" clearable placeholder="搜索文档标题 / 作者" @keyup.enter="loadData" />
+        <AppInput v-model="keyword" clearable placeholder="搜索文档标题 / 作者" @keyup.enter="loadData" />
         <AppButton variant="primary" @click="createDialog = true">新建文档</AppButton>
       </div>
       <el-alert v-if="demoData" title="演示数据不支持真实协同连接" type="info" show-icon :closable="false" class="page-feedback" />
@@ -76,12 +77,12 @@ onMounted(loadData)
       :fields="[{ key: 'title', label: '文档标题', required: true }, { key: 'status', label: '可见范围', type: 'select', options: [{ value: 'private', label: '仅自己可见' }, { value: 'team', label: '部门可见' }] }, { key: 'content', label: '初始 Markdown', type: 'textarea' }]"
       :form-data="{ title: '', status: 'private', content: '' }" @submit="handleCreate" />
     <el-dialog v-model="permissionDialog" :title="`协作者 · ${selectedDocument?.title || ''}`" width="min(620px, 94vw)">
-      <div class="grant-form"><el-input v-model="grantForm.userId" placeholder="用户 ID" /><el-select v-model="grantForm.permissionType"><el-option label="只读" value="read" /><el-option label="编辑" value="edit" /><el-option label="管理" value="manage" /></el-select><AppButton variant="primary" @click="saveGrant">保存授权</AppButton></div>
+      <div class="grant-form"><AppInput v-model="grantForm.userId" placeholder="用户 ID" /><el-select v-model="grantForm.permissionType"><el-option label="只读" value="read" /><el-option label="编辑" value="edit" /><el-option label="管理" value="manage" /></el-select><AppButton variant="primary" @click="saveGrant">保存授权</AppButton></div>
       <el-table v-loading="grantLoading" :data="grants" empty-text="暂无直接授权"><el-table-column prop="user.nickname" label="用户"><template #default="{ row }">{{ row.user?.nickname || row.user?.username || row.userId }}</template></el-table-column><el-table-column prop="permissionType" label="权限" /><el-table-column label="操作" width="100"><template #default="{ row }"><el-button link type="danger" @click="removeGrant(row.userId)">移除</el-button></template></el-table-column></el-table>
     </el-dialog>
   </div>
 </template>
 
 <style scoped>
-.document-title{padding:0;border:0;background:transparent;color:var(--color-primary);font:inherit;font-weight:600;cursor:pointer}.row-actions,.grant-form{display:flex;align-items:center;gap:.75rem}.grant-form{margin-bottom:1rem}.grant-form .el-input{flex:1}.grant-form .el-select{width:130px}@media(max-width:640px){.grant-form{align-items:stretch;flex-direction:column}.grant-form .el-select{width:100%}}
+.document-title{padding:0;border:0;background:transparent;color:var(--color-primary);font:inherit;font-weight:600;cursor:pointer}.row-actions,.grant-form{display:flex;align-items:center;gap:.75rem}.grant-form{margin-bottom:1rem}.grant-form .app-input{flex:1}.grant-form .el-select{width:130px}@media(max-width:640px){.grant-form{align-items:stretch;flex-direction:column}.grant-form .el-select{width:100%}}
 </style>

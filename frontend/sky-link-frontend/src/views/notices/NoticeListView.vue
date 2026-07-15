@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
@@ -86,7 +87,7 @@ onMounted(loadData)
     >
       <div class="page-toolbar">
         <div class="page-toolbar__filters">
-          <el-input v-model="keyword" placeholder="搜索公告标题 / 发布人" clearable />
+          <AppInput v-model="keyword" placeholder="搜索公告标题 / 发布人" clearable />
           <el-select v-model="type" placeholder="筛选公告类型" clearable>
             <el-option
               v-for="item in noticeTypeOptions"

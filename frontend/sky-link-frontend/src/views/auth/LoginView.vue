@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { login } from '../../api/workspace'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppInput from '../../components/common/AppInput.vue'
 import { useUserStore } from '../../stores/user'
 import { setToken } from '../../utils/request'
 import { useLoginForm } from './composables/useLoginForm'
@@ -61,7 +62,7 @@ async function handleLogin() {
       lastLoginAt: result.userInfo?.lastLoginAt || '',
       roles: result.userInfo?.roles || [],
     })
-    ElMessage.success('登录成功，正在进入工作台')
+    ElMessage.success('登录成功，正在进入系统')
     await router.push('/app/dashboard')
   } catch (error) {
     loginError.value = error.message || '登录失败，请检查账号和密码'
@@ -75,10 +76,10 @@ async function handleLogin() {
 <template>
   <div class="login-page">
     <section class="login-page__intro">
-      <div class="login-page__badge">SkyLink Workspace</div>
-      <h1>更轻、更快的团队协作工作台</h1>
+      <div class="login-page__badge">SkyLink</div>
+      <h1>团队协作系统</h1>
       <p>
-        面向项目与小型组织的协同平台，把成员、消息、文件、任务和公告统一在一个清晰的工作入口里。
+        登录后可使用通讯录、消息、文档、任务、日程等功能。
       </p>
     </section>
 
@@ -88,11 +89,11 @@ async function handleLogin() {
           <div class="login-card__logo">S</div>
           <div>
             <div class="login-card__title">登录 SkyLink</div>
-            <div class="login-card__subtitle">使用团队账号进入工作空间</div>
+            <div class="login-card__subtitle">请输入账号和密码</div>
           </div>
         </div>
 
-        <div class="login-card__switch">账号密码登录</div>
+        <div class="login-card__switch">登录</div>
 
         <el-alert
           v-if="loginError"
@@ -112,7 +113,7 @@ async function handleLogin() {
           @submit.prevent="handleLogin"
         >
           <el-form-item label="账号" prop="account">
-            <el-input
+            <AppInput
               v-model="form.account"
               placeholder="请输入用户名或邮箱"
               size="large"
@@ -123,7 +124,7 @@ async function handleLogin() {
           </el-form-item>
 
           <el-form-item label="密码" prop="password">
-            <el-input
+            <AppInput
               v-model="form.password"
               type="password"
               placeholder="请输入密码"
@@ -148,7 +149,7 @@ async function handleLogin() {
             :disabled="loading"
             @click="handleLogin"
           >
-            登录工作台
+            登录系统
           </AppButton>
         </el-form>
 
