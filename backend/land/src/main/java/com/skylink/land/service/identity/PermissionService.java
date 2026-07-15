@@ -23,5 +23,5 @@ public interface PermissionService extends IService<Permission> {
 
     List<PermissionVO> listByUserId(Long userId);
 
-    List<PermissionVO> listPermissionTree();
+    List<PermissionVO> listPermissions();
 }

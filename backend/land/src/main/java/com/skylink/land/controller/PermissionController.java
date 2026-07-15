@@ -30,8 +30,8 @@ public class PermissionController {
 
     @GetMapping
     @RequirePermission("permission:list")
-    public List<AdminDto.PermissionResponse> listPermissionTree() {
-        return permissionService.listPermissionTree().stream()
+    public List<AdminDto.PermissionResponse> listPermissions() {
+        return permissionService.listPermissions().stream()
             .map(this::toPermissionResponse)
             .toList();
     }
@@ -85,14 +85,6 @@ public class PermissionController {
             .permissionCode(permission.getPermissionCode())
             .permissionType(permission.getPermissionType())
             .sortNo(permission.getSortNo())
-            .children(toPermissionResponses(permission.getChildren()))
             .build();
-    }
-
-    private List<AdminDto.PermissionResponse> toPermissionResponses(List<PermissionVO> permissions) {
-        if (permissions == null) {
-            return List.of();
-        }
-        return permissions.stream().map(this::toPermissionResponse).toList();
     }
 }

@@ -15,9 +15,6 @@ import com.skylink.land.mapper.identity.RolePermissionMapper;
 import com.skylink.land.mapper.identity.UserRoleMapper;
 import com.skylink.land.service.identity.PermissionService;
 import com.skylink.land.vo.identity.PermissionVO;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -153,18 +150,14 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
     }
 
     @Override
-    public List<PermissionVO> listPermissionTree() {
-        return list(
+    public List<PermissionVO> listPermissions() {
+        List<PermissionVO> permissions = list(
             new LambdaQueryWrapper<Permission>()
                 .orderByAsc(Permission::getSortNo)
                 .orderByAsc(Permission::getPermissionId)
         ).stream()
             .map(PermissionVO::from)
             .toList();
-        permissions.forEach(permission -> permission.setChildren(List.of()));
-        permissions.sort(Comparator
-            .comparing((PermissionVO permission) -> permission.getSortNo() == null ? 0 : permission.getSortNo())
-            .thenComparing(PermissionVO::getPermissionId));
         return permissions;
     }
 
@@ -172,7 +165,12 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
         if (CollectionUtils.isEmpty(permissionIds)) {
             return List.of();
         }
-        return baseMapper.selectBatchIds(permissionIds).stream()
+        return list(
+            new LambdaQueryWrapper<Permission>()
+                .in(Permission::getPermissionId, permissionIds)
+                .orderByAsc(Permission::getSortNo)
+                .orderByAsc(Permission::getPermissionId)
+        ).stream()
             .map(PermissionVO::from)
             .toList();
     }
