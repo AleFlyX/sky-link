@@ -134,6 +134,22 @@ export async function login(account, password) {
   return demoResult(() => ({ token: `demo-token-${Date.now()}`, expiresIn: 86400, userInfo: clone(demoCurrentUser) })).then((result) => result.data)
 }
 
+export async function register(data) {
+  if (!mockEnabled) {
+    const payload = await authApi.register(data)
+    return payload?.data ?? payload
+  }
+
+  return demoResult(() => ({
+    userId: Date.now(),
+    username: data.username,
+    nickname: data.nickname || data.username,
+    email: data.email,
+    phone: data.phone,
+    createTime: new Date().toISOString(),
+  })).then((result) => result.data)
+}
+
 export function getCurrentUser() {
   return remoteOrDemo(() => userApi.getCurrentUser(), () => demoCurrentUser)
 }

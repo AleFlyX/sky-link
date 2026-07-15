@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { login } from '../../api/workspace'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
@@ -8,11 +8,27 @@ import { useUserStore } from '../../stores/user'
 import { setToken } from '../../utils/request'
 import { useLoginForm } from './composables/useLoginForm'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const loginError = ref('')
+const registeredNoticeShown = ref(false)
 const { formRef, form, rules, sanitizeForm, getCredentials } = useLoginForm()
+
+watch(
+  () => route.query,
+  (query) => {
+    if (typeof query.account === 'string' && query.account) {
+      form.account = query.account
+    }
+    if (query.registered === '1' && !registeredNoticeShown.value) {
+      registeredNoticeShown.value = true
+      ElMessage.success('注册成功，请使用新账号登录')
+    }
+  },
+  { immediate: true },
+)
 
 async function handleLogin() {
   sanitizeForm()
@@ -137,8 +153,8 @@ async function handleLogin() {
         </el-form>
 
         <div class="login-card__footer">
-          <span>首次使用团队账号？</span>
-          <a href="/">联系管理员开通</a>
+          <span>还没有账号？</span>
+          <RouterLink to="/register">立即注册</RouterLink>
         </div>
       </AppCard>
     </section>
