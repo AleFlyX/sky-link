@@ -91,5 +91,6 @@ public final class AuthDto {
         private Long departmentId;
         private Integer status;
         private List<String> roles;
+        private List<String> permissions;
     }
 }

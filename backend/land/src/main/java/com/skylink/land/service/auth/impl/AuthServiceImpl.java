@@ -122,6 +122,7 @@ public class AuthServiceImpl implements AuthService {
 
     private TokenPair issueTokens(User user) {
         List<String> roles = userService.listRoleCodes(user.getUserId());
+        List<String> permissions = userService.listPermissionCodes(user.getUserId());
         String accessToken = jwtTokenProvider.generateToken(user.getUserId(), user.getUsername(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
 
@@ -138,6 +139,7 @@ public class AuthServiceImpl implements AuthService {
                 .departmentId(user.getDepartmentId())
                 .status(user.getStatus())
                 .roles(roles)
+                .permissions(permissions)
                 .build())
             .build();
     }

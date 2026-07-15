@@ -111,6 +111,7 @@ public class UserController {
             .departmentName(profile.getDepartmentName())
             .createTime(profile.getCreateTime())
             .roles(toRoleInfos(profile.getRoles()))
+            .permissions(profile.getPermissions())
             .build();
     }
 

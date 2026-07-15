@@ -68,6 +68,7 @@ public final class UserDto {
         private String departmentName;
         private LocalDateTime createTime;
         private List<UserRoleInfo> roles;
+        private List<String> permissions;
     }
 
     @Data
