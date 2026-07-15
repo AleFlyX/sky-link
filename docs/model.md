@@ -167,7 +167,6 @@ SkyLink Database
 
 - `role` 表保存角色元数据，`role_name` 用于显示，`role_code` 用于程序判断。
 - `permission` 表保存权限点，`permission_type` 区分菜单、按钮、接口。
-- `permission` 当前采用平铺权限模型，不再维护 `parent_id` 自关联字段。
 - `permission.sort_no` 用于前端菜单展示排序。
 - `user_role` 是用户和角色的中间表，复合主键防止重复授权。
 - `role_permission` 是角色和权限的中间表，复合主键防止重复分配。

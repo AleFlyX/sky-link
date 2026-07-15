@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   profiles:
@@ -8,9 +8,9 @@ spring:
     name: land
   # 数据源（MySQL，与项目规格一致）
   datasource:
-    url: jdbc:mysql://localhost:3306/skylink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3314/SkyLink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
@@ -45,7 +45,7 @@ logging:
 skylink:
   jwt:
     issuer: sky-link
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:5111784662c3404488c90fe7114e37db391e5b8e29dc7ea7d9107f4d4fbdb9be}
     ttl: 24h
     refresh-ttl: 7d
     header: Authorization
@@ -65,9 +65,9 @@ skylink:
       - /api/v1/health
       - /error
   cors:
-    allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+    allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5573,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
   collaboration:
-    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:}
+    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:5111784662c3404488c90fe7114e37db391e5b8e29dc7ea7d9107f4d4fbdb9be}
     ticket-ttl: 60s
     websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://127.0.0.1:8180}
     service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:}
