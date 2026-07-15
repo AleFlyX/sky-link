@@ -89,7 +89,6 @@ public final class AdminDto {
         private String permissionCode;
         private Integer permissionType;
         private Integer sortNo;
-        private List<PermissionResponse> children;
     }
 
     @Data

@@ -4,7 +4,6 @@ import com.skylink.land.entity.identity.Permission;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,8 +31,6 @@ public class PermissionVO implements Serializable {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
-
-    private List<PermissionVO> children;
 
     public static PermissionVO from(Permission permission) {
         if (permission == null) {

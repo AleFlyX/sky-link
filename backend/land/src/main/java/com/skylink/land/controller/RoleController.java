@@ -125,7 +125,6 @@ public class RoleController {
             .permissionCode(permission.getPermissionCode())
             .permissionType(permission.getPermissionType())
             .sortNo(permission.getSortNo())
-            .children(toPermissionResponses(permission.getChildren()))
             .build();
     }
 }

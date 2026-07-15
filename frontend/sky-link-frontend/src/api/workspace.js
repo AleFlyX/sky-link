@@ -9,6 +9,7 @@ import * as noticeApi from './notice'
 import * as scheduleApi from './schedule'
 import * as taskApi from './task'
 import * as userApi from './user'
+import { buildSessionParams, getSessionIdFromParams, normalizeMessage } from '../utils/message'
 import {
   departments,
   files,
@@ -116,10 +117,32 @@ function searchRecords(records, keyword, fields) {
   return records.filter((record) => fields.some((field) => String(record[field] ?? '').toLowerCase().includes(value)))
 }
 
-function messageTarget(sessionId) {
-  const [sessionType, targetId] = String(sessionId).split('-')
-  const id = Number(targetId)
-  return sessionType === 'group' ? { groupId: id } : { receiverId: id }
+function sessionMessages(sessionId) {
+  return [...(state.messages[sessionId] || [])]
+}
+
+function resolveMessagePayload(dataOrContent) {
+  if (typeof dataOrContent === 'string') {
+    return {
+      messageType: 'text',
+      content: dataOrContent,
+    }
+  }
+
+  return {
+    messageType: dataOrContent?.messageType || 'text',
+    content: dataOrContent?.content || '',
+  }
+}
+
+function applyDemoSessionPreview(sessionId, message) {
+  const session = state.sessions.find((item) => item.id === sessionId)
+  if (!session) {
+    return
+  }
+
+  session.lastMessage = message.recalled ? '消息已撤回' : message.content
+  session.lastTime = message.sendTime ?? message.sentAt ?? '刚刚'
 }
 
 export function isDemoMode() {
@@ -215,7 +238,10 @@ export function markNoticeRead(id) {
 }
 
 export function getFriends({ page = 1, size = 6, keyword = '' } = {}) {
-  return remoteOrDemo(() => friendApi.getFriends({ page, size, keyword }), () => pageOf(searchRecords(state.friends, keyword, ['name', 'account', 'department']), page, size))
+  return remoteOrDemo(
+    () => friendApi.getFriends({ page, size, nickname: keyword }),
+    () => pageOf(searchRecords(state.friends, keyword, ['name', 'account', 'department']), page, size),
+  )
 }
 
 export function addFriend(data) {
@@ -227,8 +253,14 @@ export function getGroups({ page = 1, size = 6 } = {}) {
 }
 
 export function createGroup(data) {
-  return remoteOrDemo(() => groupApi.createGroup(data), () => {
-    const item = { ...data, id: Date.now(), memberCount: 1, updatedAt: '刚刚' }
+  const payload = {
+    groupName: data?.groupName || data?.name,
+    notice: data?.notice,
+    memberIds: Array.isArray(data?.memberIds) ? data.memberIds : [],
+  }
+
+  return remoteOrDemo(() => groupApi.createGroup(payload), () => {
+    const item = { ...payload, id: Date.now(), memberCount: 1, updatedAt: '刚刚' }
     state.groups.unshift(item)
     return item
   })
@@ -238,20 +270,75 @@ export function getSessions() {
   return remoteOrDemo(() => messageApi.getSessions(), () => state.sessions)
 }
 
-export function getMessages(sessionId) {
-  return remoteOrDemo(() => messageApi.getMessages(messageTarget(sessionId)), () => state.messages[sessionId] || [])
+export function getMessages(sessionOrParams, extraParams = {}) {
+  const params = buildSessionParams(sessionOrParams, extraParams)
+  const sessionId = typeof sessionOrParams === 'string'
+    ? sessionOrParams
+    : getSessionIdFromParams(params)
+
+  return remoteOrDemo(() => messageApi.getMessages(params), () => {
+    const records = sessionMessages(sessionId)
+    const before = params.before == null
+      ? records
+      : records.filter((item) => (item.messageId ?? item.id) < Number(params.before))
+    const size = Number(params.size) > 0 ? Number(params.size) : 20
+    const paged = before.slice(Math.max(before.length - size, 0))
+
+    return {
+      total: before.length,
+      page: 1,
+      size,
+      records: paged,
+    }
+  })
 }
 
-export function sendMessage(sessionId, content) {
-  return remoteOrDemo(() => messageApi.sendMessage({ ...messageTarget(sessionId), messageType: 'text', content }), () => {
-    const message = { id: Date.now(), senderId: demoCurrentUser.id, senderName: demoCurrentUser.name, content, sentAt: '刚刚' }
-    state.messages[sessionId] = [...(state.messages[sessionId] || []), message]
-    const session = state.sessions.find((item) => item.id === sessionId)
-    if (session) {
-      session.lastMessage = content
-      session.lastTime = '刚刚'
-    }
+export function sendMessage(sessionId, dataOrContent) {
+  const payload = {
+    ...buildSessionParams(sessionId),
+    ...resolveMessagePayload(dataOrContent),
+  }
+
+  return remoteOrDemo(() => messageApi.sendMessage(payload), () => {
+    const createdAt = new Date().toISOString()
+    const message = normalizeMessage({
+      id: Date.now(),
+      senderId: demoCurrentUser.id,
+      senderName: demoCurrentUser.name,
+      ...payload,
+      sendTime: createdAt,
+    })
+
+    state.messages[sessionId] = [...sessionMessages(sessionId), message]
+    applyDemoSessionPreview(sessionId, message)
     return message
+  })
+}
+
+export function recallMessage(messageId, sessionId) {
+  return remoteOrDemo(() => messageApi.recallMessage(messageId), () => {
+    const records = sessionMessages(sessionId).map((item) => {
+      if ((item.messageId ?? item.id) !== messageId) {
+        return item
+      }
+
+      return normalizeMessage({
+        ...item,
+        recalled: true,
+      })
+    })
+
+    state.messages[sessionId] = records
+    const recalledMessage = records.find((item) => item.id === messageId)
+    if (recalledMessage) {
+      const latestMessage = records.at(-1)
+      if (latestMessage) {
+        applyDemoSessionPreview(sessionId, latestMessage)
+      }
+      return recalledMessage
+    }
+
+    return null
   })
 }
 
