@@ -27,8 +27,6 @@ public class PermissionVO implements Serializable {
 
     private Integer permissionType;
 
-    private Long parentId;
-
     private Integer sortNo;
 
     private LocalDateTime createTime;
@@ -46,7 +44,6 @@ public class PermissionVO implements Serializable {
             .permissionName(permission.getPermissionName())
             .permissionCode(permission.getPermissionCode())
             .permissionType(permission.getPermissionType())
-            .parentId(permission.getParentId())
             .sortNo(permission.getSortNo())
             .createTime(permission.getCreateTime())
             .updateTime(permission.getUpdateTime())

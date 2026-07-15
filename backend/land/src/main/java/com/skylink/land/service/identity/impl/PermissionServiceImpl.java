@@ -15,11 +15,7 @@ import com.skylink.land.mapper.identity.RolePermissionMapper;
 import com.skylink.land.mapper.identity.UserRoleMapper;
 import com.skylink.land.service.identity.PermissionService;
 import com.skylink.land.vo.identity.PermissionVO;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -46,7 +42,6 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
                 .like(StringUtils.hasText(query.getPermissionName()), Permission::getPermissionName, query.getPermissionName())
                 .like(StringUtils.hasText(query.getPermissionCode()), Permission::getPermissionCode, query.getPermissionCode())
                 .eq(query.getPermissionType() != null, Permission::getPermissionType, query.getPermissionType())
-                .eq(query.getParentId() != null, Permission::getParentId, query.getParentId())
                 .orderByAsc(Permission::getSortNo)
                 .orderByAsc(Permission::getPermissionId)
         );
@@ -66,13 +61,11 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
         String permissionName = request.getPermissionName().trim();
         String permissionCode = request.getPermissionCode().trim();
         ensureUniquePermissionCode(permissionCode, null);
-        validateParent(request.getParentId(), null);
 
         Permission permission = new Permission();
         permission.setPermissionName(permissionName);
         permission.setPermissionCode(permissionCode);
         permission.setPermissionType(request.getPermissionType() == null ? 1 : request.getPermissionType());
-        permission.setParentId(request.getParentId());
         permission.setSortNo(request.getSortNo() == null ? 0 : request.getSortNo());
         save(permission);
         return getPermissionVO(permission.getPermissionId());
@@ -105,10 +98,6 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             validatePermissionType(request.getPermissionType());
             permission.setPermissionType(request.getPermissionType());
         }
-        if (request.getParentId() != null) {
-            validateParent(request.getParentId(), permissionId);
-            permission.setParentId(request.getParentId());
-        }
         if (request.getSortNo() != null) {
             permission.setSortNo(request.getSortNo());
         }
@@ -121,10 +110,6 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
     @Transactional(rollbackFor = Exception.class)
     public void deletePermission(Long permissionId) {
         requirePermission(permissionId);
-        Long childCount = count(new LambdaQueryWrapper<Permission>().eq(Permission::getParentId, permissionId));
-        if (childCount != null && childCount > 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "permission has child permissions");
-        }
         Long roleCount = rolePermissionMapper.selectCount(
             new LambdaQueryWrapper<RolePermission>().eq(RolePermission::getPermissionId, permissionId)
         );
@@ -166,31 +151,13 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
 
     @Override
     public List<PermissionVO> listPermissionTree() {
-        List<PermissionVO> permissions = list(
+        return list(
             new LambdaQueryWrapper<Permission>()
                 .orderByAsc(Permission::getSortNo)
                 .orderByAsc(Permission::getPermissionId)
         ).stream()
             .map(PermissionVO::from)
             .toList();
-
-        Map<Long, PermissionVO> permissionMap = new LinkedHashMap<>();
-        permissions.forEach(permission -> {
-            permission.setChildren(new ArrayList<>());
-            permissionMap.put(permission.getPermissionId(), permission);
-        });
-
-        List<PermissionVO> roots = new ArrayList<>();
-        permissions.forEach(permission -> {
-            PermissionVO parent = permissionMap.get(permission.getParentId());
-            if (parent == null) {
-                roots.add(permission);
-                return;
-            }
-            parent.getChildren().add(permission);
-        });
-        sortTree(roots);
-        return roots;
     }
 
     private List<PermissionVO> listByPermissionIds(List<Long> permissionIds) {
@@ -202,13 +169,6 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             .toList();
     }
 
-    private void sortTree(List<PermissionVO> permissions) {
-        permissions.sort(Comparator
-            .comparing((PermissionVO permission) -> permission.getSortNo() == null ? 0 : permission.getSortNo())
-            .thenComparing(PermissionVO::getPermissionId));
-        permissions.forEach(permission -> sortTree(permission.getChildren()));
-    }
-
     private Permission requirePermission(Long permissionId) {
         if (permissionId == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "permissionId is required");
@@ -218,21 +178,6 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             throw new BusinessException(ErrorCode.NOT_FOUND, "permission not found");
         }
         return permission;
-    }
-
-    private void validateParent(Long parentId, Long permissionId) {
-        if (parentId == null) {
-            return;
-        }
-        if (parentId < 1) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "parentId is invalid");
-        }
-        if (parentId.equals(permissionId)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "parentId cannot be itself");
-        }
-        if (getById(parentId) == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "parent permission not found");
-        }
     }
 
     private void ensureUniquePermissionCode(String permissionCode, Long excludePermissionId) {
