@@ -2,10 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { login, refreshToken } from '../api/auth'
 import { downloadFile } from '../api/file'
+import { getSentFriendRequests, handleFriendRequest } from '../api/friend'
 import { sendMessage } from '../api/message'
 import { updateRolePermissions } from '../api/role'
 import { assignUserRoles } from '../api/user'
 import { createCollaborationTicket, setDocumentPermission, setDocumentGroupPermission } from '../api/document'
+import {
+  addGroupMembers,
+  deleteGroup,
+  getGroup,
+  getGroupMembers,
+  leaveGroup,
+  removeGroupMember,
+  updateGroup,
+  updateGroupMemberRole,
+} from '../api/group'
 import { cookieRequest, request } from '../utils/request'
 
 vi.mock('../utils/request', () => ({
@@ -48,6 +59,14 @@ describe('business API contracts', () => {
     expect(request.post).toHaveBeenCalledWith('/messages', data)
   })
 
+  it('uses the friend request inbox and sent-list contracts', () => {
+    handleFriendRequest(5, { action: 'accept' })
+    getSentFriendRequests({ page: 1, size: 10 })
+
+    expect(request.put).toHaveBeenCalledWith('/friends/requests/5', { action: 'accept' })
+    expect(request.get).toHaveBeenCalledWith('/friends/requests/sent', { page: 1, size: 10 })
+  })
+
   it('uses the raw download helper for file content', () => {
     downloadFile(8)
 
@@ -78,5 +97,28 @@ describe('business API contracts', () => {
     expect(request.put).toHaveBeenCalledWith('/documents/9/permissions/12', { permissionType: 'edit' })
     expect(request.put).toHaveBeenCalledWith('/documents/9/group-permissions/3', { permissionType: 'read' })
     expect(request.post).toHaveBeenCalledWith('/documents/9/collaboration-ticket')
+  })
+
+  it('uses the documented group management contracts', () => {
+    getGroup(7)
+    updateGroup(7, { groupName: '新群名', notice: '新公告' })
+    getGroupMembers(7, { page: 1, size: 6 })
+    addGroupMembers(7, { userIds: [1002, 1003] })
+    updateGroupMemberRole(7, 1002, 'admin')
+    removeGroupMember(7, 1003)
+    leaveGroup(7)
+    deleteGroup(7)
+
+    expect(request.get).toHaveBeenCalledWith('/groups/7')
+    expect(request.put).toHaveBeenCalledWith('/groups/7', {
+      groupName: '新群名',
+      notice: '新公告',
+    })
+    expect(request.get).toHaveBeenCalledWith('/groups/7/members', { page: 1, size: 6 })
+    expect(request.post).toHaveBeenCalledWith('/groups/7/members', { userIds: [1002, 1003] })
+    expect(request.put).toHaveBeenCalledWith('/groups/7/members/1002/role', { role: 'admin' })
+    expect(request.delete).toHaveBeenCalledWith('/groups/7/members/1003')
+    expect(request.delete).toHaveBeenCalledWith('/groups/7/members/me')
+    expect(request.delete).toHaveBeenCalledWith('/groups/7')
   })
 })

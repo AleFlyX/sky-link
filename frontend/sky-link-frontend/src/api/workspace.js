@@ -32,9 +32,103 @@ const demoFriends = [
   { id: 603, userId: 1005, name: '赵思涵', account: 'zhaosh', department: '综合管理部', status: '离线', lastSeen: '昨天 18:40' },
 ]
 
+function resolveDemoUser(userId) {
+  if (userId === demoCurrentUser.id) {
+    return {
+      id: demoCurrentUser.id,
+      name: demoCurrentUser.name,
+      account: demoCurrentUser.account,
+      department: demoCurrentUser.department,
+      status: 'active',
+    }
+  }
+
+  return users.find((item) => item.id === userId)
+}
+
+function createDemoGroupMember(userId, role, joinTime) {
+  const user = resolveDemoUser(userId)
+
+  return {
+    userId,
+    username: user?.account || `user${userId}`,
+    nickname: user?.name || `用户#${userId}`,
+    role,
+    joinTime,
+  }
+}
+
 const demoGroups = [
-  { id: 701, name: 'Day 3 联调小组', memberCount: 6, notice: '今天完成消息、文档和日程演示收口。', updatedAt: '今天 09:20' },
-  { id: 702, name: '产品研发中心', memberCount: 18, notice: '需求、设计与研发同步。', updatedAt: '昨天 17:30' },
+  {
+    groupId: 701,
+    groupName: 'Day 3 联调小组',
+    notice: '今天完成消息、文档和日程演示收口。',
+    ownerId: 1001,
+    createTime: '2026-07-15T09:20:00',
+    members: [
+      createDemoGroupMember(1001, 'owner', '2026-07-15T09:20:00'),
+      createDemoGroupMember(1002, 'admin', '2026-07-15T09:28:00'),
+      createDemoGroupMember(1003, 'member', '2026-07-15T09:31:00'),
+      createDemoGroupMember(1005, 'member', '2026-07-15T09:45:00'),
+    ],
+  },
+  {
+    groupId: 702,
+    groupName: '产品研发中心',
+    notice: '需求、设计与研发同步。',
+    ownerId: 1003,
+    createTime: '2026-07-14T17:30:00',
+    members: [
+      createDemoGroupMember(1003, 'owner', '2026-07-14T17:30:00'),
+      createDemoGroupMember(1001, 'member', '2026-07-14T17:40:00'),
+      createDemoGroupMember(1006, 'member', '2026-07-14T17:55:00'),
+    ],
+  },
+]
+
+const demoIncomingFriendRequests = [
+  {
+    requestId: 901,
+    requestUser: {
+      userId: 1004,
+      username: 'zhouwy',
+      nickname: '周婉仪',
+      departmentName: '综合管理部',
+      status: 1,
+    },
+    message: '你好，我想同步一下任务安排。',
+    status: 'pending',
+    requestTime: '2026-07-15T09:20:00',
+  },
+]
+
+const demoOutgoingFriendRequests = [
+  {
+    requestId: 902,
+    targetUser: {
+      userId: 1006,
+      username: 'liuxh',
+      nickname: '刘雪涵',
+      departmentName: '产品研发中心',
+      status: 1,
+    },
+    message: '你好，一起联调消息模块吧。',
+    status: 'pending',
+    requestTime: '2026-07-15T10:05:00',
+  },
+  {
+    requestId: 903,
+    targetUser: {
+      userId: 1007,
+      username: 'hejy',
+      nickname: '何嘉怡',
+      departmentName: '综合管理部',
+      status: 1,
+    },
+    message: '申请加你为好友，方便沟通资料。',
+    status: 'accepted',
+    requestTime: '2026-07-14T16:40:00',
+  },
 ]
 
 const demoSessions = [
@@ -64,6 +158,10 @@ const demoSchedules = [
   { id: 1002, title: '后端接口联调', content: '确认用户、文件和任务接口返回结构。', startTime: '2026-07-14 14:00', endTime: '2026-07-14 15:30', repeatType: 'weekly', owner: '团队' },
 ]
 
+function cloneDemoGroups() {
+  return JSON.parse(JSON.stringify(demoGroups))
+}
+
 const state = {
   users: [...users],
   departments: [...departments],
@@ -71,7 +169,9 @@ const state = {
   tasks: [...tasks],
   notices: [...notices],
   friends: [...demoFriends],
-  groups: [...demoGroups],
+  incomingFriendRequests: [...demoIncomingFriendRequests],
+  outgoingFriendRequests: [...demoOutgoingFriendRequests],
+  groups: cloneDemoGroups(),
   sessions: [...demoSessions],
   messages: JSON.parse(JSON.stringify(demoMessages)),
   documents: [...demoDocuments],
@@ -97,8 +197,14 @@ function pageOf(records, page = 1, size = 5) {
 }
 
 function demoResult(factory) {
-  return new Promise((resolve) => {
-    window.setTimeout(() => resolve({ data: clone(factory()), source: 'demo', degraded: false }), 120)
+  return new Promise((resolve, reject) => {
+    window.setTimeout(() => {
+      try {
+        resolve({ data: clone(factory()), source: 'demo', degraded: false })
+      } catch (error) {
+        reject(error)
+      }
+    }, 120)
   })
 }
 
@@ -143,6 +249,93 @@ function applyDemoSessionPreview(sessionId, message) {
 
   session.lastMessage = message.recalled ? '消息已撤回' : message.content
   session.lastTime = message.sendTime ?? message.sentAt ?? '刚刚'
+}
+
+function activeGroupMembers(group) {
+  return (group?.members || []).filter((member) => member.role !== 'exited')
+}
+
+function findDemoGroup(groupId) {
+  return state.groups.find((item) => Number(item.groupId) === Number(groupId)) || null
+}
+
+function getDemoGroupOrThrow(groupId) {
+  const group = findDemoGroup(groupId)
+  if (!group) {
+    throw new Error('group not found')
+  }
+  return group
+}
+
+function getDemoMembership(groupId, userId) {
+  return activeGroupMembers(getDemoGroupOrThrow(groupId))
+    .find((member) => member.userId === userId) || null
+}
+
+function requireDemoMembership(groupId, userId) {
+  const membership = getDemoMembership(groupId, userId)
+  if (!membership) {
+    throw new Error('you are not a member of this group')
+  }
+  return membership
+}
+
+function requireDemoAdminOrOwner(groupId, userId) {
+  const membership = requireDemoMembership(groupId, userId)
+  if (!['owner', 'admin'].includes(membership.role)) {
+    throw new Error('only group owner or admin can perform this operation')
+  }
+  return membership
+}
+
+function requireDemoOwner(groupId, userId) {
+  const membership = requireDemoMembership(groupId, userId)
+  if (membership.role !== 'owner') {
+    throw new Error('only group owner can perform this operation')
+  }
+  return membership
+}
+
+function toDemoGroupSummary(group) {
+  const owner = resolveDemoUser(group.ownerId)
+
+  return {
+    groupId: group.groupId,
+    groupName: group.groupName,
+    notice: group.notice,
+    ownerId: group.ownerId,
+    ownerName: owner?.name || owner?.account || '未知用户',
+    memberCount: activeGroupMembers(group).length,
+    createTime: group.createTime,
+  }
+}
+
+function toDemoGroupDetail(group) {
+  return {
+    ...toDemoGroupSummary(group),
+    members: activeGroupMembers(group),
+  }
+}
+
+function toDemoGroupMember(groupId, userId) {
+  const membership = getDemoMembership(groupId, userId)
+  if (!membership) {
+    return null
+  }
+
+  return {
+    userId: membership.userId,
+    username: membership.username,
+    nickname: membership.nickname,
+    role: membership.role,
+    joinTime: membership.joinTime,
+  }
+}
+
+function removeDemoGroupSession(groupId) {
+  const sessionId = `group-${groupId}`
+  state.sessions = state.sessions.filter((item) => item.id !== sessionId)
+  delete state.messages[sessionId]
 }
 
 export function isDemoMode() {
@@ -245,11 +438,88 @@ export function getFriends({ page = 1, size = 6, keyword = '' } = {}) {
 }
 
 export function addFriend(data) {
-  return remoteOrDemo(() => friendApi.addFriend(data), () => ({ id: Date.now(), ...data, status: 'pending' }))
+  return remoteOrDemo(() => friendApi.addFriend(data), () => {
+    const targetUserId = Number(data?.friendUserId)
+    const targetUser = state.users.find((item) => item.id === targetUserId)
+    const request = {
+      requestId: Date.now(),
+      targetUser: {
+        userId: targetUserId,
+        username: targetUser?.account || `user${targetUserId}`,
+        nickname: targetUser?.name || `用户#${targetUserId}`,
+        departmentName: targetUser?.department || '未分配部门',
+        status: targetUser?.status === 'disabled' ? 0 : 1,
+      },
+      message: data?.message || '',
+      status: 'pending',
+      requestTime: new Date().toISOString(),
+    }
+    state.outgoingFriendRequests.unshift(request)
+    return { requestId: request.requestId, status: request.status }
+  })
+}
+
+export function getFriendRequests({ page = 1, size = 10 } = {}) {
+  return remoteOrDemo(
+    () => friendApi.getFriendRequests({ page, size }),
+    () => pageOf(state.incomingFriendRequests, page, size),
+  )
+}
+
+export function getSentFriendRequests({ page = 1, size = 10 } = {}) {
+  return remoteOrDemo(
+    () => friendApi.getSentFriendRequests({ page, size }),
+    () => pageOf(state.outgoingFriendRequests, page, size),
+  )
+}
+
+export function handleFriendRequest(requestId, action) {
+  return remoteOrDemo(
+    () => friendApi.handleFriendRequest(requestId, { action }),
+    () => {
+      const index = state.incomingFriendRequests.findIndex((item) => item.requestId === requestId)
+      if (index < 0) {
+        return null
+      }
+
+      const [request] = state.incomingFriendRequests.splice(index, 1)
+      if (action !== 'accept') {
+        return null
+      }
+
+      const user = request.requestUser
+      const friend = {
+        id: user.userId,
+        userId: user.userId,
+        name: user.nickname || user.username,
+        account: user.username,
+        department: user.departmentName || '未分配部门',
+        status: '启用',
+        lastSeen: '刚刚',
+      }
+      if (!state.friends.some((item) => item.userId === friend.userId)) {
+        state.friends.unshift(friend)
+      }
+
+      return {
+        friendUserId: user.userId,
+        friendUser: user,
+      }
+    },
+  )
 }
 
 export function getGroups({ page = 1, size = 6 } = {}) {
-  return remoteOrDemo(() => groupApi.getGroups({ page, size }), () => pageOf(state.groups, page, size))
+  return remoteOrDemo(
+    () => groupApi.getGroups({ page, size }),
+    () => pageOf(
+      state.groups
+        .filter((group) => getDemoMembership(group.groupId, demoCurrentUser.id))
+        .map(toDemoGroupSummary),
+      page,
+      size,
+    ),
+  )
 }
 
 export function createGroup(data) {
@@ -260,9 +530,181 @@ export function createGroup(data) {
   }
 
   return remoteOrDemo(() => groupApi.createGroup(payload), () => {
-    const item = { ...payload, id: Date.now(), memberCount: 1, updatedAt: '刚刚' }
-    state.groups.unshift(item)
-    return item
+    const createdAt = new Date().toISOString()
+    const nextGroupId = Date.now()
+    const nextGroup = {
+      groupId: nextGroupId,
+      groupName: payload.groupName,
+      notice: payload.notice || '',
+      ownerId: demoCurrentUser.id,
+      createTime: createdAt,
+      members: [
+        createDemoGroupMember(demoCurrentUser.id, 'owner', createdAt),
+      ],
+    }
+
+    for (const userId of payload.memberIds) {
+      const user = resolveDemoUser(userId)
+      if (!user) {
+        throw new Error('some users do not exist')
+      }
+      if (userId !== demoCurrentUser.id && !nextGroup.members.some((member) => member.userId === userId)) {
+        nextGroup.members.push(createDemoGroupMember(userId, 'member', createdAt))
+      }
+    }
+
+    state.groups.unshift(nextGroup)
+    return toDemoGroupDetail(nextGroup)
+  })
+}
+
+export function getGroup(groupId) {
+  return remoteOrDemo(() => groupApi.getGroup(groupId), () => {
+    requireDemoMembership(groupId, demoCurrentUser.id)
+    return toDemoGroupDetail(getDemoGroupOrThrow(groupId))
+  })
+}
+
+export function updateGroup(groupId, data) {
+  const payload = {
+    groupName: data?.groupName,
+    notice: data?.notice,
+  }
+
+  return remoteOrDemo(() => groupApi.updateGroup(groupId, payload), () => {
+    requireDemoAdminOrOwner(groupId, demoCurrentUser.id)
+    const group = getDemoGroupOrThrow(groupId)
+
+    if (payload.groupName != null) {
+      const value = String(payload.groupName).trim()
+      if (!value) {
+        throw new Error('groupName cannot be blank')
+      }
+      group.groupName = value
+    }
+
+    if (payload.notice != null) {
+      group.notice = String(payload.notice).trim()
+    }
+
+    return toDemoGroupDetail(group)
+  })
+}
+
+export function getGroupMembers(groupId, { page = 1, size = 10 } = {}) {
+  return remoteOrDemo(() => groupApi.getGroupMembers(groupId, { page, size }), () => {
+    requireDemoMembership(groupId, demoCurrentUser.id)
+    return pageOf(activeGroupMembers(getDemoGroupOrThrow(groupId)), page, size)
+  })
+}
+
+export function addGroupMembers(groupId, data) {
+  const payload = {
+    userIds: Array.isArray(data?.userIds) ? data.userIds : [],
+  }
+
+  return remoteOrDemo(() => groupApi.addGroupMembers(groupId, payload), () => {
+    requireDemoAdminOrOwner(groupId, demoCurrentUser.id)
+    if (!payload.userIds.length) {
+      throw new Error('userIds are required')
+    }
+
+    const group = getDemoGroupOrThrow(groupId)
+    const joinedAt = new Date().toISOString()
+    const deduplicatedIds = [...new Set(payload.userIds.map((item) => Number(item)).filter(Boolean))]
+    const invitedMembers = []
+
+    for (const userId of deduplicatedIds) {
+      if (userId === demoCurrentUser.id) {
+        continue
+      }
+
+      const user = resolveDemoUser(userId)
+      if (!user) {
+        throw new Error('some users do not exist')
+      }
+
+      const existing = group.members.find((member) => member.userId === userId)
+      if (!existing) {
+        const createdMember = createDemoGroupMember(userId, 'member', joinedAt)
+        group.members.push(createdMember)
+        invitedMembers.push(createdMember)
+        continue
+      }
+
+      if (existing.role === 'exited') {
+        existing.role = 'member'
+        existing.joinTime = joinedAt
+        invitedMembers.push(existing)
+      }
+    }
+
+    return invitedMembers.map((member) => ({
+      userId: member.userId,
+      username: member.username,
+      nickname: member.nickname,
+      role: member.role,
+      joinTime: member.joinTime,
+    }))
+  })
+}
+
+export function removeGroupMember(groupId, userId) {
+  return remoteOrDemo(() => groupApi.removeGroupMember(groupId, userId), () => {
+    const operator = requireDemoAdminOrOwner(groupId, demoCurrentUser.id)
+    const target = requireDemoMembership(groupId, Number(userId))
+
+    if (target.userId === demoCurrentUser.id) {
+      throw new Error('use leave endpoint to quit the group')
+    }
+    if (target.role === 'owner') {
+      throw new Error('cannot remove the group owner')
+    }
+    if (operator.role === 'admin' && target.role !== 'member') {
+      throw new Error('admin can only remove normal members')
+    }
+
+    target.role = 'exited'
+    return null
+  })
+}
+
+export function updateGroupMemberRole(groupId, userId, role) {
+  return remoteOrDemo(() => groupApi.updateGroupMemberRole(groupId, userId, role), () => {
+    requireDemoOwner(groupId, demoCurrentUser.id)
+    const membership = requireDemoMembership(groupId, Number(userId))
+
+    if (membership.role === 'owner') {
+      throw new Error('cannot modify owner role')
+    }
+    if (!['admin', 'member'].includes(role)) {
+      throw new Error('role must be admin or member')
+    }
+
+    membership.role = role
+    return toDemoGroupMember(groupId, Number(userId))
+  })
+}
+
+export function leaveGroup(groupId) {
+  return remoteOrDemo(() => groupApi.leaveGroup(groupId), () => {
+    const membership = requireDemoMembership(groupId, demoCurrentUser.id)
+    if (membership.role === 'owner') {
+      throw new Error('group owner cannot leave directly, dissolve the group instead')
+    }
+
+    membership.role = 'exited'
+    removeDemoGroupSession(groupId)
+    return null
+  })
+}
+
+export function deleteGroup(groupId) {
+  return remoteOrDemo(() => groupApi.deleteGroup(groupId), () => {
+    requireDemoOwner(groupId, demoCurrentUser.id)
+    state.groups = state.groups.filter((group) => Number(group.groupId) !== Number(groupId))
+    removeDemoGroupSession(groupId)
+    return null
   })
 }
 

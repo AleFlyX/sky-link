@@ -19,3 +19,15 @@ export function deleteFriend(friendId) {
 export function getFriendRequests(params) {
   return request.get('/friends/requests', params)
 }
+
+export async function getSentFriendRequests(params) {
+  try {
+    return await request.get('/friends/requests/sent', params)
+  } catch (error) {
+    const message = String(error?.message || '')
+    if (!message.includes('400') && !message.includes('404')) {
+      throw error
+    }
+    return request.get('/friends/requests/outgoing', params)
+  }
+}
