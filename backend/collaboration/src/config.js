@@ -4,12 +4,18 @@ const required = (name) => {
   return value
 }
 
+const requiredAny = (...names) => {
+  const value = names.map((name) => process.env[name]).find(Boolean)
+  if (!value) throw new Error(`${names.join(' or ')} is required`)
+  return value
+}
+
 export function loadConfig() {
-  const ticketSecret = required('COLLABORATION_TICKET_SECRET')
-  const serviceToken = required('COLLABORATION_SERVICE_TOKEN')
+  const ticketSecret = requiredAny('SKYLINK_COLLABORATION_TICKET_SECRET', 'COLLABORATION_TICKET_SECRET')
+  const serviceToken = requiredAny('SKYLINK_COLLABORATION_SERVICE_TOKEN', 'COLLABORATION_SERVICE_TOKEN')
   if (ticketSecret.length < 32 || serviceToken.length < 32) throw new Error('collaboration secrets must contain at least 32 characters')
   return {
-    port: Number(process.env.COLLABORATION_PORT || 1234),
+    port: Number(process.env.COLLABORATION_PORT || 8180),
     host: process.env.COLLABORATION_HOST || '127.0.0.1',
     allowedOrigins: new Set(required('COLLABORATION_ALLOWED_ORIGINS').split(',').map((it) => it.trim())),
     ticketSecret,

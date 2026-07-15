@@ -2,15 +2,12 @@ server:
   port: 8080
 
 spring:
-  profiles:
-    active: dev
   application:
     name: land
-  # 数据源（MySQL，与项目规格一致）
   datasource:
-    url: jdbc:mysql://localhost:3306/skylink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3306/sky_link?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
@@ -19,20 +16,15 @@ spring:
       data-locations: classpath:data.sql
       continue-on-error: false
 
-# MyBatis-Plus 配置
 mybatis-plus:
-  # XML 映射文件位置（有自定义 SQL 时放到 resources/mapper 下）
-  mapper-locations: classpath*:/mapper/**/*.xml
-  # 实体类别名包（实体放在 entity 包下时，XML 里可省略全限定名）
+  mapper-locations: "classpath*:/mapper/**/*.xml"
   type-aliases-package: com.skylink.land.entity
   configuration:
-    # 下划线字段自动转驼峰（默认开启，显式声明更清晰）
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
-      # 主键策略：雪花算法（对应规格 BIGINT 主键）
       id-type: assign_id
-      # 逻辑删除（对应规格"逻辑删除保留历史"）
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
@@ -40,12 +32,12 @@ mybatis-plus:
 logging:
   level:
     root: INFO
-    com.skylink.land: INFO
+    com.skylink.land: DEBUG
 
 skylink:
   jwt:
     issuer: sky-link
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:replace-with-a-random-secret-longer-than-32-bytes}
     ttl: 24h
     refresh-ttl: 7d
     header: Authorization
@@ -65,18 +57,18 @@ skylink:
       - /api/v1/health
       - /error
   cors:
-    allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+    allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5573,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
   collaboration:
-    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:}
+    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:replace-with-a-random-collaboration-secret}
     ticket-ttl: 60s
     websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://127.0.0.1:8180}
-    service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:}
+    service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:replace-with-a-random-service-token}
   bootstrap:
     security-data-enabled: ${SKYLINK_SECURITY_DATA_INITIALIZATION_ENABLED:true}
     admin:
       enabled: ${SKYLINK_BOOTSTRAP_ADMIN_ENABLED:false}
-      username: ${SKYLINK_BOOTSTRAP_ADMIN_USERNAME:}
-      password: ${SKYLINK_BOOTSTRAP_ADMIN_PASSWORD:}
-      nickname: ${SKYLINK_BOOTSTRAP_ADMIN_NICKNAME:}
-      email: ${SKYLINK_BOOTSTRAP_ADMIN_EMAIL:}
-      phone: ${SKYLINK_BOOTSTRAP_ADMIN_PHONE:}
+      username: ${SKYLINK_BOOTSTRAP_ADMIN_USERNAME:superadmin}
+      password: ${SKYLINK_BOOTSTRAP_ADMIN_PASSWORD:replace-with-a-12-char-password}
+      nickname: ${SKYLINK_BOOTSTRAP_ADMIN_NICKNAME:SA}
+      email: ${SKYLINK_BOOTSTRAP_ADMIN_EMAIL:admin@example.com}
+      phone: ${SKYLINK_BOOTSTRAP_ADMIN_PHONE:13800138001}

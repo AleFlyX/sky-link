@@ -61,7 +61,6 @@ public final class IdentityDto {
         private String permissionName;
         private String permissionCode;
         private Integer permissionType;
-        private Long parentId;
         private Integer sortNo;
     }
 
@@ -93,7 +92,6 @@ public final class IdentityDto {
         private String permissionName;
         private String permissionCode;
         private Integer permissionType;
-        private Long parentId;
     }
 
     @Data

@@ -8,15 +8,15 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vu
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '../../components/common/AppButton.vue'
 import { getDocument, updateDocument } from '../../api/document'
-import { useAppStore } from '../../stores/app'
+import { useUserStore } from '../../stores/user'
 import { useCollaborationSession } from './composables/useCollaborationSession'
 
-const route = useRoute(); const router = useRouter(); const appStore = useAppStore()
+const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
 const documentId = Number(route.params.documentId)
 const document = ref(null); const loading = ref(true); const titleSaving = ref(false)
 const session = useCollaborationSession(documentId)
 const colors = ['#0066CC', '#009966', '#CC6600', '#663399', '#CC3333']
-const userColor = colors[Math.abs(Number(appStore.currentUser.id) || 0) % colors.length]
+const userColor = colors[Math.abs(Number(userStore.user?.id) || 0) % colors.length]
 
 const editor = shallowRef(null)
 
@@ -31,7 +31,7 @@ async function load() {
     editor.value = new Editor({ editable: session.editable.value, extensions: [
       StarterKit.configure({ undoRedo: false }),
       Collaboration.configure({ document: session.ydoc, field: 'default' }),
-      CollaborationCaret.configure({ provider: session.provider.value, user: { name: appStore.currentUser.name || '协作者', color: userColor } }),
+      CollaborationCaret.configure({ provider: session.provider.value, user: { name: userStore.displayName || '协作者', color: userColor } }),
     ] })
   } catch (error) { session.error.value = error.message; session.status.value = 'error' }
   finally { loading.value = false }

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.skylink.land.dto.document.DocumentDto;
 import com.skylink.land.entity.document.Document;
 import com.skylink.land.entity.document.DocumentCollaborationState;
+import com.skylink.land.entity.identity.User;
 import com.skylink.land.exception.BusinessException;
 import com.skylink.land.mapper.document.DocumentGroupPermissionMapper;
 import com.skylink.land.mapper.document.DocumentMapper;
@@ -87,6 +88,28 @@ class DocumentServiceImplTests {
     }
 
     @Test
+    void departmentSharedDocumentGrantsReadToCreatorDepartment() {
+        Document document = document(10L, 1L, 2);
+        when(userService.listRoleCodes(2L)).thenReturn(List.of("ROLE_USER"));
+        when(permissionMapper.selectEffectivePermission(10L, 2L)).thenReturn(null);
+        when(userMapper.selectById(2L)).thenReturn(user(2L, 100L));
+        when(userMapper.selectById(1L)).thenReturn(user(1L, 100L));
+
+        assertThat(service.resolvePermission(2L, document)).isEqualTo("read");
+    }
+
+    @Test
+    void departmentSharedDocumentDoesNotGrantAccessAcrossDepartments() {
+        Document document = document(10L, 1L, 2);
+        when(userService.listRoleCodes(2L)).thenReturn(List.of("ROLE_USER"));
+        when(permissionMapper.selectEffectivePermission(10L, 2L)).thenReturn(null);
+        when(userMapper.selectById(2L)).thenReturn(user(2L, 200L));
+        when(userMapper.selectById(1L)).thenReturn(user(1L, 100L));
+
+        assertThat(service.resolvePermission(2L, document)).isNull();
+    }
+
+    @Test
     void restCannotOverwriteInitializedCollaborativeContent() {
         Document document = document(10L, 1L, 1);
         DocumentCollaborationState state = new DocumentCollaborationState(); state.setDocumentId(10L);
@@ -110,5 +133,12 @@ class DocumentServiceImplTests {
         document.setContent("# Plan");
         document.setStatus(status);
         return document;
+    }
+
+    private User user(Long id, Long departmentId) {
+        User user = new User();
+        user.setUserId(id);
+        user.setDepartmentId(departmentId);
+        return user;
     }
 }

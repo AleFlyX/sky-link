@@ -9,6 +9,11 @@ export function createCollaborationServer(config, repository) {
   const lastEditors = new Map()
   const activeByUser = new Map(); const pendingStores = new Map()
   const metrics = { activeConnections: 0, authenticationFailures: 0, persistenceFailures: 0 }
+  const finishHttpRequest = (response, body) => {
+    response.writeHead(200, { 'content-type': 'application/json' })
+    response.end(body)
+    return Promise.reject()
+  }
   const broadcastSaved = (document) => document.broadcastStateless(JSON.stringify({ type: 'saved', at: new Date().toISOString() }))
   const storeNow = async ({ documentName, state, document }) => {
     await repository.store(Number(documentName), state, lastEditors.get(documentName) || null); broadcastSaved(document)
@@ -74,8 +79,8 @@ export function createCollaborationServer(config, repository) {
       if (context?.counted) { const count = activeByUser.get(context.userId) || 1; count <= 1 ? activeByUser.delete(context.userId) : activeByUser.set(context.userId, count - 1); metrics.activeConnections -= 1 }
     },
     async onRequest({ request, response }) {
-      if (request.url === '/health') { response.writeHead(200, { 'content-type': 'application/json' }); response.end('{"status":"ok"}') }
-      if (request.url === '/metrics') { response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify({ ...metrics, dirtyDocuments: pendingStores.size })) }
+      if (request.url === '/health') return finishHttpRequest(response, '{"status":"ok"}')
+      if (request.url === '/metrics') return finishHttpRequest(response, JSON.stringify({ ...metrics, dirtyDocuments: pendingStores.size }))
     },
   })
   server.metrics = metrics

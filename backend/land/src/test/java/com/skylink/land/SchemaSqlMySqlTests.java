@@ -16,7 +16,10 @@ class SchemaSqlMySqlTests {
             System.getenv("TEST_MYSQL_USERNAME"),
             System.getenv("TEST_MYSQL_PASSWORD")
         );
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(new ClassPathResource("schema.sql"));
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
+            new ClassPathResource("schema.sql"),
+            new ClassPathResource("data.sql")
+        );
 
         populator.execute(dataSource);
         populator.execute(dataSource);

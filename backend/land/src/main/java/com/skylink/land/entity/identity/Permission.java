@@ -27,7 +27,5 @@ public class Permission extends LogicDeleteEntity {
 
     private Integer permissionType;
 
-    private Long parentId;
-
     private Integer sortNo;
 }
