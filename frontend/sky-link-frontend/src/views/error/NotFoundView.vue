@@ -5,10 +5,10 @@ import AppCard from '../../components/common/AppCard.vue'
 <template>
   <div class="error-page">
     <section class="error-page__intro">
-      <div class="error-page__badge">Page Missing</div>
+      <div class="error-page__badge">404</div>
       <h1>你访问的页面不存在</h1>
       <p>
-        目标页面可能已被移动、地址输入有误，或者该模块还未在当前演示版本中开放。你可以返回工作台继续浏览其他功能。
+        页面不存在，或者地址输入有误。你可以返回首页或登录页。
       </p>
 
       <div class="error-page__stats">
@@ -18,7 +18,7 @@ import AppCard from '../../components/common/AppCard.vue'
         </article>
         <article>
           <strong>SkyLink</strong>
-          <span>统一协作入口</span>
+          <span>系统首页</span>
         </article>
       </div>
     </section>
@@ -26,9 +26,9 @@ import AppCard from '../../components/common/AppCard.vue'
     <section class="error-page__panel">
       <AppCard variant="hero" padding="lg" class="error-card">
         <div class="error-card__code">404</div>
-        <div class="error-card__title">这条路径暂时没有内容</div>
+        <div class="error-card__title">未找到页面</div>
         <p class="error-card__text">
-          建议返回首页重新进入，也可以回到登录页，从系统入口重新开始当前操作流程。
+          请检查地址是否正确，或返回系统首页后重新进入。
         </p>
 
         <div class="error-card__actions">
