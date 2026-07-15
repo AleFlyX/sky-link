@@ -15,6 +15,9 @@ import com.skylink.land.mapper.identity.RolePermissionMapper;
 import com.skylink.land.mapper.identity.UserRoleMapper;
 import com.skylink.land.service.identity.PermissionService;
 import com.skylink.land.vo.identity.PermissionVO;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -158,6 +161,11 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
         ).stream()
             .map(PermissionVO::from)
             .toList();
+        permissions.forEach(permission -> permission.setChildren(List.of()));
+        permissions.sort(Comparator
+            .comparing((PermissionVO permission) -> permission.getSortNo() == null ? 0 : permission.getSortNo())
+            .thenComparing(PermissionVO::getPermissionId));
+        return permissions;
     }
 
     private List<PermissionVO> listByPermissionIds(List<Long> permissionIds) {

@@ -12,6 +12,6 @@ public class CollaborationProperties {
     private String audience = "sky-link-collaboration";
     private String ticketSecret;
     private Duration ticketTtl = Duration.ofSeconds(60);
-    private String websocketUrl = "ws://localhost:1234";
+    private String websocketUrl = "ws://127.0.0.1:8180";
     private String serviceToken;
 }

@@ -2,8 +2,10 @@
 import AppCard from '../../components/common/AppCard.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
 import { useAppStore } from '../../stores/app'
+import { useUserStore } from '../../stores/user'
 
 const appStore = useAppStore()
+const userStore = useUserStore()
 
 const cards = [
   { title: '用户与组织', text: '个人中心、用户管理、部门管理已能承接联调。' },
@@ -26,9 +28,9 @@ const cards = [
     <section class="summary-grid">
       <AppCard title="当前登录成员" subtitle="头栏与个人中心共享同一份用户资料">
         <div class="summary-card">
-          <strong>{{ appStore.currentUser.name }}</strong>
-          <span>{{ appStore.currentUser.department }}</span>
-          <AppStatusTag :label="appStore.currentUser.roleLabel" tone="primary" />
+          <strong>{{ userStore.user.name }}</strong>
+          <span>{{ userStore.user.department }}</span>
+          <AppStatusTag :label="userStore.user.roleLabel" tone="primary" />
         </div>
       </AppCard>
 

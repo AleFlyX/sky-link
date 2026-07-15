@@ -4,9 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.skylink.land.entity.identity.Permission;
 import com.skylink.land.entity.identity.Role;
 import com.skylink.land.entity.identity.RolePermission;
+import com.skylink.land.entity.identity.User;
+import com.skylink.land.entity.identity.UserRole;
 import com.skylink.land.mapper.identity.PermissionMapper;
 import com.skylink.land.mapper.identity.RoleMapper;
 import com.skylink.land.mapper.identity.RolePermissionMapper;
+import com.skylink.land.mapper.identity.UserMapper;
+import com.skylink.land.mapper.identity.UserRoleMapper;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +32,25 @@ public class SecurityDataInitializer implements ApplicationRunner {
 
     private final RolePermissionMapper rolePermissionMapper;
 
+    private final UserMapper userMapper;
+
+    private final UserRoleMapper userRoleMapper;
+
     private final BootstrapAdminService bootstrapAdminService;
 
     public SecurityDataInitializer(
         RoleMapper roleMapper,
         PermissionMapper permissionMapper,
         RolePermissionMapper rolePermissionMapper,
+        UserMapper userMapper,
+        UserRoleMapper userRoleMapper,
         BootstrapAdminService bootstrapAdminService
     ) {
         this.roleMapper = roleMapper;
         this.permissionMapper = permissionMapper;
         this.rolePermissionMapper = rolePermissionMapper;
+        this.userMapper = userMapper;
+        this.userRoleMapper = userRoleMapper;
         this.bootstrapAdminService = bootstrapAdminService;
     }
 
@@ -60,6 +72,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
 
         bindPermissions(userRole, permissions, SecurityBootstrapCatalog.USER_PERMISSION_CODES);
         bindPermissions(adminRole, permissions, SecurityBootstrapCatalog.ADMIN_PERMISSION_CODES);
+        bindDefaultRoleToUsersMissingRoles(userRole);
         Map<String, Permission> allPermissions = permissionMapper.selectList(new LambdaQueryWrapper<Permission>()).stream()
             .collect(Collectors.toMap(Permission::getPermissionCode, permission -> permission));
         bindPermissions(superAdminRole, allPermissions, allPermissions.keySet().stream().toList());
@@ -118,6 +131,28 @@ public class SecurityDataInitializer implements ApplicationRunner {
             relation.setRoleId(role.getRoleId());
             relation.setPermissionId(permission.getPermissionId());
             rolePermissionMapper.insert(relation);
+        }
+    }
+
+    private void bindDefaultRoleToUsersMissingRoles(Role defaultRole) {
+        if (defaultRole == null || defaultRole.getRoleId() == null) {
+            return;
+        }
+        List<User> users = userMapper.selectList(new LambdaQueryWrapper<User>().eq(User::getStatus, 1));
+        for (User user : users) {
+            if (user == null || user.getUserId() == null) {
+                continue;
+            }
+            boolean hasRole = !userRoleMapper.selectList(
+                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, user.getUserId())
+            ).isEmpty();
+            if (hasRole) {
+                continue;
+            }
+            UserRole relation = new UserRole();
+            relation.setUserId(user.getUserId());
+            relation.setRoleId(defaultRole.getRoleId());
+            userRoleMapper.insert(relation);
         }
     }
 }

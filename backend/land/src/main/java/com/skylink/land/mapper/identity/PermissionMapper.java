@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Update;
 public interface PermissionMapper extends BaseMapper<Permission> {
 
     @Select("""
-        SELECT permission_id, permission_name, permission_code, permission_type,  sort_no,
+        SELECT permission_id, permission_name, permission_code, permission_type, sort_no,
                create_time, update_time, is_deleted
         FROM permission
         WHERE permission_code = #{permissionCode}

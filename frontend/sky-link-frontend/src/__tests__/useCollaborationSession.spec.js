@@ -11,7 +11,7 @@ vi.mock('@hocuspocus/provider', () => ({
   },
 }))
 vi.mock('../api/document', () => ({
-  createCollaborationTicket: vi.fn(async () => ({ data: { token: 'ticket', websocketUrl: 'ws://localhost:1234', permission: 'edit' } })),
+  createCollaborationTicket: vi.fn(async () => ({ data: { token: 'ticket', websocketUrl: 'ws://127.0.0.1:8180', permission: 'edit' } })),
 }))
 
 import { useCollaborationSession } from '../views/documents/composables/useCollaborationSession'

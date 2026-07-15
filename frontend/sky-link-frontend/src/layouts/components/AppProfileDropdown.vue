@@ -1,15 +1,15 @@
 <script setup>
 import { ArrowDown, SwitchButton, User } from '@element-plus/icons-vue'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout } from '../../api/auth'
-import { useAppStore } from '../../stores/app'
+import { useUserStore } from '../../stores/user'
 import { clearToken } from '../../utils/request'
 
 const router = useRouter()
-const appStore = useAppStore()
+const userStore = useUserStore()
 const loggingOut = ref(false)
-const avatarText = computed(() => appStore.currentUser.name.slice(0, 1))
+const avatarText = userStore.avatarText
 
 async function handleCommand(command) {
   if (command === 'profile') {
@@ -26,6 +26,7 @@ async function handleCommand(command) {
     // 即使服务端登出失败，也优先清理本地会话，避免用户留在已失效状态。
   } finally {
     clearToken()
+    userStore.resetUser()
     loggingOut.value = false
     ElMessage.success('已退出登录')
     await router.replace('/login')
@@ -43,15 +44,15 @@ async function handleCommand(command) {
     <button
       type="button"
       class="profile-dropdown"
-      :aria-label="`${appStore.currentUser.name} 的个人菜单`"
+      :aria-label="`${userStore.displayName} 的个人菜单`"
       :aria-busy="loggingOut"
     >
       <el-avatar class="profile-dropdown__avatar" :size="40">
         {{ avatarText }}
       </el-avatar>
       <div class="profile-dropdown__copy">
-        <strong>{{ appStore.currentUser.name }}</strong>
-        <span>{{ appStore.currentUser.roleLabel }}</span>
+        <strong>{{ userStore.user.name }}</strong>
+        <span>{{ userStore.user.roleLabel }}</span>
       </div>
       <ArrowDown class="profile-dropdown__icon" />
     </button>

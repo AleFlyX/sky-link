@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS `department` (
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
   PRIMARY KEY (`department_id`),
   UNIQUE KEY `uk_department_name` (`department_name`),
-  KEY `idx_department_leader_id` (`leader_id`),
-  CONSTRAINT `fk_department_leader` FOREIGN KEY (`leader_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL
+  KEY `idx_department_leader_id` (`leader_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
 
 CREATE TABLE IF NOT EXISTS `user` (
@@ -33,9 +32,40 @@ CREATE TABLE IF NOT EXISTS `user` (
   UNIQUE KEY `uk_user_email` (`email`),
   UNIQUE KEY `uk_user_phone` (`phone`),
   KEY `idx_user_department_id` (`department_id`),
-  KEY `idx_user_status` (`status`),
-  CONSTRAINT `fk_user_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON DELETE SET NULL
+  KEY `idx_user_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+
+SET @user_department_fk_exists = (
+  SELECT COUNT(*)
+  FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'user'
+    AND CONSTRAINT_NAME = 'fk_user_department'
+);
+SET @user_department_fk_sql = IF(
+  @user_department_fk_exists = 0,
+  'ALTER TABLE `user` ADD CONSTRAINT `fk_user_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON DELETE SET NULL',
+  'SELECT 1'
+);
+PREPARE user_department_fk_stmt FROM @user_department_fk_sql;
+EXECUTE user_department_fk_stmt;
+DEALLOCATE PREPARE user_department_fk_stmt;
+
+SET @department_leader_fk_exists = (
+  SELECT COUNT(*)
+  FROM information_schema.TABLE_CONSTRAINTS
+  WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'department'
+    AND CONSTRAINT_NAME = 'fk_department_leader'
+);
+SET @department_leader_fk_sql = IF(
+  @department_leader_fk_exists = 0,
+  'ALTER TABLE `department` ADD CONSTRAINT `fk_department_leader` FOREIGN KEY (`leader_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL',
+  'SELECT 1'
+);
+PREPARE department_leader_fk_stmt FROM @department_leader_fk_sql;
+EXECUTE department_leader_fk_stmt;
+DEALLOCATE PREPARE department_leader_fk_stmt;
 
 CREATE TABLE IF NOT EXISTS `role` (
   `role_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '角色ID',
@@ -56,15 +86,12 @@ CREATE TABLE IF NOT EXISTS `permission` (
   `permission_name` VARCHAR(50) NOT NULL COMMENT '权限名称',
   `permission_code` VARCHAR(100) NOT NULL COMMENT '权限编码',
   `permission_type` TINYINT NOT NULL DEFAULT 1 COMMENT '权限类型 1-菜单 2-按钮 3-接口',
-  `parent_id` BIGINT DEFAULT NULL COMMENT '父权限ID',
   `sort_no` INT NOT NULL DEFAULT 0 COMMENT '排序号',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除 0-未删除 1-已删除',
   PRIMARY KEY (`permission_id`),
-  UNIQUE KEY `uk_permission_code` (`permission_code`),
-  KEY `idx_permission_parent_id` (`parent_id`),
-  CONSTRAINT `fk_permission_parent` FOREIGN KEY (`parent_id`) REFERENCES `permission` (`permission_id`) ON DELETE SET NULL
+  UNIQUE KEY `uk_permission_code` (`permission_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限表';
 
 CREATE TABLE IF NOT EXISTS `user_role` (
@@ -164,7 +191,7 @@ CREATE TABLE IF NOT EXISTS `document` (
   `title` VARCHAR(100) NOT NULL COMMENT '文档标题',
   `content` LONGTEXT COMMENT '文档内容',
   `creator_id` BIGINT NOT NULL COMMENT '创建者ID',
-  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1-私有 2-团队共享 3-归档',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态 1-私有 2-部门可见 3-归档',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除',

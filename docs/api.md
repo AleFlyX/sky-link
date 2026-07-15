@@ -504,7 +504,7 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 {
   "title": "项目计划书",
   "content": "# 项目计划...",
-  "status": "private"   // private 或 team
+  "status": "private"   // private 或 team；team 表示部门可见
 }
 ```
 - **响应**：返回文档对象。
