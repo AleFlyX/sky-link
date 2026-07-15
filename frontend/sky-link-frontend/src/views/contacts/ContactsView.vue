@@ -38,6 +38,40 @@ const groupColumns = [
   { key: 'actions', label: '操作', width: '120px', align: 'center', slot: 'actions' },
 ]
 
+function formatStatus(status) {
+  if (status === 1 || status === '1' || status === 'active') {
+    return '启用'
+  }
+  if (status === 0 || status === '0' || status === 'disabled') {
+    return '禁用'
+  }
+  return '未知'
+}
+
+function normalizeFriend(row) {
+  const friendUser = row?.friendUser || row || {}
+
+  return {
+    id: row?.friendId ?? row?.id ?? friendUser.userId,
+    userId: friendUser.userId ?? row?.userId ?? row?.id,
+    name: friendUser.nickname || friendUser.username || row?.name || '未命名用户',
+    account: friendUser.username || row?.account || '-',
+    department: friendUser.departmentName || row?.department || '未分配部门',
+    status: row?.status || formatStatus(friendUser.status),
+    lastSeen: row?.lastSeen || row?.addTime || friendUser.createTime || '暂无记录',
+  }
+}
+
+function normalizeGroup(row) {
+  return {
+    id: row?.groupId ?? row?.id,
+    name: row?.groupName ?? row?.name ?? '未命名群聊',
+    memberCount: row?.memberCount ?? 0,
+    notice: row?.notice || '暂无群公告',
+    updatedAt: row?.updatedAt || row?.createTime || '暂无记录',
+  }
+}
+
 function openSingleChat(friend) {
   const targetId = friend.userId ?? friend.id
   if (!targetId) {
@@ -77,8 +111,8 @@ async function loadData() {
     getFriends({ page: 1, size: 100, keyword: keyword.value }),
     getGroups({ page: 1, size: 100 }),
   ])
-  friends.value = friendResult.data.records || []
-  groups.value = groupResult.data.records || []
+  friends.value = (friendResult.data.records || []).map(normalizeFriend)
+  groups.value = (groupResult.data.records || []).map(normalizeGroup)
   demoData.value = friendResult.source === 'demo' || groupResult.source === 'demo'
   const degraded = friendResult.degraded || groupResult.degraded
   if (degraded) loadError.value = `接口暂不可用，已切换演示数据：${friendResult.error || groupResult.error}`
@@ -147,10 +181,10 @@ onMounted(loadData)
       title="创建群聊"
       confirm-text="创建群聊"
       :fields="[
-        { key: 'name', label: '群聊名称', required: true },
+        { key: 'groupName', label: '群聊名称', required: true },
         { key: 'notice', label: '群公告', type: 'textarea' },
       ]"
-      :form-data="{ name: '', notice: '' }"
+      :form-data="{ groupName: '', notice: '' }"
       @submit="handleCreateGroup"
     />
   </div>

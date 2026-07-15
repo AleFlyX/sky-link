@@ -1,16 +1,32 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useAppStore } from '../../stores/app'
+import { useUserStore } from '../../stores/user'
 import { TOKEN_KEY } from '../../utils/request'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
-import { getMessages, getSessions, isDemoMode } from '../../api/workspace'
-import { recallMessage as apiRecallMessage, sendMessage as apiSendMessage } from '../../api/message'
+import {
+  getMessages,
+  getSessions,
+  isDemoMode,
+  recallMessage as recallWorkspaceMessage,
+  sendMessage as sendWorkspaceMessage,
+} from '../../api/workspace'
+import {
+  buildRouteSession,
+  canRecallMessage,
+  getConversationKeyFromMessage,
+  normalizeMessageList,
+  normalizeSessionList,
+  upsertMessage,
+  upsertSession,
+} from '../../utils/message'
 
-const appStore = useAppStore()
 const route = useRoute()
+const userStore = useUserStore()
+const PAGE_SIZE = 20
+
 const sessions = ref([])
 const activeSessionId = ref('')
 const messages = ref([])
@@ -24,8 +40,11 @@ const connectionState = ref('connecting')
 const socket = ref(null)
 const reconnectTimer = ref(null)
 const closingSocket = ref(false)
+const hasMoreHistory = ref(false)
+const loadingHistory = ref(false)
+const threadBodyRef = ref(null)
 
-const currentUserId = computed(() => appStore.currentUser?.id ?? null)
+const currentUserId = computed(() => userStore.user.id ?? null)
 const activeSession = computed(() => sessions.value.find((session) => session.id === activeSessionId.value))
 const connectionLabel = computed(() => {
   if (demoData.value) {
@@ -37,120 +56,6 @@ const connectionLabel = computed(() => {
     disconnected: '连接已断开',
   }[connectionState.value] || '连接中'
 })
-
-function toDate(value) {
-  if (value instanceof Date) {
-    return value
-  }
-  if (value === null || value === undefined || value === '') {
-    return null
-  }
-
-  const raw = String(value)
-  const directDate = new Date(raw)
-  if (!Number.isNaN(directDate.getTime())) {
-    return directDate
-  }
-
-  const timeOnlyMatch = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
-  if (!timeOnlyMatch) {
-    return null
-  }
-
-  const [, hourText, minuteText, secondText = '0'] = timeOnlyMatch
-  const date = new Date()
-  date.setHours(Number(hourText), Number(minuteText), Number(secondText), 0)
-  return date
-}
-
-function formatMessageTime(value) {
-  const date = toDate(value)
-  if (!date) {
-    return value ? String(value) : ''
-  }
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date)
-}
-
-function normalizeMessage(message) {
-  const sendTime = message?.sendTime ?? message?.sentAt ?? message?.sentAtLabel ?? null
-  const recalled = Boolean(message?.recalled ?? message?.isRecalled)
-  const resolvedSendTime = sendTime === '刚刚' ? new Date().toISOString() : sendTime
-  return {
-    id: message?.messageId ?? message?.id,
-    senderId: message?.senderId,
-    senderName: message?.senderName,
-    receiverId: message?.receiverId,
-    groupId: message?.groupId,
-    messageType: message?.messageType ?? 'text',
-    content: recalled ? '消息已撤回' : message?.content,
-    recalled,
-    sendTime: resolvedSendTime,
-    sentAt: formatMessageTime(resolvedSendTime),
-  }
-}
-
-function normalizeSession(session) {
-  const lastMessage = session?.lastMessage
-    ? normalizeMessage(session.lastMessage)
-    : null
-  return {
-    id: session?.id ?? `${session?.sessionType}-${session?.targetId}`,
-    sessionType: session?.sessionType,
-    targetId: session?.targetId,
-    targetName: session?.targetName,
-    lastMessage: lastMessage?.content || session?.lastMessage || '',
-    lastTime: session?.lastTime || lastMessage?.sentAt || '',
-  }
-}
-
-function normalizeSessionList(data) {
-  const list = Array.isArray(data) ? data : data?.records ?? []
-  return list.map(normalizeSession)
-}
-
-function normalizeMessageList(data) {
-  const list = Array.isArray(data) ? data : data?.records ?? []
-  return list.map(normalizeMessage)
-}
-
-function buildRouteSession() {
-  const sessionType = String(route.query.type || '').trim()
-  const targetId = Number(route.query.id)
-  if (!['single', 'group'].includes(sessionType) || !Number.isFinite(targetId) || targetId <= 0) {
-    return null
-  }
-
-  const targetName = typeof route.query.name === 'string' && route.query.name.trim()
-    ? route.query.name.trim()
-    : sessionType === 'group'
-      ? `群聊#${targetId}`
-      : `用户#${targetId}`
-
-  return {
-    id: `${sessionType}-${targetId}`,
-    sessionType,
-    targetId,
-    targetName,
-    lastMessage: '',
-    lastTime: '',
-  }
-}
-
-function getConversationKeyFromMessage(message) {
-  if (!message) {
-    return ''
-  }
-  if (message.groupId) {
-    return `group-${message.groupId}`
-  }
-  const otherUserId = message.senderId === currentUserId.value ? message.receiverId : message.senderId
-  return otherUserId ? `single-${otherUserId}` : ''
-}
 
 function buildWebSocketUrl() {
   const token = localStorage.getItem(TOKEN_KEY)
@@ -165,6 +70,37 @@ function buildWebSocketUrl() {
   url.search = ''
   url.searchParams.set('token', token)
   return url.toString()
+}
+
+function scrollThreadToBottom(force = false) {
+  nextTick(() => {
+    const element = threadBodyRef.value
+    if (!element) {
+      return
+    }
+
+    const distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight
+    if (force || distanceToBottom < 120) {
+      element.scrollTop = element.scrollHeight
+    }
+  })
+}
+
+function syncActiveSessionPreview() {
+  if (!activeSession.value) {
+    return
+  }
+
+  const latestMessage = messages.value.at(-1)
+  if (!latestMessage) {
+    return
+  }
+
+  sessions.value = upsertSession(sessions.value, {
+    ...activeSession.value,
+    lastMessage: latestMessage,
+    lastTime: latestMessage.sendTime,
+  })
 }
 
 function closeSocket() {
@@ -220,11 +156,15 @@ function connectSocket() {
         return
       }
 
-      const conversationKey = getConversationKeyFromMessage(payload.message)
-      if (conversationKey && conversationKey === activeSessionId.value) {
-        loadMessages()
+      if (payload.session) {
+        sessions.value = upsertSession(sessions.value, payload.session)
       }
-      loadSessions()
+
+      const conversationKey = getConversationKeyFromMessage(payload.message, currentUserId.value)
+      if (conversationKey && conversationKey === activeSessionId.value) {
+        messages.value = upsertMessage(messages.value, payload.message)
+        scrollThreadToBottom(payload.type === 'message.created')
+      }
     } catch (error) {
       console.warn('ignored websocket message', error)
     }
@@ -249,7 +189,7 @@ async function loadSessions() {
   try {
     const result = await getSessions()
     const normalized = normalizeSessionList(result.data)
-    const routeSession = buildRouteSession()
+    const routeSession = buildRouteSession(route.query)
     if (routeSession && !normalized.some((session) => session.id === routeSession.id)) {
       normalized.unshift(routeSession)
     }
@@ -262,6 +202,7 @@ async function loadSessions() {
     activeSessionId.value = nextActiveSession
     if (!nextActiveSession) {
       messages.value = []
+      hasMoreHistory.value = false
     }
   } catch (error) {
     loadError.value = error.message || '会话加载失败'
@@ -270,29 +211,67 @@ async function loadSessions() {
   }
 }
 
-async function loadMessages() {
+async function loadMessages({ before = null } = {}) {
   if (!activeSessionId.value) {
     messages.value = []
+    hasMoreHistory.value = false
     return
   }
 
-  messageLoading.value = true
+  if (before) {
+    loadingHistory.value = true
+  } else {
+    messageLoading.value = true
+  }
+
+  const scrollElement = threadBodyRef.value
+  const previousHeight = scrollElement?.scrollHeight || 0
   loadError.value = ''
   try {
-    const result = await getMessages(activeSessionId.value)
-    const payload = Array.isArray(result.data) ? result.data : result.data?.records ?? []
-    messages.value = normalizeMessageList(payload)
+    const result = await getMessages(activeSessionId.value, {
+      before,
+      size: PAGE_SIZE,
+    })
+    const payload = result.data?.records ? result.data : { records: result.data || [] }
+    const incomingMessages = normalizeMessageList(payload)
+
+    if (before) {
+      let mergedMessages = [...messages.value]
+      incomingMessages.forEach((message) => {
+        mergedMessages = upsertMessage(mergedMessages, message)
+      })
+      messages.value = mergedMessages
+    } else {
+      messages.value = incomingMessages
+    }
+
+    hasMoreHistory.value = Number(payload.total || 0) > incomingMessages.length
     demoData.value = result.source === 'demo' || demoData.value
+
+    await nextTick()
+    if (before && scrollElement) {
+      const nextHeight = scrollElement.scrollHeight
+      scrollElement.scrollTop = nextHeight - previousHeight
+    } else {
+      scrollThreadToBottom(true)
+    }
   } catch (error) {
     loadError.value = error.message || '消息加载失败'
   } finally {
-    messageLoading.value = false
+    if (before) {
+      loadingHistory.value = false
+    } else {
+      messageLoading.value = false
+    }
   }
 }
 
-function refreshCurrentView() {
-  loadMessages()
-  loadSessions()
+function handleLoadMoreHistory() {
+  const oldestMessageId = messages.value[0]?.id
+  if (!oldestMessageId || loadingHistory.value) {
+    return
+  }
+  loadMessages({ before: oldestMessageId })
 }
 
 async function handleSend() {
@@ -302,68 +281,22 @@ async function handleSend() {
   }
 
   try {
-    if (demoData.value) {
-      const createdAt = new Date().toISOString()
-      const result = {
-        data: normalizeMessage({
-          id: Date.now(),
-          senderId: currentUserId.value,
-          senderName: appStore.currentUser?.name || '',
-          content,
-          messageType: messageType.value,
-          sentAt: createdAt,
-          sendTime: createdAt,
-        }),
-      }
-      draft.value = ''
-      const created = normalizeMessage(result.data || result)
-      messages.value = [...messages.value, created]
-      const session = sessions.value.find((item) => item.id === activeSessionId.value)
-      if (session) {
-        session.lastMessage = created.content
-        session.lastTime = created.sentAt
-      }
-    } else {
-      const activeTarget = activeSession.value
-      if (!activeTarget) {
-        return
-      }
-      const payload = activeTarget.sessionType === 'group'
-        ? { groupId: activeTarget.targetId, messageType: messageType.value, content }
-        : { receiverId: activeTarget.targetId, messageType: messageType.value, content }
-      await apiSendMessage(payload)
-      draft.value = ''
-      await refreshCurrentView()
+    const result = await sendWorkspaceMessage(activeSessionId.value, {
+      messageType: messageType.value,
+      content,
+    })
+    const created = result.data || result
+
+    draft.value = ''
+    if (created) {
+      messages.value = upsertMessage(messages.value, created)
+      syncActiveSessionPreview()
+      scrollThreadToBottom(true)
     }
+
     ElMessage.success('消息已发送')
   } catch (error) {
     ElMessage.error(error.message || '发送失败')
-  }
-}
-
-function applyRecallLocally(messageId) {
-  const currentMessage = messages.value.find((message) => message.id === messageId)
-  const wasLastMessage = sessions.value.find((item) => item.id === activeSessionId.value)?.lastMessage === currentMessage?.content
-
-  messages.value = messages.value.map((message) => (
-    message.id === messageId
-      ? {
-          ...message,
-          recalled: true,
-          content: '消息已撤回',
-        }
-      : message
-  ))
-
-  const recalledMessage = messages.value.find((message) => message.id === messageId)
-  if (!recalledMessage) {
-    return
-  }
-
-  const session = sessions.value.find((item) => item.id === activeSessionId.value)
-  if (session && wasLastMessage) {
-    session.lastMessage = recalledMessage.content
-    session.lastTime = recalledMessage.sentAt
   }
 }
 
@@ -379,11 +312,12 @@ async function handleRecall(message) {
   }
 
   try {
-    if (demoData.value) {
-      applyRecallLocally(message.id)
-    } else {
-      await apiRecallMessage(message.id)
-      await refreshCurrentView()
+    const result = await recallWorkspaceMessage(message.id, activeSessionId.value)
+    const recalledMessage = result.data || result
+
+    if (recalledMessage) {
+      messages.value = upsertMessage(messages.value, recalledMessage)
+      syncActiveSessionPreview()
     }
     ElMessage.success('消息已撤回')
   } catch (error) {
@@ -392,14 +326,7 @@ async function handleRecall(message) {
 }
 
 function canRecall(message) {
-  if (!message || message.senderId !== currentUserId.value || message.recalled) {
-    return false
-  }
-  const sendTime = toDate(message.sendTime ?? message.sentAt ?? message.sentAtLabel)
-  if (!sendTime) {
-    return true
-  }
-  return Date.now() - sendTime.getTime() <= 120000
+  return canRecallMessage(message, currentUserId.value)
 }
 
 watch(activeSessionId, () => {
@@ -413,9 +340,13 @@ watch(
   },
 )
 
+watch(currentUserId, () => {
+  closeSocket()
+  connectSocket()
+}, { immediate: true })
+
 onMounted(async () => {
   await loadSessions()
-  connectSocket()
 })
 
 onBeforeUnmount(() => {
@@ -475,10 +406,28 @@ onBeforeUnmount(() => {
             </div>
             <span class="message-thread__status">{{ connectionLabel }}</span>
           </div>
+          <div v-else class="message-thread__placeholder">
+            从通讯录选择一个好友或群聊后，就可以在这里开始对话。
+          </div>
 
           <el-skeleton v-if="messageLoading" :rows="6" animated />
-          <div v-else-if="!messages.length" class="message-empty">暂无历史消息，先发一条吧</div>
-          <div v-else class="message-thread__body">
+          <div v-else-if="activeSession && !messages.length" class="message-empty">暂无历史消息，先发一条吧</div>
+          <div
+            v-else
+            ref="threadBodyRef"
+            class="message-thread__body"
+          >
+            <div class="message-thread__history">
+              <AppButton
+                v-if="hasMoreHistory"
+                size="small"
+                variant="secondary"
+                :loading="loadingHistory"
+                @click="handleLoadMoreHistory"
+              >
+                加载更早消息
+              </AppButton>
+            </div>
             <article
               v-for="message in messages"
               :key="message.id"
@@ -616,6 +565,15 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 
+.message-thread__placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 8rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
 .message-thread__header {
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--color-border);
@@ -633,6 +591,11 @@ onBeforeUnmount(() => {
   gap: 0.8rem;
   padding: 1.25rem;
   overflow-y: auto;
+}
+
+.message-thread__history {
+  display: flex;
+  justify-content: center;
 }
 
 .message-bubble {
