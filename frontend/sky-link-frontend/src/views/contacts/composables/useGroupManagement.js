@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { useConfirmDialog } from '../../../composables/useConfirmDialog'
 import {
   addGroupMembers as inviteGroupMembers,
   deleteGroup as dissolveGroup,
@@ -49,6 +50,7 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
   const groupMembersPage = ref(1)
   const groupMembersTotal = ref(0)
   const groupActionLoading = ref('')
+  const { confirm } = useConfirmDialog()
 
   const currentGroupRole = computed(() => {
     if (!groupDetail.value?.members?.length) {
@@ -166,12 +168,14 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
       return
     }
 
-    const confirmed = await ElMessageBox.confirm(
-      `确认将 ${member.nickname || member.username} 移出群聊吗？`,
-      '移除成员',
-      { type: 'warning' },
-    ).catch(() => false)
-    if (!confirmed) {
+    try {
+      await confirm(`确认将 ${member.nickname || member.username} 移出群聊吗？`, '移除成员', {
+        confirmText: '移除',
+        cancelText: '取消',
+        type: 'danger',
+        confirmVariant: 'danger',
+      })
+    } catch {
       return
     }
 
@@ -196,9 +200,14 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
       ? `确认将 ${member.nickname || member.username} 设为管理员吗？`
       : `确认取消 ${member.nickname || member.username} 的管理员身份吗？`
 
-    const confirmed = await ElMessageBox.confirm(message, '修改成员角色', { type: 'warning' })
-      .catch(() => false)
-    if (!confirmed) {
+    try {
+      await confirm(message, '修改成员角色', {
+        confirmText: role === 'admin' ? '设为管理员' : '取消管理员',
+        cancelText: '取消',
+        type: 'warning',
+        confirmVariant: 'primary',
+      })
+    } catch {
       return
     }
 
@@ -219,9 +228,14 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
       return
     }
 
-    const confirmed = await ElMessageBox.confirm('确认退出当前群聊吗？', '退出群聊', { type: 'warning' })
-      .catch(() => false)
-    if (!confirmed) {
+    try {
+      await confirm('确认退出当前群聊吗？', '退出群聊', {
+        confirmText: '退出',
+        cancelText: '取消',
+        type: 'warning',
+        confirmVariant: 'danger',
+      })
+    } catch {
       return
     }
 
@@ -244,9 +258,14 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
       return
     }
 
-    const confirmed = await ElMessageBox.confirm('解散后成员将被移除，确认继续吗？', '解散群组', { type: 'warning' })
-      .catch(() => false)
-    if (!confirmed) {
+    try {
+      await confirm('解散后成员将被移除，确认继续吗？', '解散群组', {
+        confirmText: '解散',
+        cancelText: '取消',
+        type: 'danger',
+        confirmVariant: 'danger',
+      })
+    } catch {
       return
     }
 

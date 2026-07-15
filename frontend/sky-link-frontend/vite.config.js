@@ -11,6 +11,9 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, cwd(), '')
+  const elementPlusResolver = ElementPlusResolver({
+    importStyle: mode === 'test' ? false : 'css',
+  })
 
   return {
     base: env.BASE_URL || '/',
@@ -19,11 +22,11 @@ export default defineConfig(({ mode }) => {
       vueDevTools(),
       AutoImport({
         dts: false,
-        resolvers: [ElementPlusResolver()],
+        resolvers: [elementPlusResolver],
       }),
       Components({
         dts: false,
-        resolvers: [ElementPlusResolver()],
+        resolvers: [elementPlusResolver],
       }),
     ],
     resolve: {

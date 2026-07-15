@@ -1,7 +1,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '../../../stores/user'
+import { useConfirmDialog } from '../../../composables/useConfirmDialog'
 import { TOKEN_KEY } from '../../../utils/request'
 import {
   getMessages,
@@ -43,6 +44,7 @@ export function useMessageCenter() {
   const hasMoreHistory = ref(false)
   const loadingHistory = ref(false)
   const threadBodyRef = ref(null)
+  const { confirm } = useConfirmDialog()
 
   const currentUserId = computed(() => userStore.user.id ?? null)
   const activeSession = computed(() => sessions.value.find((session) => session.id === activeSessionId.value))
@@ -336,10 +338,11 @@ export function useMessageCenter() {
 
   async function handleRecall(message) {
     try {
-      await ElMessageBox.confirm('确认撤回这条消息吗？', '撤回消息', {
-        confirmButtonText: '撤回',
-        cancelButtonText: '取消',
-        type: 'warning',
+      await confirm('确认撤回这条消息吗？', '撤回消息', {
+        confirmText: '撤回',
+        cancelText: '取消',
+        type: 'danger',
+        confirmVariant: 'danger',
       })
     } catch {
       return

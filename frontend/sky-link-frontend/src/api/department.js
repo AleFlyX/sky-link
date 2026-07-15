@@ -19,3 +19,11 @@ export function deleteDepartment(departmentId) {
 export function getDepartmentMembers(departmentId, params) {
   return request.get(`/departments/${departmentId}/members`, params)
 }
+
+export function addDepartmentMembers(departmentId, userIds) {
+  return request.post(`/departments/${departmentId}/members`, { userIds })
+}
+
+export function removeDepartmentMember(departmentId, userId) {
+  return request.delete(`/departments/${departmentId}/members/${userId}`)
+}

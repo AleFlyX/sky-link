@@ -1,70 +1,165 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted } from 'vue'
+import { Delete, EditPen, UserFilled, View } from '@element-plus/icons-vue'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
-import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
-import AppFormDialog from '../../components/common/AppFormDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
-import { getDepartments } from '../../api/workspace'
+import DepartmentAddMembersDialog from './components/DepartmentAddMembersDialog.vue'
+import DepartmentFormDialog from './components/DepartmentFormDialog.vue'
+import DepartmentMembersDialog from './components/DepartmentMembersDialog.vue'
+import DepartmentToolbar from './components/DepartmentToolbar.vue'
+import { useDepartmentManagement } from './composables/useDepartmentManagement'
 
-const keyword = ref('')
-const page = ref(1)
-const pageSize = 4
-const dialogVisible = ref(false)
-const rows = ref([])
-const total = ref(0)
+const {
+  page,
+  pageSize,
+  loading,
+  loadError,
+  keyword,
+  formVisible,
+  formSaving,
+  departmentForm,
+  leaderOptions,
+  formTitle,
+  formConfirmText,
+  membersVisible,
+  membersLoading,
+  membersError,
+  membersPage,
+  membersPageSize,
+  membersTotal,
+  memberRows,
+  activeDepartment,
+  addMembersVisible,
+  addMembersSaving,
+  selectedMemberIds,
+  columns,
+  filteredRows,
+  pagedRows,
+  availableMemberOptions,
+  formatStatus,
+  loadDepartments,
+  refreshAll,
+  handleSearch,
+  handleReset,
+  openCreateDialog,
+  openEditDialog,
+  saveDepartment,
+  removeDepartment,
+  openMembers,
+  openAddMembers,
+  loadMembers,
+  saveMembers,
+  removeMember,
+} = useDepartmentManagement()
 
-const columns = [
-  { key: 'name', label: '部门名称' },
-  { key: 'leader', label: '负责人' },
-  { key: 'memberCount', label: '成员数' },
-  { key: 'roleScope', label: '角色范围' },
-  { key: 'description', label: '说明' },
-]
-
-async function loadData() {
-  const result = await getDepartments({ page: page.value, size: pageSize, keyword: keyword.value })
-  rows.value = result.data?.records || []
-  total.value = result.data?.total || 0
+function updateSelectedMemberIds(value) {
+  selectedMemberIds.value = value
 }
 
-watch(keyword, () => {
-  page.value = 1
-  loadData()
+onMounted(async () => {
+  await refreshAll()
 })
-
-onMounted(loadData)
-
-function openDialog() {
-  dialogVisible.value = true
-}
 </script>
 
 <template>
   <div class="page-shell">
-    <AppCard title="部门管理" subtitle="成员 A 联调：部门列表已可演示，后续可无缝替换接口">
-      <div class="page-toolbar">
-        <AppInput v-model="keyword" placeholder="搜索部门 / 负责人 / 角色范围" clearable />
-        <AppButton variant="primary" @click="openDialog">新建部门</AppButton>
-      </div>
+    <AppCard
+      title="部门管理"
+      subtitle="维护部门基础信息、负责人和成员归属，非空部门需先迁移成员后再删除。"
+    >
+      <DepartmentToolbar
+        v-model:keyword="keyword"
+        @search="handleSearch"
+        @reset="handleReset"
+        @create="openCreateDialog"
+      />
 
-      <AppDataTable :columns="columns" :rows="rows" empty-text="暂无部门数据" />
-      <AppPagination v-model:page="page" :page-size="pageSize" :total="total" @update:page="loadData" />
+      <AppDataTable
+        row-key="departmentId"
+        :columns="columns"
+        :rows="pagedRows"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无部门数据"
+        @retry="loadDepartments"
+      >
+        <template #leaderName="{ value }">
+          <span>{{ value || '未设置' }}</span>
+        </template>
+
+        <template #memberCount="{ row, value }">
+          <AppButton size="small" :icon="UserFilled" @click="openMembers(row)">
+            {{ value }} 人
+          </AppButton>
+        </template>
+
+        <template #description="{ value }">
+          <span>{{ value || '-' }}</span>
+        </template>
+
+        <template #actions="{ row }">
+          <div class="row-actions">
+            <AppButton size="small" :icon="View" @click="openMembers(row)">成员</AppButton>
+            <AppButton v-permission="'department:update'" size="small" :icon="EditPen" @click="openEditDialog(row)">编辑</AppButton>
+            <AppButton v-permission="'department:delete'" size="small" variant="danger" :icon="Delete" @click="removeDepartment(row)">
+              删除
+            </AppButton>
+          </div>
+        </template>
+      </AppDataTable>
+
+      <AppPagination
+        v-model:page="page"
+        :page-size="pageSize"
+        :total="filteredRows.length"
+      />
     </AppCard>
 
-    <AppFormDialog
-      v-model="dialogVisible"
-      title="新建部门"
-      confirm-text="保存部门"
-      :fields="[
-        { key: 'name', label: '部门名称' },
-        { key: 'leader', label: '负责人' },
-        { key: 'roleScope', label: '角色范围' },
-        { key: 'description', label: '部门说明', type: 'textarea' },
-      ]"
-      :form-data="{ name: '', leader: '', roleScope: '', description: '' }"
-      @submit="() => {}"
+    <DepartmentFormDialog
+      v-model="formVisible"
+      :title="formTitle"
+      :confirm-text="formConfirmText"
+      :saving="formSaving"
+      :leader-options="leaderOptions"
+      :form-data="departmentForm"
+      @submit="saveDepartment"
+    />
+
+    <DepartmentMembersDialog
+      v-model="membersVisible"
+      :department="activeDepartment"
+      :member-rows="memberRows"
+      :members-loading="membersLoading"
+      :members-error="membersError"
+      :members-total="membersTotal"
+      :members-page="membersPage"
+      :members-page-size="membersPageSize"
+      :format-status="formatStatus"
+      @retry="loadMembers"
+      @page-change="loadMembers"
+      @open-add-members="openAddMembers"
+      @remove-member="removeMember"
+    />
+
+    <DepartmentAddMembersDialog
+      v-model="addMembersVisible"
+      :department="activeDepartment"
+      :options="availableMemberOptions"
+      :selected-member-ids="selectedMemberIds"
+      :saving="addMembersSaving"
+      @update:selected-member-ids="updateSelectedMemberIds"
+      @save="saveMembers"
     />
   </div>
 </template>
+
+<style scoped>
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+</style>
