@@ -63,13 +63,13 @@ onMounted(loadData)
     <AppCard title="在线文档" subtitle="查看文档列表并管理协作者">
       <div class="page-toolbar">
         <AppInput v-model="keyword" clearable placeholder="搜索文档标题 / 作者" @keyup.enter="loadData" />
-        <AppButton variant="primary" @click="createDialog = true">新建文档</AppButton>
+        <AppButton v-permission="'document:create'" variant="primary" @click="createDialog = true">新建文档</AppButton>
       </div>
       <el-alert v-if="demoData" title="演示数据不支持真实协同连接" type="info" show-icon :closable="false" class="page-feedback" />
       <AppDataTable :columns="columns" :rows="rows" :loading="loading" :error="loadError" empty-text="暂无文档" @retry="loadData">
         <template #title="{ value, row }"><button type="button" class="document-title" @click="openDocument(row)">{{ value }}</button></template>
         <template #status="{ value }"><AppStatusTag :label="value === 'team' ? '部门可见' : value === 'archived' ? '已归档' : '仅自己可见'" :tone="value === 'archived' ? 'info' : 'primary'" /></template>
-        <template #actions="{ row }"><div class="row-actions"><AppButton variant="primary" @click="openDocument(row)">编辑</AppButton><AppButton v-if="row.permission === 'manage'" variant="secondary" @click="openPermissions(row)">协作者</AppButton></div></template>
+        <template #actions="{ row }"><div class="row-actions"><AppButton v-permission="'document:update'" variant="primary" @click="openDocument(row)">编辑</AppButton><AppButton v-if="row.permission === 'manage'" v-permission="'document:permission:list'" variant="secondary" @click="openPermissions(row)">协作者</AppButton></div></template>
       </AppDataTable>
       <AppPagination v-model:page="page" :page-size="pageSize" :total="rows.length" />
     </AppCard>
@@ -77,8 +77,8 @@ onMounted(loadData)
       :fields="[{ key: 'title', label: '文档标题', required: true }, { key: 'status', label: '可见范围', type: 'select', options: [{ value: 'private', label: '仅自己可见' }, { value: 'team', label: '部门可见' }] }, { key: 'content', label: '初始 Markdown', type: 'textarea' }]"
       :form-data="{ title: '', status: 'private', content: '' }" @submit="handleCreate" />
     <el-dialog v-model="permissionDialog" :title="`协作者 · ${selectedDocument?.title || ''}`" width="min(620px, 94vw)">
-      <div class="grant-form"><AppInput v-model="grantForm.userId" placeholder="用户 ID" /><el-select v-model="grantForm.permissionType"><el-option label="只读" value="read" /><el-option label="编辑" value="edit" /><el-option label="管理" value="manage" /></el-select><AppButton variant="primary" @click="saveGrant">保存授权</AppButton></div>
-      <el-table v-loading="grantLoading" :data="grants" empty-text="暂无直接授权"><el-table-column prop="user.nickname" label="用户"><template #default="{ row }">{{ row.user?.nickname || row.user?.username || row.userId }}</template></el-table-column><el-table-column prop="permissionType" label="权限" /><el-table-column label="操作" width="100"><template #default="{ row }"><el-button link type="danger" @click="removeGrant(row.userId)">移除</el-button></template></el-table-column></el-table>
+      <div class="grant-form"><AppInput v-model="grantForm.userId" placeholder="用户 ID" /><el-select v-model="grantForm.permissionType"><el-option label="只读" value="read" /><el-option label="编辑" value="edit" /><el-option label="管理" value="manage" /></el-select><AppButton v-permission="'document:permission:user:set'" variant="primary" @click="saveGrant">保存授权</AppButton></div>
+      <el-table v-loading="grantLoading" :data="grants" empty-text="暂无直接授权"><el-table-column prop="user.nickname" label="用户"><template #default="{ row }">{{ row.user?.nickname || row.user?.username || row.userId }}</template></el-table-column><el-table-column prop="permissionType" label="权限" /><el-table-column label="操作" width="100"><template #default="{ row }"><el-button v-permission="'document:permission:user:delete'" link type="danger" @click="removeGrant(row.userId)">移除</el-button></template></el-table-column></el-table>
     </el-dialog>
   </div>
 </template>

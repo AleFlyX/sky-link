@@ -342,6 +342,7 @@ onMounted(async () => {
           <div class="row-actions">
             <AppButton size="small" :icon="View" @click="openDetail(row.userId)">详情</AppButton>
             <AppButton
+              v-permission="'user:status:update'"
               size="small"
               :icon="SwitchButton"
               :variant="row.status === 1 ? 'warning' : 'success'"
@@ -349,7 +350,7 @@ onMounted(async () => {
             >
               {{ row.status === 1 ? '禁用' : '启用' }}
             </AppButton>
-            <AppButton size="small" variant="danger" :icon="Delete" @click="removeUser(row)">
+            <AppButton v-permission="'user:delete'" size="small" variant="danger" :icon="Delete" @click="removeUser(row)">
               删除
             </AppButton>
           </div>
@@ -452,6 +453,7 @@ onMounted(async () => {
             </el-select>
             <div class="detail-section__footer">
               <AppButton
+                v-permission="'user:role:add'"
                 variant="primary"
                 :icon="EditPen"
                 :loading="detailRoleSaving"

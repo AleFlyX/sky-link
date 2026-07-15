@@ -33,6 +33,8 @@
 - `department:update`
 - `department:delete`
 - `department:members:list`
+- `department:members:add`
+- `department:members:remove`
 - `role:list`
 - `role:create`
 - `role:update`
@@ -63,13 +65,13 @@
 
 ### `ROLE_SUPER_ADMIN`
 
-拥有全部 47 个权限。
+拥有全部 49 个权限。
 
 ### `ROLE_ADMIN`
 
 - 基础：`user:me:get` `user:me:update` `user:password:update` `user:get` `friend:list` `friend:request:list` `friend:request:create` `friend:delete` `message:list` `message:send` `message:recall` `group:list`
 - 用户：`user:list` `user:get` `user:status:update` `user:delete` `user:role:add` `user:role:delete`
-- 部门：`department:list` `department:create` `department:update` `department:delete` `department:members:list`
+- 部门：`department:list` `department:create` `department:update` `department:delete` `department:members:list` `department:members:add` `department:members:remove`
 - 角色：`role:list` `role:create` `role:update` `role:delete` `role:permission:set`
 - 权限：`permission:list` `permission:create` `permission:update` `permission:delete`
 - 文档：`document:create` `document:list` `document:get` `document:update` `document:delete` `document:permission:user:set` `document:permission:group:set` `document:permission:list` `document:permission:user:delete` `document:permission:group:delete`
