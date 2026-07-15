@@ -64,10 +64,11 @@ function buildWebSocketUrl() {
     return null
   }
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin
+  const explicitWebSocketUrl = import.meta.env.VITE_WS_URL
+  const apiBase = explicitWebSocketUrl || import.meta.env.VITE_API_BASE_URL || window.location.origin
   const url = new URL(apiBase, window.location.origin)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  url.pathname = '/ws/messages'
+  url.pathname = explicitWebSocketUrl ? url.pathname : '/ws/messages'
   url.search = ''
   url.searchParams.set('token', token)
   return url.toString()
@@ -132,6 +133,13 @@ function scheduleReconnect() {
 function connectSocket() {
   if (demoData.value || !currentUserId.value) {
     connectionState.value = demoData.value ? 'connected' : 'disconnected'
+    return
+  }
+
+  if (socket.value && (
+    socket.value.readyState === WebSocket.OPEN
+    || socket.value.readyState === WebSocket.CONNECTING
+  )) {
     return
   }
 
