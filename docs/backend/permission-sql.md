@@ -98,4 +98,5 @@
 - `ROLE_PROJECT_LEADER` 现在是基础用户权限加任务管理权限。
 - `ROLE_SUPER_ADMIN` 由 `data.sql` 通过 `CROSS JOIN permission` 自动绑定全部权限。
 - 登录响应应返回 `permissions`，前端可直接据此隐藏侧边栏入口。
+- 前端路由守卫也应读取 `meta.permissions`，无权限时跳转 `/401`。
 - 当前 `permission` 表里全部都是接口权限，没有单独的菜单权限码。

@@ -4,7 +4,6 @@ import { Delete, EditPen, Refresh, Search, SwitchButton, View } from '@element-p
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
-import AppInput from '../../components/common/AppInput.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppDialog from '../../components/common/AppDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
