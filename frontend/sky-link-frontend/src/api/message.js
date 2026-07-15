@@ -15,11 +15,3 @@ export function sendMessage(data) {
 export function recallMessage(messageId) {
   return request.delete(`/messages/${messageId}`)
 }
-
-export function markMessagesRead(data) {
-  return request.put('/messages/read', data)
-}
-
-export function getUnreadMessageCount() {
-  return request.get('/messages/unread/count')
-}
