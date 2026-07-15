@@ -37,8 +37,8 @@ const demoGroups = [
 ]
 
 const demoSessions = [
-  { id: 'single-1002', sessionType: 'single', targetId: 1002, targetName: '李明浩', unreadCount: 2, lastTime: '10:32', lastMessage: '我已把部门名单同步好了。' },
-  { id: 'group-701', sessionType: 'group', targetId: 701, targetName: 'Day 3 联调小组', unreadCount: 5, lastTime: '09:48', lastMessage: '文档详情页可以开始验收了。' },
+  { id: 'single-1002', sessionType: 'single', targetId: 1002, targetName: '李明浩', lastTime: '10:32', lastMessage: '我已把部门名单同步好了。' },
+  { id: 'group-701', sessionType: 'group', targetId: 701, targetName: 'Day 3 联调小组', lastTime: '09:48', lastMessage: '文档详情页可以开始验收了。' },
 ]
 
 const demoMessages = {

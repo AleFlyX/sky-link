@@ -77,7 +77,6 @@ onMounted(loadSessions)
               <strong>{{ session.targetName }}</strong>
               <small>{{ session.lastMessage }}</small>
             </span>
-            <span v-if="session.unreadCount" class="message-session__badge">{{ session.unreadCount }}</span>
           </button>
           <div v-if="!loading && !sessions.length" class="message-empty">暂无会话</div>
         </aside>
@@ -198,16 +197,6 @@ onMounted(loadSessions)
 
 .message-session__copy small {
   color: var(--color-text-muted);
-}
-
-.message-session__badge {
-  min-width: 1.25rem;
-  padding: 0.1rem 0.3rem;
-  border-radius: 999px;
-  background: var(--color-primary);
-  color: white;
-  font-size: 0.72rem;
-  text-align: center;
 }
 
 .message-thread {
