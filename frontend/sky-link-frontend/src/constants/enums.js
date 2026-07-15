@@ -1,7 +1,6 @@
 export const userStatusOptions = [
-  { value: 'active', label: '启用', tone: 'success' },
-  { value: 'pending', label: '待激活', tone: 'warning' },
-  { value: 'disabled', label: '停用', tone: 'danger' },
+  { value: 1, label: '启用', tone: 'success' },
+  { value: 0, label: '禁用', tone: 'danger' },
 ]
 
 export const taskStatusOptions = [
@@ -17,17 +16,6 @@ export const noticeTypeOptions = [
   { value: 'alert', label: '紧急提醒', tone: 'danger' },
 ]
 
-/**
- * 转换函数，将枚举选项数组转换为映射对象，便于根据 value 快速查找对应的枚举项
- * @param {Array} options
- * @returns {Object} 映射对象，键为 value，值为对应的枚举项
- * 结果示例：
- * {
- *   active: { value: 'active', label: '启用', tone: 'success' },
- *   pending: { value: 'pending', label: '待激活', tone: 'warning' },
- *   disabled: { value: 'disabled', label: '停用', tone: 'danger' },
- * }
- */
 function createEnumMap(options) {
   return options.reduce((result, item) => {
     result[item.value] = item

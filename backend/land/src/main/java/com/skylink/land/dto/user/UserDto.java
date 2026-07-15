@@ -75,6 +75,27 @@ public final class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class UserDetailResponse implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private Long userId;
+        private String username;
+        private String nickname;
+        private String email;
+        private Integer status;
+        private Long departmentId;
+        private String departmentName;
+        private LocalDateTime createTime;
+        private LocalDateTime updateTime;
+        private List<UserRoleInfo> roles;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class UpdateProfileRequest implements Serializable {
 
         @Serial
