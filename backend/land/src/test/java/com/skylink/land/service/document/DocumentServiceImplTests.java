@@ -2,6 +2,7 @@ package com.skylink.land.service.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.skylink.land.dto.document.DocumentDto;
@@ -68,6 +69,20 @@ class DocumentServiceImplTests {
         when(permissionMapper.selectEffectivePermission(10L, 2L)).thenReturn(4);
 
         assertThat(service.resolvePermission(2L, document)).isEqualTo("read");
+    }
+
+    @Test
+    void archivedDocumentCreatorCanRestoreStatus() {
+        Document document = document(10L, 1L, 3);
+        when(documentMapper.selectById(10L)).thenReturn(document);
+        DocumentDto.UpdateDocumentRequest request = new DocumentDto.UpdateDocumentRequest();
+        request.setStatus("team");
+
+        DocumentDto.DocumentDetailResponse response = service.updateDocument(1L, 10L, request);
+
+        assertThat(response.getStatus()).isEqualTo("team");
+        assertThat(document.getStatus()).isEqualTo(2);
+        verify(documentMapper).updateById(document);
     }
 
     @Test
