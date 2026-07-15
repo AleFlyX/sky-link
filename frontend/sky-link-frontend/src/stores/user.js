@@ -15,15 +15,43 @@ const emptyUser = {
   bio: '',
   lastLoginAt: '',
   roles: [],
+  permissions: [],
+}
+
+function getRoleText(role) {
+  if (!role) return ''
+  if (typeof role === 'string') return role
+  return role.roleName || role.name || role.roleCode || role.code || ''
+}
+
+function normalizeRoles(roles) {
+  if (!Array.isArray(roles)) return []
+  return roles
+    .map((role) => {
+      if (!role || typeof role !== 'object') return role
+      return {
+        ...role,
+        label: getRoleText(role),
+      }
+    })
+    .filter(Boolean)
 }
 
 function normalizeUser(user = {}) {
   const { avatar: _avatar, ...rest } = user
+  const roles = normalizeRoles(rest.roles)
+  const roleLabel = rest.roleLabel || roles.map(getRoleText).filter(Boolean).join('、')
 
   return {
     ...emptyUser,
     ...rest,
-    roles: Array.isArray(rest.roles) ? [...rest.roles] : [],
+    id: rest.id || rest.userId || null,
+    name: rest.name || rest.nickname || rest.username || '',
+    account: rest.account || rest.username || '',
+    department: rest.department || rest.departmentName || '',
+    roleLabel,
+    roles,
+    permissions: Array.isArray(rest.permissions) ? [...rest.permissions] : [],
   }
 }
 

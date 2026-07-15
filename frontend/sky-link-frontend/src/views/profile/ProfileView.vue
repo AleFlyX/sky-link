@@ -1,45 +1,41 @@
 <script setup>
+import { computed, onMounted } from 'vue'
 import AppCard from '../../components/common/AppCard.vue'
-import AppStatusTag from '../../components/common/AppStatusTag.vue'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
+const systemIdentity = computed(() => userStore.user.roleLabel || '未分配')
+const profileDepartment = computed(() => userStore.user.department || '未加入部门')
+
+onMounted(() => {
+  userStore.loadCurrentUser().catch(() => {
+    ElMessage.warning('获取个人信息失败，请稍后重试')
+  })
+})
 </script>
 
 <template>
   <div class="page-grid page-grid--profile">
-    <AppCard variant="hero" title="个人中心" subtitle="个人资料与角色展示统一收口">
+    <AppCard variant="hero" title="个人中心">
       <div class="profile-hero">
         <div class="profile-hero__avatar">{{ userStore.avatarText }}</div>
         <div class="profile-hero__copy">
           <h2>{{ userStore.user.name }}</h2>
           <p>{{ userStore.user.bio }}</p>
           <div class="profile-hero__meta">
-            <span>{{ userStore.user.department }}</span>
+            <span>{{ profileDepartment }}</span>
             <span>{{ userStore.user.email }}</span>
-            <span>最近登录：{{ userStore.user.lastLoginAt }}</span>
           </div>
         </div>
       </div>
     </AppCard>
 
-    <AppCard title="账号信息" subtitle="当前已对接个人中心展示所需的基础资料">
+    <AppCard title="账号信息" class="profile-account-card">
       <div class="info-list">
         <div><strong>账号邮箱</strong><span>{{ userStore.user.email }}</span></div>
         <div><strong>联系电话</strong><span>{{ userStore.user.phone }}</span></div>
-        <div><strong>所属部门</strong><span>{{ userStore.user.department }}</span></div>
-        <div><strong>系统身份</strong><span>{{ userStore.user.roleLabel }}</span></div>
-      </div>
-    </AppCard>
-
-    <AppCard title="角色展示" subtitle="成员 A 联调项可直接基于这里替换真实数据">
-      <div class="role-list">
-        <AppStatusTag
-          v-for="role in userStore.user.roles"
-          :key="role"
-          :label="role"
-          tone="primary"
-        />
+        <div><strong>所属部门</strong><span>{{ profileDepartment }}</span></div>
+        <div><strong>系统身份</strong><span>{{ systemIdentity }}</span></div>
       </div>
     </AppCard>
   </div>
@@ -94,8 +90,11 @@ const userStore = useUserStore()
   font-size: 0.85rem;
 }
 
-.info-list,
-.role-list {
+.profile-account-card {
+  grid-column: 1 / -1;
+}
+
+.info-list {
   display: grid;
   gap: 0.9rem;
 }
@@ -115,10 +114,6 @@ const userStore = useUserStore()
 .info-list span {
   color: var(--color-text-muted);
   text-align: right;
-}
-
-.role-list {
-  grid-template-columns: repeat(auto-fit, minmax(120px, max-content));
 }
 
 @media (max-width: 720px) {

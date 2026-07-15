@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import {
   ChatDotRound,
   DArrowLeft,
@@ -12,6 +13,7 @@ import {
 import { ElIcon } from 'element-plus'
 import AppBrand from '@/components/common/AppBrand.vue'
 import AppNavItem from '@/components/common/AppNavItem.vue'
+import { useUserStore } from '@/stores/user'
 
 defineProps({
   collapsed: {
@@ -22,16 +24,27 @@ defineProps({
 
 defineEmits(['toggle'])
 
+const userStore = useUserStore()
+
 const navItems = [
   { label: '工作台', to: '/app/dashboard', icon: House },
   { label: '个人中心', to: '/app/profile', icon: User },
-  { label: '用户管理', to: '/app/users', icon: User },
-  { label: '部门管理', to: '/app/departments', icon: OfficeBuilding },
-  { label: '任务管理', to: '/app/tasks', icon: Memo },
-  { label: '通讯录', to: '/app/contacts', icon: User },
-  { label: '消息中心', to: '/app/messages', icon: ChatDotRound },
-  { label: '在线文档', to: '/app/documents', icon: Document },
+  { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
+  { label: '部门管理', to: '/app/departments', icon: OfficeBuilding, permissions: ['department:list'] },
+  { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
+  { label: '通讯录', to: '/app/contacts', icon: User, permissions: ['friend:list', 'group:list'] },
+  { label: '消息中心', to: '/app/messages', icon: ChatDotRound, permissions: ['message:list'] },
+  { label: '在线文档', to: '/app/documents', icon: Document, permissions: ['document:list'] },
 ]
+
+const visibleNavItems = computed(() => {
+  const permissions = new Set(userStore.user.permissions || [])
+
+  return navItems.filter((item) => {
+    if (!item.permissions?.length) return true
+    return item.permissions.some((permission) => permissions.has(permission))
+  })
+})
 </script>
 
 <template>
@@ -62,7 +75,7 @@ const navItems = [
 
     <nav class="app-sidebar__nav">
       <AppNavItem
-        v-for="item in navItems"
+        v-for="item in visibleNavItems"
         :key="item.to"
         :collapsed="collapsed"
         :icon="item.icon"

@@ -9,6 +9,8 @@ public final class SecurityBootstrapCatalog {
 
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
 
+    public static final String ROLE_PROJECT_LEADER = "ROLE_PROJECT_LEADER";
+
     public static final String ROLE_USER = "ROLE_USER";
 
     static final List<PermissionDefinition> PERMISSIONS = List.of(
@@ -21,6 +23,14 @@ public final class SecurityBootstrapCatalog {
         permission("Delete User", "user:delete", 16),
         permission("Assign User Roles", "user:role:add", 17),
         permission("Remove User Role", "user:role:delete", 18),
+        permission("List Friends", "friend:list", 20),
+        permission("List Friend Requests", "friend:request:list", 21),
+        permission("Send Friend Request", "friend:request:create", 22),
+        permission("Delete Friend", "friend:delete", 23),
+        permission("List Messages", "message:list", 24),
+        permission("Send Message", "message:send", 25),
+        permission("Recall Message", "message:recall", 26),
+        permission("List Groups", "group:list", 27),
         permission("List Departments", "department:list", 30),
         permission("Create Department", "department:create", 31),
         permission("Update Department", "department:update", 32),
@@ -58,6 +68,14 @@ public final class SecurityBootstrapCatalog {
         "user:me:update",
         "user:password:update",
         "user:get",
+        "friend:list",
+        "friend:request:list",
+        "friend:request:create",
+        "friend:delete",
+        "message:list",
+        "message:send",
+        "message:recall",
+        "group:list",
         "department:list",
         "department:members:list",
         "document:create",
@@ -96,6 +114,14 @@ public final class SecurityBootstrapCatalog {
         "task:create",
         "task:update",
         "task:delete"
+    ));
+
+    static final List<String> PROJECT_LEADER_PERMISSION_CODES = concat(USER_PERMISSION_CODES, List.of(
+        "task:list",
+        "task:get",
+        "task:status:update",
+        "task:create",
+        "task:update"
     ));
 
     private SecurityBootstrapCatalog() {

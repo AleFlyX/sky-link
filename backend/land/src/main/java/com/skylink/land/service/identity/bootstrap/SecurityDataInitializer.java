@@ -64,6 +64,11 @@ public class SecurityDataInitializer implements ApplicationRunner {
             SecurityBootstrapCatalog.ROLE_ADMIN,
             "Manages users, departments, and roles"
         );
+        Role projectLeaderRole = ensureRole(
+            "Project Leader",
+            SecurityBootstrapCatalog.ROLE_PROJECT_LEADER,
+            "Manages project tasks on top of the base user permissions"
+        );
         Role superAdminRole = ensureRole(
             "Super Administrator",
             SecurityBootstrapCatalog.ROLE_SUPER_ADMIN,
@@ -72,6 +77,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
 
         bindPermissions(userRole, permissions, SecurityBootstrapCatalog.USER_PERMISSION_CODES);
         bindPermissions(adminRole, permissions, SecurityBootstrapCatalog.ADMIN_PERMISSION_CODES);
+        bindPermissions(projectLeaderRole, permissions, SecurityBootstrapCatalog.PROJECT_LEADER_PERMISSION_CODES);
         bindDefaultRoleToUsersMissingRoles(userRole);
         Map<String, Permission> allPermissions = permissionMapper.selectList(new LambdaQueryWrapper<Permission>()).stream()
             .collect(Collectors.toMap(Permission::getPermissionCode, permission -> permission));
