@@ -4,12 +4,12 @@ import { useRouter } from 'vue-router'
 import { login } from '../../api/workspace'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
-import { useAppStore } from '../../stores/app'
+import { useUserStore } from '../../stores/user'
 import { setToken } from '../../utils/request'
 import { useLoginForm } from './composables/useLoginForm'
 
 const router = useRouter()
-const appStore = useAppStore()
+const userStore = useUserStore()
 const loading = ref(false)
 const loginError = ref('')
 const { formRef, form, rules, sanitizeForm, getCredentials } = useLoginForm()
@@ -33,18 +33,18 @@ async function handleLogin() {
     }
 
     setToken(token)
-    if (result.userInfo) {
-      appStore.currentUser = {
-        ...appStore.currentUser,
-        id: result.userInfo.userId || result.userInfo.id || appStore.currentUser.id,
-        name: result.userInfo.nickname || result.userInfo.name || appStore.currentUser.name,
-        account: result.userInfo.username || result.userInfo.account || credentials.account,
-        avatar: result.userInfo.avatar || appStore.currentUser.avatar,
-        email: result.userInfo.email || appStore.currentUser.email,
-        phone: result.userInfo.phone || appStore.currentUser.phone,
-        roles: result.userInfo.roles || appStore.currentUser.roles,
-      }
-    }
+    userStore.setUser({
+      id: result.userInfo?.userId || result.userInfo?.id,
+      name: result.userInfo?.nickname || result.userInfo?.name || '',
+      account: result.userInfo?.username || result.userInfo?.account || credentials.account,
+      email: result.userInfo?.email || '',
+      phone: result.userInfo?.phone || '',
+      department: result.userInfo?.department || '',
+      roleLabel: result.userInfo?.roleLabel || '',
+      bio: result.userInfo?.bio || '',
+      lastLoginAt: result.userInfo?.lastLoginAt || '',
+      roles: result.userInfo?.roles || [],
+    })
     ElMessage.success('登录成功，正在进入工作台')
     await router.push('/app/dashboard')
   } catch (error) {
@@ -64,35 +64,6 @@ async function handleLogin() {
       <p>
         面向项目与小型组织的协同平台，把成员、消息、文件、任务和公告统一在一个清晰的工作入口里。
       </p>
-
-      <!-- <div class="login-page__summary">
-        <div class="login-page__summary-card">
-          <div class="login-page__summary-label">当前版本重点</div>
-          <div class="login-page__summary-value">登录、任务、文件、公告</div>
-          <div class="login-page__summary-text">优先保证演示路径连贯，界面简洁，操作反馈清晰。</div>
-        </div>
-
-        <div class="login-page__grid">
-          <article>
-            <strong>26</strong>
-            <span>核心数据表</span>
-          </article>
-          <article>
-            <strong>9</strong>
-            <span>业务模块</span>
-          </article>
-          <article>
-            <strong>3 天</strong>
-            <span>冲刺交付</span>
-          </article>
-        </div>
-      </div>
-
-      <div class="login-page__features">
-        <div>统一身份与权限管理</div>
-        <div>文件、任务与公告集中流转</div>
-        <div>适合课程答辩展示的企业化界面</div>
-      </div> -->
     </section>
 
     <section class="login-page__panel">
@@ -216,37 +187,6 @@ async function handleLogin() {
   line-height: 1.8;
 }
 
-.login-page__summary {
-  margin-top: 1.9rem;
-}
-
-.login-page__summary-card {
-  padding: 1.1rem 1.15rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: var(--shadow-card);
-}
-
-.login-page__summary-label {
-  color: var(--color-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.login-page__summary-value {
-  margin-top: 0.45rem;
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.login-page__summary-text {
-  margin-top: 0.45rem;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  line-height: 1.7;
-}
-
 .login-page__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -270,29 +210,6 @@ async function handleLogin() {
 .login-page__grid span {
   color: var(--color-text-muted);
   font-size: 0.88rem;
-}
-
-.login-page__features {
-  display: grid;
-  gap: 0.7rem;
-  margin-top: 1.5rem;
-  color: var(--color-text-muted);
-}
-
-.login-page__features div {
-  position: relative;
-  padding-left: 1.2rem;
-}
-
-.login-page__features div::before {
-  content: '';
-  position: absolute;
-  top: 0.45rem;
-  left: 0;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: var(--color-primary);
 }
 
 .login-page__panel {

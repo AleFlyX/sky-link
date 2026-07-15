@@ -1,23 +1,23 @@
 <script setup>
 import AppCard from '../../components/common/AppCard.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
-import { useAppStore } from '../../stores/app'
+import { useUserStore } from '../../stores/user'
 
-const appStore = useAppStore()
+const userStore = useUserStore()
 </script>
 
 <template>
   <div class="page-grid page-grid--profile">
     <AppCard variant="hero" title="个人中心" subtitle="个人资料与角色展示统一收口">
       <div class="profile-hero">
-        <div class="profile-hero__avatar">{{ appStore.currentUser.name.slice(0, 1) }}</div>
+        <div class="profile-hero__avatar">{{ userStore.avatarText }}</div>
         <div class="profile-hero__copy">
-          <h2>{{ appStore.currentUser.name }}</h2>
-          <p>{{ appStore.currentUser.bio }}</p>
+          <h2>{{ userStore.user.name }}</h2>
+          <p>{{ userStore.user.bio }}</p>
           <div class="profile-hero__meta">
-            <span>{{ appStore.currentUser.department }}</span>
-            <span>{{ appStore.currentUser.email }}</span>
-            <span>最近登录：{{ appStore.currentUser.lastLoginAt }}</span>
+            <span>{{ userStore.user.department }}</span>
+            <span>{{ userStore.user.email }}</span>
+            <span>最近登录：{{ userStore.user.lastLoginAt }}</span>
           </div>
         </div>
       </div>
@@ -25,17 +25,17 @@ const appStore = useAppStore()
 
     <AppCard title="账号信息" subtitle="当前已对接个人中心展示所需的基础资料">
       <div class="info-list">
-        <div><strong>账号邮箱</strong><span>{{ appStore.currentUser.email }}</span></div>
-        <div><strong>联系电话</strong><span>{{ appStore.currentUser.phone }}</span></div>
-        <div><strong>所属部门</strong><span>{{ appStore.currentUser.department }}</span></div>
-        <div><strong>系统身份</strong><span>{{ appStore.currentUser.roleLabel }}</span></div>
+        <div><strong>账号邮箱</strong><span>{{ userStore.user.email }}</span></div>
+        <div><strong>联系电话</strong><span>{{ userStore.user.phone }}</span></div>
+        <div><strong>所属部门</strong><span>{{ userStore.user.department }}</span></div>
+        <div><strong>系统身份</strong><span>{{ userStore.user.roleLabel }}</span></div>
       </div>
     </AppCard>
 
     <AppCard title="角色展示" subtitle="成员 A 联调项可直接基于这里替换真实数据">
       <div class="role-list">
         <AppStatusTag
-          v-for="role in appStore.currentUser.roles"
+          v-for="role in userStore.user.roles"
           :key="role"
           :label="role"
           tone="primary"
