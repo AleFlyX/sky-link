@@ -6,6 +6,7 @@ import com.skylink.land.dto.common.PageResponse;
 import com.skylink.land.dto.user.UserDto;
 import com.skylink.land.exception.BusinessException;
 import com.skylink.land.exception.ErrorCode;
+import com.skylink.land.service.identity.RoleService;
 import com.skylink.land.service.identity.UserService;
 import com.skylink.land.vo.identity.RoleVO;
 import com.skylink.land.vo.identity.UserProfileVO;
@@ -25,15 +26,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final RoleService roleService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, RoleService roleService) {
         this.userService = userService;
+        this.roleService = roleService;
     }
 
     @GetMapping("/me")
     @RequirePermission("user:me:get")
     public UserDto.UserProfileResponse me() {
         return toProfileResponse(userService.getUserProfile(AuthContext.requireUserId()));
+    }
+
+    @GetMapping("/{userId}")
+    @RequirePermission("user:get")
+    public UserDto.UserDetailResponse getUser(@PathVariable Long userId) {
+        UserVO user = userService.getUserVO(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user not found");
+        }
+        return toDetailResponse(user, roleService.listByUserId(userId));
     }
 
     @PutMapping("/me")
@@ -111,6 +124,21 @@ public class UserController {
             .departmentName(profile.getDepartmentName())
             .createTime(profile.getCreateTime())
             .roles(toRoleInfos(profile.getRoles()))
+            .build();
+    }
+
+    private UserDto.UserDetailResponse toDetailResponse(UserVO user, List<RoleVO> roles) {
+        return UserDto.UserDetailResponse.builder()
+            .userId(user.getUserId())
+            .username(user.getUsername())
+            .nickname(user.getNickname())
+            .email(user.getEmail())
+            .status(user.getStatus())
+            .departmentId(user.getDepartmentId())
+            .departmentName(user.getDepartmentName())
+            .createTime(user.getCreateTime())
+            .updateTime(user.getUpdateTime())
+            .roles(toRoleInfos(roles))
             .build();
     }
 
