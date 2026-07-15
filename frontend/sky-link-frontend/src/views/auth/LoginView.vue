@@ -61,6 +61,7 @@ async function handleLogin() {
       bio: result.userInfo?.bio || '',
       lastLoginAt: result.userInfo?.lastLoginAt || '',
       roles: result.userInfo?.roles || [],
+      permissions: result.userInfo?.permissions || [],
     })
     ElMessage.success('登录成功，正在进入系统')
     await router.push('/app/dashboard')
