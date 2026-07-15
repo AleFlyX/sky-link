@@ -1,11 +1,20 @@
 <script setup>
+import { ref } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
+
+const isSidebarCollapsed = ref(false)
 </script>
 
 <template>
-  <div class="layout">
-    <AppSidebar />
+  <div
+    class="layout"
+    :class="{ 'layout--sidebar-collapsed': isSidebarCollapsed }"
+  >
+    <AppSidebar
+      :collapsed="isSidebarCollapsed"
+      @toggle="isSidebarCollapsed = !isSidebarCollapsed"
+    />
 
     <main class="layout__main">
       <AppHeader />
@@ -23,6 +32,11 @@ import AppSidebar from './components/AppSidebar.vue'
   grid-template-columns: 248px 1fr;
   align-items: start;
   min-height: 100vh;
+  transition: grid-template-columns 0.28s ease;
+}
+
+.layout--sidebar-collapsed {
+  grid-template-columns: 88px 1fr;
 }
 
 .layout__main {
@@ -35,6 +49,10 @@ import AppSidebar from './components/AppSidebar.vue'
 
 @media (max-width: 900px) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .layout--sidebar-collapsed {
     grid-template-columns: 1fr;
   }
 }
