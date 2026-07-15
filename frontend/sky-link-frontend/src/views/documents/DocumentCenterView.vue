@@ -67,13 +67,13 @@ onMounted(loadData)
       <el-alert v-if="demoData" title="演示数据不支持真实协同连接" type="info" show-icon :closable="false" class="page-feedback" />
       <AppDataTable :columns="columns" :rows="rows" :loading="loading" :error="loadError" empty-text="暂无文档" @retry="loadData">
         <template #title="{ value, row }"><button type="button" class="document-title" @click="openDocument(row)">{{ value }}</button></template>
-        <template #status="{ value }"><AppStatusTag :label="value === 'team' ? '团队可见' : value === 'archived' ? '已归档' : '仅自己可见'" :tone="value === 'archived' ? 'info' : 'primary'" /></template>
+        <template #status="{ value }"><AppStatusTag :label="value === 'team' ? '部门可见' : value === 'archived' ? '已归档' : '仅自己可见'" :tone="value === 'archived' ? 'info' : 'primary'" /></template>
         <template #actions="{ row }"><div class="row-actions"><AppButton variant="primary" @click="openDocument(row)">编辑</AppButton><AppButton v-if="row.permission === 'manage'" variant="secondary" @click="openPermissions(row)">协作者</AppButton></div></template>
       </AppDataTable>
       <AppPagination v-model:page="page" :page-size="pageSize" :total="rows.length" />
     </AppCard>
     <AppFormDialog v-model="createDialog" title="新建文档" confirm-text="创建文档"
-      :fields="[{ key: 'title', label: '文档标题', required: true }, { key: 'status', label: '可见范围', type: 'select', options: [{ value: 'private', label: '仅自己可见' }, { value: 'team', label: '团队可见' }] }, { key: 'content', label: '初始 Markdown', type: 'textarea' }]"
+      :fields="[{ key: 'title', label: '文档标题', required: true }, { key: 'status', label: '可见范围', type: 'select', options: [{ value: 'private', label: '仅自己可见' }, { value: 'team', label: '部门可见' }] }, { key: 'content', label: '初始 Markdown', type: 'textarea' }]"
       :form-data="{ title: '', status: 'private', content: '' }" @submit="handleCreate" />
     <el-dialog v-model="permissionDialog" :title="`协作者 · ${selectedDocument?.title || ''}`" width="min(620px, 94vw)">
       <div class="grant-form"><el-input v-model="grantForm.userId" placeholder="用户 ID" /><el-select v-model="grantForm.permissionType"><el-option label="只读" value="read" /><el-option label="编辑" value="edit" /><el-option label="管理" value="manage" /></el-select><AppButton variant="primary" @click="saveGrant">保存授权</AppButton></div>
