@@ -1,0 +1,73 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: land
+  datasource:
+    url: jdbc:mysql://localhost:3306/sky_link?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
+
+mybatis-plus:
+  mapper-locations: "classpath*:/mapper/**/*.xml"
+  type-aliases-package: com.skylink.land.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+logging:
+  level:
+    root: INFO
+    com.skylink.land: DEBUG
+
+skylink:
+  jwt:
+    issuer: sky-link
+    secret: ${JWT_SECRET:replace-with-a-random-secret-longer-than-32-bytes}
+    ttl: 24h
+    refresh-ttl: 7d
+    header: Authorization
+    token-prefix: "Bearer "
+    refresh-cookie:
+      name: skylink_refresh_token
+      path: /api/v1/auth
+      domain: ${JWT_REFRESH_COOKIE_DOMAIN:}
+      http-only: true
+      secure: ${JWT_REFRESH_COOKIE_SECURE:false}
+      same-site: ${JWT_REFRESH_COOKIE_SAME_SITE:Lax}
+    exclude-paths:
+      - /api/v1/auth/login
+      - /api/v1/auth/register
+      - /api/v1/auth/refresh
+      - /api/v1/auth/logout
+      - /api/v1/health
+      - /error
+  cors:
+    allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5573,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
+  collaboration:
+    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:replace-with-a-random-collaboration-secret}
+    ticket-ttl: 60s
+    websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://localhost:8180}
+    service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:replace-with-a-random-service-token}
+  bootstrap:
+    security-data-enabled: ${SKYLINK_SECURITY_DATA_INITIALIZATION_ENABLED:true}
+    admin:
+      enabled: ${SKYLINK_BOOTSTRAP_ADMIN_ENABLED:false}
+      username: ${SKYLINK_BOOTSTRAP_ADMIN_USERNAME:superadmin}
+      password: ${SKYLINK_BOOTSTRAP_ADMIN_PASSWORD:replace-with-a-12-char-password}
+      nickname: ${SKYLINK_BOOTSTRAP_ADMIN_NICKNAME:SA}
+      email: ${SKYLINK_BOOTSTRAP_ADMIN_EMAIL:admin@example.com}
+      phone: ${SKYLINK_BOOTSTRAP_ADMIN_PHONE:13800138001}
