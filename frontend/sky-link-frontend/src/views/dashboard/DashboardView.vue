@@ -137,8 +137,8 @@ async function loadDashboardData() {
     dataSource.value = [taskResult, documentResult].some(
       (result) => result?.source === 'demo' || result?.degraded,
     )
-      ? '演示数据'
-      : '实时数据'
+      ? '演示'
+      : '在线'
   } catch (error) {
     tasks.value = []
     documents.value = []
@@ -229,7 +229,7 @@ onMounted(loadDashboardData)
           <ul v-if="recentDocuments.length" class="document-list">
             <li v-for="document in recentDocuments" :key="document.id">
               <strong>{{ document.title }}</strong>
-              <span>{{ document.author || '未知作者' }} · {{ document.updatedAt || '最近更新' }}</span>
+              <span>{{ document.creatorName || '未知作者' }} · {{ document.updatedAt || '最近更新' }}</span>
             </li>
           </ul>
           <div v-else class="empty-state">暂无近期协作文档。</div>
