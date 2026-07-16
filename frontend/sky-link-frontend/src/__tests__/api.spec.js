@@ -4,6 +4,7 @@ import { login, refreshToken } from '../api/auth'
 import { downloadFile } from '../api/file'
 import { getSentFriendRequests, handleFriendRequest } from '../api/friend'
 import { sendMessage } from '../api/message'
+import { createPermission, deletePermission, getPermissionPage, updatePermission } from '../api/permission'
 import { updateRolePermissions } from '../api/role'
 import { assignUserRoles } from '../api/user'
 import { createCollaborationTicket, setDocumentPermission, setDocumentGroupPermission } from '../api/document'
@@ -120,5 +121,41 @@ describe('business API contracts', () => {
     expect(request.delete).toHaveBeenCalledWith('/groups/7/members/1003')
     expect(request.delete).toHaveBeenCalledWith('/groups/7/members/me')
     expect(request.delete).toHaveBeenCalledWith('/groups/7')
+  })
+
+  it('uses the documented permission management contracts', () => {
+    getPermissionPage({ page: 2, size: 20, permissionCode: 'role:list' })
+    createPermission({
+      permissionName: '角色列表',
+      permissionCode: 'role:list',
+      permissionType: 3,
+      sortNo: 10,
+    })
+    updatePermission(6, {
+      permissionName: '角色查看',
+      permissionCode: 'role:list',
+      permissionType: 3,
+      sortNo: 20,
+    })
+    deletePermission(6)
+
+    expect(request.get).toHaveBeenCalledWith('/permissions/page', {
+      page: 2,
+      size: 20,
+      permissionCode: 'role:list',
+    })
+    expect(request.post).toHaveBeenCalledWith('/permissions', {
+      permissionName: '角色列表',
+      permissionCode: 'role:list',
+      permissionType: 3,
+      sortNo: 10,
+    })
+    expect(request.put).toHaveBeenCalledWith('/permissions/6', {
+      permissionName: '角色查看',
+      permissionCode: 'role:list',
+      permissionType: 3,
+      sortNo: 20,
+    })
+    expect(request.delete).toHaveBeenCalledWith('/permissions/6')
   })
 })
