@@ -76,6 +76,26 @@ const routes = [
         },
       },
       {
+        path: 'roles',
+        name: 'roles',
+        component: () => import('../views/roles/RoleListView.vue'),
+        meta: {
+          title: '角色管理',
+          eyebrow: 'Role Governance',
+          permissions: ['role:list'],
+        },
+      },
+      {
+        path: 'permissions',
+        name: 'permissions',
+        component: () => import('../views/permissions/PermissionListView.vue'),
+        meta: {
+          title: '权限管理',
+          eyebrow: 'Permission Catalog',
+          permissions: ['permission:list'],
+        },
+      },
+      {
         path: 'files',
         name: 'files',
         component: () => import('../views/files/FileCenterView.vue'),

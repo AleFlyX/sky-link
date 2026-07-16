@@ -40,6 +40,8 @@ const navItems = [
 const privilegedNavItems = [
   { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
   { label: '部门管理', to: '/app/departments', icon: OfficeBuilding, permissions: ['department:list'] },
+  { label: '角色管理', to: '/app/roles', icon: Memo, permissions: ['role:list'] },
+  { label: '权限管理', to: '/app/permissions', icon: Document, permissions: ['permission:list'] },
   { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
 ]
 

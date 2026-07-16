@@ -29,4 +29,9 @@ describe('router auth redirect', () => {
     expect(router.currentRoute.value.name).toBe('dashboard')
     expect(router.currentRoute.value.fullPath).toBe('/app/dashboard')
   })
+
+  it('registers independent role and permission management routes', () => {
+    expect(router.resolve('/app/roles').name).toBe('roles')
+    expect(router.resolve('/app/permissions').name).toBe('permissions')
+  })
 })
