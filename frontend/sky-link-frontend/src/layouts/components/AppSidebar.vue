@@ -27,27 +27,27 @@ defineProps({
 defineEmits(['toggle'])
 
 const userStore = useUserStore()
-const isPrivilegedMenuCollapsed = ref(true)
+const isSystemMenuCollapsed = ref(true)
 
 const navItems = [
   { label: '工作台', to: '/app/dashboard', icon: House },
   { label: '在线文档', to: '/app/documents', icon: Document, permissions: ['document:list'] },
   { label: '消息中心', to: '/app/messages', icon: ChatDotRound, permissions: ['message:list'] },
   { label: '通讯录', to: '/app/contacts', icon: User, permissions: ['friend:list', 'group:list'] },
-  { label: '个人中心', to: '/app/profile', icon: User },
-]
-
-const privilegedNavItems = [
-  { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
   {
-    label: '部门管理',
+    label: '部门信息',
     to: '/app/departments',
     icon: OfficeBuilding,
     permissions: ['department:list'],
   },
+  { label: '任务看板', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
+  { label: '个人中心', to: '/app/profile', icon: User },
+]
+
+const systemNavItems = [
+  { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
   { label: '角色管理', to: '/app/roles', icon: Memo, permissions: ['role:list'] },
   { label: '权限管理', to: '/app/permissions', icon: Document, permissions: ['permission:list'] },
-  { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
 ]
 
 function filterVisibleItems(items) {
@@ -60,7 +60,7 @@ function filterVisibleItems(items) {
 }
 
 const visibleNavItems = computed(() => filterVisibleItems(navItems))
-const visiblePrivilegedNavItems = computed(() => filterVisibleItems(privilegedNavItems))
+const visibleSystemNavItems = computed(() => filterVisibleItems(systemNavItems))
 </script>
 
 <template>
@@ -94,24 +94,24 @@ const visiblePrivilegedNavItems = computed(() => filterVisibleItems(privilegedNa
         :to="item.to"
       />
 
-      <div v-if="visiblePrivilegedNavItems.length" class="app-sidebar__group">
+      <div v-if="visibleSystemNavItems.length" class="app-sidebar__group">
         <button
           class="app-sidebar__group-toggle"
           :class="{ 'app-sidebar__group-toggle--collapsed': collapsed }"
           type="button"
-          :aria-expanded="String(!isPrivilegedMenuCollapsed)"
-          :title="collapsed ? '展开管理入口' : ''"
-          @click="isPrivilegedMenuCollapsed = !isPrivilegedMenuCollapsed"
+          :aria-expanded="String(!isSystemMenuCollapsed)"
+          :title="collapsed ? '展开系统管理' : ''"
+          @click="isSystemMenuCollapsed = !isSystemMenuCollapsed"
         >
-          <span v-if="!collapsed" class="app-sidebar__group-label">管理入口</span>
+          <span v-if="!collapsed" class="app-sidebar__group-label">系统管理</span>
           <ElIcon class="app-sidebar__group-icon">
-            <component :is="isPrivilegedMenuCollapsed ? ArrowDown : ArrowUp" />
+            <component :is="isSystemMenuCollapsed ? ArrowDown : ArrowUp" />
           </ElIcon>
         </button>
 
-        <div v-show="!isPrivilegedMenuCollapsed && !collapsed" class="app-sidebar__group-list">
+        <div v-show="!isSystemMenuCollapsed && !collapsed" class="app-sidebar__group-list">
           <AppNavItem
-            v-for="item in visiblePrivilegedNavItems"
+            v-for="item in visibleSystemNavItems"
             :key="item.to"
             :collapsed="collapsed"
             :icon="item.icon"
