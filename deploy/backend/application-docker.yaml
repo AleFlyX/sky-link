@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:SkyLink}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+
+skylink:
+  cors:
+    allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost}
