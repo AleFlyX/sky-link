@@ -27,7 +27,13 @@ const emit = defineEmits(['update:keyword', 'search', 'reset', 'create'])
     <div class="department-toolbar__actions">
       <AppButton variant="primary" :icon="Search" @click="emit('search')">查询</AppButton>
       <AppButton :icon="Refresh" @click="emit('reset')">重置</AppButton>
-      <AppButton v-permission="'department:create'" variant="primary" :icon="Plus" @click="emit('create')">新建部门</AppButton>
+      <AppButton
+        v-permission="'department:create'"
+        variant="primary"
+        :icon="Plus"
+        @click="emit('create')"
+        >新建部门</AppButton
+      >
     </div>
   </div>
 </template>

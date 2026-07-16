@@ -7,10 +7,7 @@ const isSidebarCollapsed = ref(false)
 </script>
 
 <template>
-  <div
-    class="layout"
-    :class="{ 'layout--sidebar-collapsed': isSidebarCollapsed }"
-  >
+  <div class="layout" :class="{ 'layout--sidebar-collapsed': isSidebarCollapsed }">
     <AppSidebar
       :collapsed="isSidebarCollapsed"
       @toggle="isSidebarCollapsed = !isSidebarCollapsed"

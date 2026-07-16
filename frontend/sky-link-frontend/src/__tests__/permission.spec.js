@@ -24,7 +24,9 @@ describe('v-permission', () => {
   it('supports any and all permission checks', () => {
     expect(hasPermission(['task:list'], 'task:list')).toBe(true)
     expect(hasPermission(['task:list'], ['task:list', 'task:create'])).toBe(true)
-    expect(hasPermission(['task:list'], { permissions: ['task:list', 'task:create'], mode: 'all' })).toBe(false)
+    expect(
+      hasPermission(['task:list'], { permissions: ['task:list', 'task:create'], mode: 'all' }),
+    ).toBe(false)
   })
 
   it('hides unauthorized elements and reacts to permission changes', async () => {

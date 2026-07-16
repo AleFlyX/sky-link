@@ -13,7 +13,11 @@ const DEFAULT_OPTIONS = {
 }
 
 function resolveOptions(messageOrOptions, title, options = {}) {
-  if (messageOrOptions && typeof messageOrOptions === 'object' && !Array.isArray(messageOrOptions)) {
+  if (
+    messageOrOptions &&
+    typeof messageOrOptions === 'object' &&
+    !Array.isArray(messageOrOptions)
+  ) {
     return {
       ...DEFAULT_OPTIONS,
       ...messageOrOptions,

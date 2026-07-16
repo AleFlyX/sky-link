@@ -73,14 +73,15 @@ export function normalizeMessage(message = {}) {
 }
 
 export function normalizeMessageList(data) {
-  const list = Array.isArray(data) ? data : data?.records ?? []
+  const list = Array.isArray(data) ? data : (data?.records ?? [])
   return list.map(normalizeMessage)
 }
 
 export function normalizeSession(session = {}) {
-  const lastMessageObject = session.lastMessage && typeof session.lastMessage === 'object'
-    ? normalizeMessage(session.lastMessage)
-    : null
+  const lastMessageObject =
+    session.lastMessage && typeof session.lastMessage === 'object'
+      ? normalizeMessage(session.lastMessage)
+      : null
   const rawLastMessage = typeof session.lastMessage === 'string' ? session.lastMessage : ''
   const rawLastTime = session.lastTime ?? lastMessageObject?.sendTime ?? ''
 
@@ -96,7 +97,7 @@ export function normalizeSession(session = {}) {
 }
 
 export function normalizeSessionList(data) {
-  const list = Array.isArray(data) ? data : data?.records ?? []
+  const list = Array.isArray(data) ? data : (data?.records ?? [])
   return list.map(normalizeSession)
 }
 
@@ -124,11 +125,12 @@ export function buildRouteSession(query = {}) {
     return null
   }
 
-  const targetName = typeof query.name === 'string' && query.name.trim()
-    ? query.name.trim()
-    : sessionType === 'group'
-      ? `群聊#${targetId}`
-      : `用户#${targetId}`
+  const targetName =
+    typeof query.name === 'string' && query.name.trim()
+      ? query.name.trim()
+      : sessionType === 'group'
+        ? `群聊#${targetId}`
+        : `用户#${targetId}`
 
   return normalizeSession({
     id: getSessionId(sessionType, targetId),
@@ -167,9 +169,7 @@ export function getConversationKeyFromMessage(message, currentUserId) {
     return getSessionId('group', message.groupId)
   }
 
-  const otherUserId = message.senderId === currentUserId
-    ? message.receiverId
-    : message.senderId
+  const otherUserId = message.senderId === currentUserId ? message.receiverId : message.senderId
   return otherUserId ? getSessionId('single', otherUserId) : ''
 }
 

@@ -7,9 +7,7 @@ import AppCard from '../../components/common/AppCard.vue'
     <section class="error-page__intro">
       <div class="error-page__badge">404</div>
       <h1>你访问的页面不存在</h1>
-      <p>
-        页面不存在，或者地址输入有误。你可以返回首页或登录页。
-      </p>
+      <p>页面不存在，或者地址输入有误。你可以返回首页或登录页。</p>
 
       <div class="error-page__stats">
         <article>
@@ -27,9 +25,7 @@ import AppCard from '../../components/common/AppCard.vue'
       <AppCard variant="hero" padding="lg" class="error-card">
         <div class="error-card__code">404</div>
         <div class="error-card__title">未找到页面</div>
-        <p class="error-card__text">
-          请检查地址是否正确，或返回系统首页后重新进入。
-        </p>
+        <p class="error-card__text">请检查地址是否正确，或返回系统首页后重新进入。</p>
 
         <div class="error-card__actions">
           <router-link to="/app/dashboard">

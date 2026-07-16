@@ -35,12 +35,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits([
-  'update:modelValue',
-  'update:activeTab',
-  'retry',
-  'handle-request',
-])
+const emit = defineEmits(['update:modelValue', 'update:activeTab', 'retry', 'handle-request'])
 
 function closeDialog() {
   emit('update:modelValue', false)
@@ -52,12 +47,7 @@ function forwardHandleRequest(requestId, action) {
 </script>
 
 <template>
-  <AppDialog
-    :model-value="modelValue"
-    title="好友申请"
-    width="980px"
-    @close="closeDialog"
-  >
+  <AppDialog :model-value="modelValue" title="好友申请" width="980px" @close="closeDialog">
     <div class="request-dialog">
       <FriendRequestOverviewCards
         :incoming-count="incomingRequests.length"

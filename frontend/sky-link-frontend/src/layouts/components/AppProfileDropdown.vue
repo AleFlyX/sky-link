@@ -64,9 +64,7 @@ async function handleCommand(command) {
           <span>进入个人主页</span>
         </el-dropdown-item>
         <el-dropdown-item command="logout" divided :disabled="loggingOut">
-          <SwitchButton
-            class="profile-dropdown__menu-icon profile-dropdown__menu-icon--danger"
-          />
+          <SwitchButton class="profile-dropdown__menu-icon profile-dropdown__menu-icon--danger" />
           <span>{{ loggingOut ? '正在退出...' : '退出登录' }}</span>
         </el-dropdown-item>
       </el-dropdown-menu>
@@ -102,7 +100,7 @@ async function handleCommand(command) {
 .profile-dropdown__copy {
   display: flex;
   flex-direction: column;
-  gap:0.3rem;
+  gap: 0.3rem;
   text-align: left;
 }
 

@@ -159,9 +159,7 @@ onMounted(loadDashboardData)
         <div class="hero-copy">
           <p class="eyebrow">今日工作台</p>
           <h1>{{ displayName }}，欢迎回来</h1>
-          <p>
-            {{ departmentName }} · {{ roleLabel }}
-          </p>
+          <p>{{ departmentName }} · {{ roleLabel }}</p>
         </div>
       </div>
       <div class="hero-actions">
@@ -176,7 +174,9 @@ onMounted(loadDashboardData)
       <AppCard v-for="item in heroStats" :key="item.label" padding="sm">
         <div class="metric-card">
           <span>{{ item.label }}</span>
-          <strong>{{ item.value }}<small>{{ item.unit }}</small></strong>
+          <strong
+            >{{ item.value }}<small>{{ item.unit }}</small></strong
+          >
           <AppStatusTag :label="item.hint" :tone="item.tone" />
         </div>
       </AppCard>
@@ -229,7 +229,10 @@ onMounted(loadDashboardData)
           <ul v-if="recentDocuments.length" class="document-list">
             <li v-for="document in recentDocuments" :key="document.id">
               <strong>{{ document.title }}</strong>
-              <span>{{ document.creatorName || '未知作者' }} · {{ document.updatedAt || '最近更新' }}</span>
+              <span
+                >{{ document.creatorName || '未知作者' }} ·
+                {{ document.updatedAt || '最近更新' }}</span
+              >
             </li>
           </ul>
           <div v-else class="empty-state">暂无近期协作文档。</div>

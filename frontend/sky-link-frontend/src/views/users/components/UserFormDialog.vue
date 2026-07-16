@@ -89,12 +89,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <AppDialog
-    :model-value="modelValue"
-    :title="title"
-    width="720px"
-    @close="closeDialog"
-  >
+  <AppDialog :model-value="modelValue" :title="title" width="720px" @close="closeDialog">
     <el-form label-position="top" class="user-form-dialog">
       <div class="user-form-dialog__grid">
         <el-form-item label="用户名" required>
@@ -164,11 +159,7 @@ function handleSubmit() {
         </el-form-item>
 
         <el-form-item label="状态">
-          <el-select
-            v-model="localForm.status"
-            placeholder="请选择状态"
-            :disabled="saving"
-          >
+          <el-select v-model="localForm.status" placeholder="请选择状态" :disabled="saving">
             <el-option
               v-for="item in userStatusOptions"
               :key="item.value"
@@ -198,19 +189,13 @@ function handleSubmit() {
         </el-form-item>
       </div>
 
-      <p class="user-form-dialog__hint">
-        不选择角色时，系统会自动分配默认 `ROLE_USER`。
-      </p>
+      <p class="user-form-dialog__hint">不选择角色时，系统会自动分配默认 `ROLE_USER`。</p>
     </el-form>
 
     <template #footer>
       <div class="user-form-dialog__footer">
         <AppButton @click="closeDialog">取消</AppButton>
-        <AppButton
-          variant="primary"
-          :loading="saving"
-          @click="handleSubmit"
-        >
+        <AppButton variant="primary" :loading="saving" @click="handleSubmit">
           {{ confirmText }}
         </AppButton>
       </div>

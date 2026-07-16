@@ -78,11 +78,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <AppDialog
-    :model-value="modelValue"
-    :title="title"
-    @close="closeDialog"
-  >
+  <AppDialog :model-value="modelValue" :title="title" @close="closeDialog">
     <AppGeneratedForm
       :model-value="localForm"
       :fields="normalizedFields"

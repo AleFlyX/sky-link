@@ -32,10 +32,18 @@ onMounted(() => {
 
     <AppCard title="账号信息" class="profile-account-card">
       <div class="info-list">
-        <div><strong>账号邮箱</strong><span>{{ userStore.user.email }}</span></div>
-        <div><strong>联系电话</strong><span>{{ userStore.user.phone }}</span></div>
-        <div><strong>所属部门</strong><span>{{ profileDepartment }}</span></div>
-        <div><strong>系统身份</strong><span>{{ systemIdentity }}</span></div>
+        <div>
+          <strong>账号邮箱</strong><span>{{ userStore.user.email }}</span>
+        </div>
+        <div>
+          <strong>联系电话</strong><span>{{ userStore.user.phone }}</span>
+        </div>
+        <div>
+          <strong>所属部门</strong><span>{{ profileDepartment }}</span>
+        </div>
+        <div>
+          <strong>系统身份</strong><span>{{ systemIdentity }}</span>
+        </div>
       </div>
     </AppCard>
   </div>

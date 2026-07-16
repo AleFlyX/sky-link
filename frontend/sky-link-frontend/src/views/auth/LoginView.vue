@@ -64,9 +64,10 @@ async function handleLogin() {
       permissions: result.userInfo?.permissions || [],
     })
     ElMessage.success('登录成功，正在进入系统')
-    const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/app')
-      ? route.query.redirect
-      : '/app/dashboard'
+    const redirect =
+      typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/app')
+        ? route.query.redirect
+        : '/app/dashboard'
     await router.push(redirect)
   } catch (error) {
     loginError.value = error.message || '登录失败，请检查账号和密码'
@@ -82,9 +83,7 @@ async function handleLogin() {
     <section class="login-page__intro">
       <div class="login-page__badge">SkyLink</div>
       <h1>团队协作系统</h1>
-      <p>
-        登录后可使用通讯录、消息、文档、任务、日程等功能。
-      </p>
+      <p>登录后可使用通讯录、消息、文档、任务、日程等功能。</p>
     </section>
 
     <section class="login-page__panel">

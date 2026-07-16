@@ -97,7 +97,8 @@ const AppInputStub = defineComponent({
     },
   },
   emits: ['update:modelValue', 'keyup.enter'],
-  template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  template:
+    '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
 })
 
 const AppPaginationStub = defineComponent({

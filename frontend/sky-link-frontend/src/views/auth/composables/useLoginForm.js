@@ -14,7 +14,7 @@ const ACCOUNT_PATTERN = /^[A-Za-z0-9@._+-]+$/ // 账号允许的字符范围
 export function sanitizeAuthAccount(value) {
   return String(value ?? '')
     .normalize('NFKC') // 将全角字符转换为半角字符
-    .replace(CONTROL_CHARACTERS, '')  // 移除控制字符
+    .replace(CONTROL_CHARACTERS, '') // 移除控制字符
     .replace(ZERO_WIDTH_CHARACTERS, '') // 移除零宽字符
     .trim() // 移除首尾空格
 }
@@ -26,7 +26,9 @@ export function sanitizeAuthAccount(value) {
  * @returns
  */
 export function sanitizeLoginPassword(value) {
-  return String(value ?? '').replace(CONTROL_CHARACTERS, '').replace(ZERO_WIDTH_CHARACTERS, '')
+  return String(value ?? '')
+    .replace(CONTROL_CHARACTERS, '')
+    .replace(ZERO_WIDTH_CHARACTERS, '')
 }
 
 export function useLoginForm() {

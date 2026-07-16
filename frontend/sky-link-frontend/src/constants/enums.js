@@ -29,12 +29,12 @@ export const taskStatusMap = createEnumMap(taskStatusOptions)
 export const noticeTypeMap = createEnumMap(noticeTypeOptions)
 
 const taskStatusAliases = {
-  '未开始': 'todo',
-  '待开始': 'todo',
-  '进行中': 'doing',
-  '已完成': 'done',
-  '已阻塞': 'blocked',
-  '已取消': 'cancelled',
+  未开始: 'todo',
+  待开始: 'todo',
+  进行中: 'doing',
+  已完成: 'done',
+  已阻塞: 'blocked',
+  已取消: 'cancelled',
 }
 
 const taskStatusApiValues = {
@@ -52,7 +52,9 @@ export function normalizeTaskStatus(status) {
 
 export function getTaskStatusMeta(status) {
   const normalizedStatus = normalizeTaskStatus(status)
-  return taskStatusMap[normalizedStatus] || { label: status ? String(status) : '未知', tone: 'info' }
+  return (
+    taskStatusMap[normalizedStatus] || { label: status ? String(status) : '未知', tone: 'info' }
+  )
 }
 
 export function toTaskStatusApiValue(status) {

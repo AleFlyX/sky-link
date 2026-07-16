@@ -31,8 +31,7 @@ defineProps({
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.9rem;
-  background:
-    linear-gradient(145deg, #4c8dff, #3370ff 62%, #245bdb);
+  background: linear-gradient(145deg, #4c8dff, #3370ff 62%, #245bdb);
   color: #fff;
   font-weight: 700;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);

@@ -39,7 +39,12 @@ const navItems = [
 
 const privilegedNavItems = [
   { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
-  { label: '部门管理', to: '/app/departments', icon: OfficeBuilding, permissions: ['department:list'] },
+  {
+    label: '部门管理',
+    to: '/app/departments',
+    icon: OfficeBuilding,
+    permissions: ['department:list'],
+  },
   { label: '角色管理', to: '/app/roles', icon: Memo, permissions: ['role:list'] },
   { label: '权限管理', to: '/app/permissions', icon: Document, permissions: ['permission:list'] },
   { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
@@ -59,10 +64,7 @@ const visiblePrivilegedNavItems = computed(() => filterVisibleItems(privilegedNa
 </script>
 
 <template>
-  <aside
-    class="app-sidebar"
-    :class="{ 'app-sidebar--collapsed': collapsed }"
-  >
+  <aside class="app-sidebar" :class="{ 'app-sidebar--collapsed': collapsed }">
     <div class="app-sidebar__top">
       <div class="app-sidebar__top-bar">
         <AppBrand :collapsed="collapsed" />
@@ -78,9 +80,7 @@ const visiblePrivilegedNavItems = computed(() => filterVisibleItems(privilegedNa
         </button>
       </div>
       <Transition name="sidebar-workspace">
-        <div v-if="!collapsed" class="app-sidebar__workspace">
-          SkyLink 团队空间
-        </div>
+        <div v-if="!collapsed" class="app-sidebar__workspace">SkyLink 团队空间</div>
       </Transition>
     </div>
 
@@ -109,10 +109,7 @@ const visiblePrivilegedNavItems = computed(() => filterVisibleItems(privilegedNa
           </ElIcon>
         </button>
 
-        <div
-          v-show="!isPrivilegedMenuCollapsed && !collapsed"
-          class="app-sidebar__group-list"
-        >
+        <div v-show="!isPrivilegedMenuCollapsed && !collapsed" class="app-sidebar__group-list">
           <AppNavItem
             v-for="item in visiblePrivilegedNavItems"
             :key="item.to"

@@ -86,7 +86,9 @@ function handleResponse(response) {
 // 兼容后端不同的 token 返回字段命名：
 // 有些接口返回 accessToken，有些历史结构可能叫 token。
 function extractAccessToken(payload) {
-  return payload?.accessToken || payload?.token || payload?.data?.accessToken || payload?.data?.token
+  return (
+    payload?.accessToken || payload?.token || payload?.data?.accessToken || payload?.data?.token
+  )
 }
 
 // 执行 refresh 流程：

@@ -68,12 +68,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <AppDialog
-    :model-value="modelValue"
-    :title="title"
-    width="620px"
-    @close="closeDialog"
-  >
+  <AppDialog :model-value="modelValue" :title="title" width="620px" @close="closeDialog">
     <el-form label-position="top" class="department-form">
       <el-form-item label="部门名称" required>
         <el-input
@@ -85,12 +80,7 @@ function handleSubmit() {
       </el-form-item>
 
       <el-form-item label="负责人">
-        <el-select
-          v-model="localForm.leaderId"
-          clearable
-          filterable
-          placeholder="请选择负责人"
-        >
+        <el-select v-model="localForm.leaderId" clearable filterable placeholder="请选择负责人">
           <el-option
             v-for="user in leaderOptions"
             :key="user.userId"
@@ -115,11 +105,7 @@ function handleSubmit() {
     <template #footer>
       <div class="dialog-footer">
         <AppButton @click="closeDialog">取消</AppButton>
-        <AppButton
-          variant="primary"
-          :loading="saving"
-          @click="handleSubmit"
-        >
+        <AppButton variant="primary" :loading="saving" @click="handleSubmit">
           {{ confirmText }}
         </AppButton>
       </div>

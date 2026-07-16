@@ -27,12 +27,7 @@ function getStatusTone(status) {
 </script>
 
 <template>
-  <AppCard
-    variant="soft"
-    padding="sm"
-    interactive
-    body-class="friend-profile-card"
-  >
+  <AppCard variant="soft" padding="sm" interactive body-class="friend-profile-card">
     <div class="friend-profile-card__main">
       <div class="friend-profile-card__header">
         <span class="friend-profile-card__avatar">{{ friend.name.slice(0, 1) }}</span>
@@ -45,12 +40,16 @@ function getStatusTone(status) {
         <div class="friend-profile-card__meta">
           <span class="friend-profile-card__chip">{{ friend.department }}</span>
           <AppStatusTag :label="friend.status" :tone="getStatusTone(friend.status)" />
-          <span class="friend-profile-card__chip friend-profile-card__chip--muted">{{ friend.lastSeen }}</span>
+          <span class="friend-profile-card__chip friend-profile-card__chip--muted">{{
+            friend.lastSeen
+          }}</span>
         </div>
       </div>
     </div>
     <div class="friend-profile-card__actions">
-      <AppButton size="small" variant="primary" @click="emit('open-chat', friend)">发消息</AppButton>
+      <AppButton size="small" variant="primary" @click="emit('open-chat', friend)"
+        >发消息</AppButton
+      >
     </div>
   </AppCard>
 </template>
