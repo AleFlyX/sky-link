@@ -240,13 +240,13 @@ onMounted(loadDashboardData)
           </template>
         </AppCard>
 
-        <AppCard title="当前身份" subtitle="用于确认权限和协作上下文">
+        <!-- <AppCard title="当前身份" subtitle="用于确认权限和协作上下文">
           <div class="profile-summary">
             <strong>{{ displayName }}</strong>
             <span>{{ departmentName }}</span>
             <AppStatusTag :label="roleLabel" tone="primary" />
           </div>
-        </AppCard>
+        </AppCard> -->
       </div>
     </section>
   </div>
