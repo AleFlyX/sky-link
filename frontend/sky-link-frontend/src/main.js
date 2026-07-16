@@ -4,7 +4,6 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { permission } from './directives'
-import 'element-plus/theme-chalk/el-message-box.css'
 import './assets/main.css'
 
 const app = createApp(App)
