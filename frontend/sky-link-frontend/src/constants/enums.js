@@ -7,7 +7,6 @@ export const taskStatusOptions = [
   { value: 'todo', label: '未开始', tone: 'info' },
   { value: 'doing', label: '进行中', tone: 'primary' },
   { value: 'done', label: '已完成', tone: 'success' },
-  { value: 'blocked', label: '已阻塞', tone: 'danger' },
   { value: 'cancelled', label: '已取消', tone: 'default' },
 ]
 
@@ -33,7 +32,6 @@ const taskStatusAliases = {
   待开始: 'todo',
   进行中: 'doing',
   已完成: 'done',
-  已阻塞: 'blocked',
   已取消: 'cancelled',
 }
 

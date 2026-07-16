@@ -10,8 +10,6 @@ import AppStatusTag from '../../../components/common/AppStatusTag.vue'
 import { getTaskStatusMeta, taskStatusOptions } from '../../../constants/enums'
 import { useTaskList } from '../composables/useTaskList'
 
-const searchStatusOptions = taskStatusOptions.filter((item) => item.value !== 'blocked')
-
 const {
   columns,
   demoData,
@@ -50,13 +48,13 @@ const {
         <div class="page-toolbar__filters">
           <AppInput
             v-model="keyword"
-            placeholder="搜索任务 / 负责人"
+            placeholder="搜索任务"
             clearable
             @keyup.enter="handleSearch"
           />
           <el-select v-model="status" placeholder="筛选任务状态" clearable @change="handleSearch">
             <el-option
-              v-for="item in searchStatusOptions"
+              v-for="item in taskStatusOptions"
               :key="item.value"
               :label="item.label"
               :value="item.value"
