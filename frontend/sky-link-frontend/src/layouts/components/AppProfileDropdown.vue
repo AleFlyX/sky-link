@@ -52,7 +52,7 @@ async function handleCommand(command) {
       </el-avatar>
       <div class="profile-dropdown__copy">
         <strong>{{ userStore.user.name }}</strong>
-        <!-- <span>{{ userStore.user.roleLabel }}</span> -->
+        <span>{{ userStore.user.roleLabel }}</span>
       </div>
       <ArrowDown class="profile-dropdown__icon" />
     </button>

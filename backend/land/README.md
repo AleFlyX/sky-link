@@ -6,12 +6,14 @@
 
 - 主配置文件：`src/main/resources/application.yaml`
 - 本地模板：`src/main/resources/application-local.yaml.example`
+- Docker 模板：`../../deploy/.env.example`
 - 数据库初始化脚本：`src/main/resources/schema.sql`
 
 现在建议这样使用：
 
 - `application.yaml` 放基础配置和必须的环境变量占位
 - `application-local.yaml.example` 作为本地调试模板
+- `deploy/.env.example` 作为 Docker Compose 部署模板
 - 你自己本地实际使用时，新建 `application-local.yaml`，不要提交真实密码和密钥
 
 ## 2. 当前配置项说明
@@ -202,17 +204,18 @@ jdbc:mysql://localhost:3306/skylink...
 之前仓库里只有一个 `application.yaml`，没有现成的：
 
 - `application-local.yaml`
-- `application-dev.yaml`
-- `.env.example`
+- 复制后即可使用的 `application-local.yaml.example`
+- 可复制为根目录 `.env` 的 `deploy/.env.example`
 
 这会导致新同学接手时，不知道必须补哪些变量，也不知道应该改哪里才安全。
 
 ## 6. 建议的后续整理方向
 
-现在仓库已经补了 `application-local.yaml.example`。如果你后面继续整理后端配置，建议按这个方向做：
+现在仓库已经补了 `application-local.yaml.example` 和 `deploy/.env.example`。如果你后面继续整理后端配置，建议按这个方向做：
 
 1. 保留 `application.yaml` 作为无敏感信息的基础配置
 2. 把 `application-local.yaml.example` 作为共享模板继续维护
-3. 把数据库、JWT、协同文档密钥全部改成“文档可见、实际值外置”
-4. 开发环境保留 `spring.sql.init.mode=always`
-5. 后续如果进入多人协作或部署阶段，再引入正式的数据库迁移工具
+3. 把 `deploy/.env.example` 作为 Docker 部署唯一变量入口继续维护
+4. 把数据库、JWT、协同文档密钥全部改成“文档可见、实际值外置”
+5. 开发环境保留 `spring.sql.init.mode=always`
+6. 后续如果进入多人协作或部署阶段，再引入正式的数据库迁移工具

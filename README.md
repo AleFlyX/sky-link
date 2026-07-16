@@ -88,27 +88,25 @@ USE skylink;
 
 ### 2. 启动后端
 
-后端默认连接 `localhost:3306/skylink`，默认端口为 `8080`。数据库凭据和 JWT 密钥没有默认值，启动前必须显式设置：
+后端基础配置文件 [`backend/land/src/main/resources/application.yaml`](backend/land/src/main/resources/application.yaml) 只保留共享配置和环境变量占位，不再内置本地数据库账号、密码或 JWT 默认值。推荐本地调试按下面方式操作：
 
-| 环境变量 | 说明 | 是否必填 |
-| --- | --- | --- |
-| `DB_USERNAME` | MySQL 用户名 | 是 |
-| `DB_PASSWORD` | MySQL 密码 | 是 |
-| `JWT_SECRET` | JWT 签名密钥，至少 32 字节，不能使用示例值 | 是 |
-
-PowerShell 示例：
+1. 复制 [`backend/land/src/main/resources/application-local.yaml.example`](backend/land/src/main/resources/application-local.yaml.example) 为 `backend/land/src/main/resources/application-local.yaml`
+2. 把数据库地址、账号密码、JWT 密钥改成你本机实际值
+3. 启动本地 profile
 
 ```powershell
 cd backend/land
-$env:DB_USERNAME = "root"
-$env:DB_PASSWORD = "your-password"
-$jwtBytes = New-Object byte[] 48
-$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-$rng.GetBytes($jwtBytes)
-$rng.Dispose()
-$env:JWT_SECRET = [Convert]::ToBase64String($jwtBytes)
-.\mvnw.cmd spring-boot:run
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
+
+如果你更想走纯环境变量方式，至少需要提供下面三项：
+
+| 环境变量 | 说明 | 是否必填 |
+| --- | --- | --- |
+| `SPRING_DATASOURCE_URL` | MySQL JDBC 地址 | 是 |
+| `DB_USERNAME` | MySQL 用户名 | 是 |
+| `DB_PASSWORD` | MySQL 密码 | 是 |
+| `JWT_SECRET` | JWT 签名密钥，至少 32 字节，不能使用示例值 | 是 |
 
 应用启动时会幂等创建 `ROLE_USER`、`ROLE_ADMIN`、`ROLE_SUPER_ADMIN`、当前接口权限及角色权限关系。新注册用户会自动获得 `ROLE_USER`；如果初始化数据缺失，注册事务会回滚，不会产生无角色账号。
 
@@ -138,6 +136,20 @@ npm run dev
 浏览器访问 Vite 终端输出的地址。当前开发配置使用端口 `5573`。
 
 前端通过 `VITE_API_BASE_URL` 判断是否启用远程接口：未配置时使用本地演示数据，配置后请求后端，并在多数业务页面请求失败时回退到演示数据。环境变量模板见 `frontend/sky-link-frontend/.env.template`。
+
+## Docker 部署
+
+Docker Compose 的变量模板位于 [deploy/.env.example](/E:/A study/A软件工程/sky-link/deploy/.env.example:1)。
+
+1. 复制 `deploy/.env.example` 为仓库根目录 `.env`
+2. 按部署环境填写数据库账号、JWT 密钥、协同密钥和域名相关变量
+3. 在仓库根目录执行：
+
+```powershell
+docker compose up -d --build
+```
+
+当前 Compose 只认这一套根级变量，不再额外挂载 `application-docker.yaml`。数据库名、数据库账号密码、后端密钥和协同服务密钥都以根目录 `.env` 为唯一入口，而 `deploy/.env.example` 只负责提供模板。
 
 ## 接口约定
 

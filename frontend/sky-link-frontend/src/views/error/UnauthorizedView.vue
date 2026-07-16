@@ -29,7 +29,7 @@ import AppCard from '../../components/common/AppCard.vue'
           <router-link to="/login">
             <el-button type="primary" size="large">返回登录</el-button>
           </router-link>
-          <router-link to="/app/profile">
+          <router-link to="/app/dashboard">
             <el-button size="large" plain>前往首页</el-button>
           </router-link>
         </div>

@@ -18,10 +18,39 @@ const emptyUser = {
   permissions: [],
 }
 
+const roleTextMap = {
+  ROLE_SUPER_ADMIN: '超级管理员',
+  ROLE_ADMIN: '管理员',
+  ROLE_PROJECT_LEADER: '项目主管',
+  ROLE_USER: '普通成员',
+  'SUPER ADMINISTRATOR': '超级管理员',
+  'ADMINISTRATOR': '管理员',
+  'PROJECT LEADER': '项目主管',
+  USER: '普通成员',
+  ADMIN: '管理员',
+}
+
+function normalizeRoleText(value) {
+  const text = String(value || '').trim()
+  if (!text) return ''
+
+  return text
+    .split(/[、,，;；|/]+/)
+    .map((item) => {
+      const token = item.trim()
+      if (!token) return ''
+
+      const mapped = roleTextMap[token.toUpperCase()]
+      return mapped || token
+    })
+    .filter(Boolean)
+    .join('、')
+}
+
 function getRoleText(role) {
   if (!role) return ''
-  if (typeof role === 'string') return role
-  return role.roleName || role.name || role.roleCode || role.code || ''
+  if (typeof role === 'string') return normalizeRoleText(role)
+  return normalizeRoleText(role.roleCode || role.roleName || role.name || role.code || role.label || '')
 }
 
 function normalizeRoles(roles) {
@@ -40,7 +69,7 @@ function normalizeRoles(roles) {
 function normalizeUser(user = {}) {
   const { avatar: _avatar, ...rest } = user
   const roles = normalizeRoles(rest.roles)
-  const roleLabel = rest.roleLabel || roles.map(getRoleText).filter(Boolean).join('、')
+  const roleLabel = normalizeRoleText(rest.roleLabel) || roles.map(getRoleText).filter(Boolean).join('、')
 
   return {
     ...emptyUser,

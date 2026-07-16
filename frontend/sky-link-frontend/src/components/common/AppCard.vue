@@ -54,7 +54,7 @@ const hasHeader = computed(() => Boolean(props.title || props.subtitle))
       <slot name="header" :title="title" :subtitle="subtitle">
         <div class="app-card__title-wrap">
           <h3 v-if="title" class="app-card__title">{{ title }}</h3>
-          <!-- <p v-if="subtitle" class="app-card__subtitle">{{ subtitle }}</p> -->
+          <p v-if="subtitle" class="app-card__subtitle">{{ subtitle }}</p>
         </div>
       </slot>
     </div>

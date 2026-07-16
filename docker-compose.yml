@@ -1,0 +1,84 @@
+services:
+  mysql:
+    image: mysql:lts
+    container_name: skylink-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend/land
+    container_name: skylink-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SKYLINK_COLLABORATION_TICKET_SECRET: ${SKYLINK_COLLABORATION_TICKET_SECRET}
+      SKYLINK_COLLABORATION_SERVICE_TOKEN: ${SKYLINK_COLLABORATION_SERVICE_TOKEN}
+      SKYLINK_COLLABORATION_WEBSOCKET_URL: ${SKYLINK_COLLABORATION_WEBSOCKET_URL}
+      SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS}
+    restart: unless-stopped
+
+  collaboration:
+    build:
+      context: ./backend/collaboration
+    container_name: skylink-collaboration
+    depends_on:
+      mysql:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      COLLABORATION_HOST: 0.0.0.0
+      COLLABORATION_PORT: 8180
+      COLLABORATION_ALLOWED_ORIGINS: ${COLLABORATION_ALLOWED_ORIGINS}
+      SKYLINK_COLLABORATION_TICKET_SECRET: ${SKYLINK_COLLABORATION_TICKET_SECRET}
+      SKYLINK_COLLABORATION_SERVICE_TOKEN: ${SKYLINK_COLLABORATION_SERVICE_TOKEN}
+      SKYLINK_INTERNAL_BASE_URL: http://backend:8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend/sky-link-frontend
+    container_name: skylink-frontend
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: skylink-nginx
+    depends_on:
+      - frontend
+      - backend
+      - collaboration
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
+volumes:
+  mysql-data:

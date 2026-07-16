@@ -210,6 +210,12 @@ export function useDepartmentManagement() {
     formVisible.value = true
   }
 
+  function syncFormData(source = departmentForm) {
+    departmentForm.departmentName = source?.departmentName ?? ''
+    departmentForm.leaderId = source?.leaderId ?? ''
+    departmentForm.description = source?.description ?? ''
+  }
+
   function buildPayload() {
     return {
       departmentName: departmentForm.departmentName.trim(),
@@ -218,7 +224,11 @@ export function useDepartmentManagement() {
     }
   }
 
-  async function saveDepartment() {
+  async function saveDepartment(submittedForm) {
+    if (submittedForm) {
+      syncFormData(submittedForm)
+    }
+
     const payload = buildPayload()
     if (!payload.departmentName) {
       ElMessage.warning('请填写部门名称')

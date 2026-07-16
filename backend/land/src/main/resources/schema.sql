@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS `department` (
   KEY `idx_department_leader_id` (`leader_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
 
+-- `department.leader_id` and `user.department_id` form a cyclic reference.
+-- Runtime bootstrap keeps both columns indexed and lets the service layer
+-- validate target existence, which is more reliable across repeated startups.
+
 CREATE TABLE IF NOT EXISTS `user` (
   `user_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` VARCHAR(50) NOT NULL COMMENT '用户名',
@@ -34,38 +38,6 @@ CREATE TABLE IF NOT EXISTS `user` (
   KEY `idx_user_department_id` (`department_id`),
   KEY `idx_user_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-
-SET @user_department_fk_exists = (
-  SELECT COUNT(*)
-  FROM information_schema.TABLE_CONSTRAINTS
-  WHERE CONSTRAINT_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'user'
-    AND CONSTRAINT_NAME = 'fk_user_department'
-);
-SET @user_department_fk_sql = IF(
-  @user_department_fk_exists = 0,
-  'ALTER TABLE `user` ADD CONSTRAINT `fk_user_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON DELETE SET NULL',
-  'SELECT 1'
-);
-PREPARE user_department_fk_stmt FROM @user_department_fk_sql;
-EXECUTE user_department_fk_stmt;
-DEALLOCATE PREPARE user_department_fk_stmt;
-
-SET @department_leader_fk_exists = (
-  SELECT COUNT(*)
-  FROM information_schema.TABLE_CONSTRAINTS
-  WHERE CONSTRAINT_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'department'
-    AND CONSTRAINT_NAME = 'fk_department_leader'
-);
-SET @department_leader_fk_sql = IF(
-  @department_leader_fk_exists = 0,
-  'ALTER TABLE `department` ADD CONSTRAINT `fk_department_leader` FOREIGN KEY (`leader_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL',
-  'SELECT 1'
-);
-PREPARE department_leader_fk_stmt FROM @department_leader_fk_sql;
-EXECUTE department_leader_fk_stmt;
-DEALLOCATE PREPARE department_leader_fk_stmt;
 
 CREATE TABLE IF NOT EXISTS `role` (
   `role_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '角色ID',

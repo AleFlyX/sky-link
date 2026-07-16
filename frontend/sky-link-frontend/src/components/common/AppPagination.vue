@@ -20,7 +20,7 @@ const props = defineProps({
 const emit = defineEmits(['update:page'])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
-
+const total = computed(()=>props.total)
 const pages = computed(() =>
   Array.from({ length: totalPages.value }, (_, index) => index + 1),
 )
