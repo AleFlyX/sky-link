@@ -1,4 +1,4 @@
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   createTask,
@@ -30,10 +30,6 @@ const taskFormInitialData = {
   executorId: '',
   priority: 2,
   deadline: '',
-}
-
-function toSearchText(value) {
-  return String(value ?? '').toLowerCase()
 }
 
 function formatTaskPriority(priority) {
@@ -113,6 +109,7 @@ export function useTaskList() {
   const keyword = ref('')
   const status = ref('')
   const page = ref(1)
+  const total = ref(0)
   const dialogVisible = ref(false)
   const rows = ref([])
   const loading = ref(false)
@@ -167,37 +164,25 @@ export function useTaskList() {
     }
     return ''
   })
-  const taskCreationDisabled = computed(() =>
-    assigneeLoading.value || Boolean(taskCreationNotice.value),
+  const taskCreationDisabled = computed(
+    () => assigneeLoading.value || Boolean(taskCreationNotice.value),
   )
 
-  const filteredRows = computed(() =>
-    rows.value.filter((item) => {
-      const matchKeyword = [item.title, item.assignee, item.priority].some((text) =>
-        toSearchText(text).includes(toSearchText(keyword.value)),
-      )
-      const matchStatus = !status.value || normalizeTaskStatus(item.status) === status.value
-      return matchKeyword && matchStatus
-    }),
-  )
-
-  const pagedRows = computed(() => {
-    const start = (page.value - 1) * pageSize
-    return filteredRows.value.slice(start, start + pageSize)
-  })
-
-  watch([keyword, status], () => {
-    page.value = 1
-  })
-
-  async function loadData() {
+  async function loadData(targetPage = page.value) {
     loading.value = true
     loadError.value = ''
 
     try {
-      const result = await getTasks({ page: 1, size: 100 })
+      const result = await getTasks({
+        page: targetPage,
+        size: pageSize,
+        keyword: keyword.value.trim() || undefined,
+        status: status.value || undefined,
+      })
       const data = result.data ?? {}
       rows.value = (data.records || []).map(normalizeTaskRow)
+      total.value = data.total || 0
+      page.value = data.page || targetPage
       demoData.value = result.source === 'demo'
 
       if (result.degraded) {
@@ -205,10 +190,28 @@ export function useTaskList() {
       }
     } catch (error) {
       rows.value = []
+      total.value = 0
       loadError.value = error.message || '任务加载失败'
     } finally {
       loading.value = false
     }
+  }
+
+  function handleSearch() {
+    page.value = 1
+    loadData(1)
+  }
+
+  function handleReset() {
+    keyword.value = ''
+    status.value = ''
+    page.value = 1
+    loadData(1)
+  }
+
+  function handlePageChange(nextPage) {
+    page.value = nextPage
+    loadData(nextPage)
   }
 
   async function loadAssigneeOptions() {
@@ -224,8 +227,7 @@ export function useTaskList() {
       const response = await getDepartmentMembers(currentDepartmentId.value, { page: 1, size: 500 })
       const data = unwrapData(response)
       assigneeOptions.value = normalizePage(data)
-        .records
-        .map(normalizeUserOption)
+        .records.map(normalizeUserOption)
         .filter((item) => item.value != null)
       assigneeError.value = assigneeOptions.value.length
         ? ''
@@ -284,8 +286,10 @@ export function useTaskList() {
     columns,
     demoData,
     dialogVisible,
-    filteredRows,
     getNextStatusAction,
+    handlePageChange,
+    handleReset,
+    handleSearch,
     handleStatusUpdate,
     handleSubmit,
     keyword,
@@ -294,13 +298,13 @@ export function useTaskList() {
     loading,
     page,
     pageSize,
-    pagedRows,
     rows,
     status,
     taskCreationDisabled,
     taskCreationNotice,
     taskFormFields,
     taskFormInitialData,
+    total,
     updatingTaskId,
   }
 }

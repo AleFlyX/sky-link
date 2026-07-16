@@ -48,6 +48,19 @@ public final class DepartmentDto {
     @Data
     @Builder
     @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    public static class DepartmentQueryRequest extends PageRequest {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private String keyword;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     public static class DepartmentMemberQueryRequest extends PageRequest {
 

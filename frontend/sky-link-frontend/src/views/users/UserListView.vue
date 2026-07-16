@@ -73,10 +73,16 @@ const columns = [
 ]
 
 const selectedDepartmentLabel = computed(() => {
-  if (filters.departmentId === '' || filters.departmentId === null || filters.departmentId === undefined) {
+  if (
+    filters.departmentId === '' ||
+    filters.departmentId === null ||
+    filters.departmentId === undefined
+  ) {
     return ''
   }
-  const department = departmentOptions.value.find((item) => item.departmentId === Number(filters.departmentId))
+  const department = departmentOptions.value.find(
+    (item) => item.departmentId === Number(filters.departmentId),
+  )
   return department?.departmentName || ''
 })
 
@@ -126,7 +132,7 @@ function buildCreateForm() {
 }
 
 async function loadDepartments() {
-  const response = await getDepartments()
+  const response = await getDepartments({ page: 1, size: 500 })
   const data = unwrapData(response)
   departmentOptions.value = Array.isArray(data) ? data : data.records || []
 }
@@ -161,11 +167,7 @@ async function loadUsers(targetPage = page.value) {
 }
 
 async function refreshAll() {
-  await Promise.allSettled([
-    loadDepartments(),
-    loadRoles(),
-    loadUsers(page.value),
-  ])
+  await Promise.allSettled([loadDepartments(), loadRoles(), loadUsers(page.value)])
 }
 
 function handleSearch() {
@@ -204,7 +206,9 @@ async function saveUser(payload) {
       departmentId: normalizeId(payload.departmentId),
       status: normalizeId(payload.status) ?? 1,
       roleIds: Array.isArray(payload.roleIds)
-        ? payload.roleIds.map((roleId) => Number(roleId)).filter((roleId) => Number.isFinite(roleId))
+        ? payload.roleIds
+            .map((roleId) => Number(roleId))
+            .filter((roleId) => Number.isFinite(roleId))
         : [],
     })
     ElMessage.success('用户已创建')
@@ -263,11 +267,15 @@ async function changeStatus(row) {
   const actionLabel = nextStatus === 1 ? '启用' : '禁用'
 
   try {
-    await confirm(`确定要${actionLabel}用户「${row.nickname || row.username}」吗？`, `${actionLabel}用户`, {
-      confirmText: actionLabel,
-      cancelText: '取消',
-      type: 'warning',
-    })
+    await confirm(
+      `确定要${actionLabel}用户「${row.nickname || row.username}」吗？`,
+      `${actionLabel}用户`,
+      {
+        confirmText: actionLabel,
+        cancelText: '取消',
+        type: 'warning',
+      },
+    )
   } catch {
     return
   }
@@ -344,14 +352,14 @@ onMounted(async () => {
             <el-option
               v-for="department in departmentOptions"
               :key="department.departmentId"
-            :label="department.departmentName"
-            :value="department.departmentId"
-          />
-        </el-select>
-        <el-select v-model="filters.status" placeholder="状态" clearable>
-          <el-option
-            v-for="item in userStatusOptions"
-            :key="item.value"
+              :label="department.departmentName"
+              :value="department.departmentId"
+            />
+          </el-select>
+          <el-select v-model="filters.status" placeholder="状态" clearable>
+            <el-option
+              v-for="item in userStatusOptions"
+              :key="item.value"
               :label="item.label"
               :value="item.value"
             />
@@ -391,10 +399,7 @@ onMounted(async () => {
         @retry="loadUsers"
       >
         <template #status="{ value }">
-          <AppStatusTag
-            :label="statusMeta(value).label"
-            :tone="statusMeta(value).tone"
-          />
+          <AppStatusTag :label="statusMeta(value).label" :tone="statusMeta(value).tone" />
         </template>
 
         <template #createTime="{ value }">
@@ -413,7 +418,13 @@ onMounted(async () => {
             >
               {{ row.status === 1 ? '禁用' : '启用' }}
             </AppButton>
-            <AppButton v-permission="'user:delete'" size="small" variant="danger" :icon="Delete" @click="removeUser(row)">
+            <AppButton
+              v-permission="'user:delete'"
+              size="small"
+              variant="danger"
+              :icon="Delete"
+              @click="removeUser(row)"
+            >
               删除
             </AppButton>
           </div>
@@ -439,11 +450,7 @@ onMounted(async () => {
       @submit="saveUser"
     />
 
-    <AppDialog
-      v-model="detailVisible"
-      title="用户详情"
-      width="860px"
-    >
+    <AppDialog v-model="detailVisible" title="用户详情" width="860px">
       <el-skeleton v-if="detailLoading" :rows="6" animated />
 
       <el-alert

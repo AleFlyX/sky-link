@@ -58,6 +58,7 @@ public final class TaskDto {
         @Serial
         private static final long serialVersionUID = 1L;
 
+        private String keyword;
         private String status;
         private Integer priority;
         private Long executorId;

@@ -1,4 +1,4 @@
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useConfirmDialog } from '../../../composables/useConfirmDialog'
 import {
@@ -70,6 +70,7 @@ function normalizeUser(item) {
 export function useDepartmentManagement() {
   const page = ref(1)
   const rows = ref([])
+  const total = ref(0)
   const loading = ref(false)
   const loadError = ref('')
   const keyword = ref('')
@@ -96,23 +97,6 @@ export function useDepartmentManagement() {
   const addMembersSaving = ref(false)
   const selectedMemberIds = ref([])
   const { confirm } = useConfirmDialog()
-
-  const filteredRows = computed(() => {
-    const value = keyword.value.trim().toLowerCase()
-    if (!value) {
-      return rows.value
-    }
-
-    return rows.value.filter((row) =>
-      [row.departmentName, row.leaderName, row.description]
-        .some((field) => String(field || '').toLowerCase().includes(value)),
-    )
-  })
-
-  const pagedRows = computed(() => {
-    const start = (page.value - 1) * pageSize
-    return filteredRows.value.slice(start, start + pageSize)
-  })
 
   const formTitle = computed(() => (formMode.value === 'create' ? '新建部门' : '编辑部门'))
   const formConfirmText = computed(() => (formMode.value === 'create' ? '创建部门' : '保存修改'))
@@ -142,19 +126,24 @@ export function useDepartmentManagement() {
     return { label: '未知', tone: 'default' }
   }
 
-  async function loadDepartments() {
+  async function loadDepartments(targetPage = page.value) {
     loading.value = true
     loadError.value = ''
 
     try {
-      const response = await getDepartments({ page: 1, size: 500, keyword: '' })
+      const response = await getDepartments({
+        page: targetPage,
+        size: pageSize,
+        keyword: keyword.value.trim() || undefined,
+      })
       const data = unwrapData(response)
       const pageData = normalizePage(data)
       rows.value = pageData.records.map(normalizeDepartment)
-      if (page.value > 1 && pagedRows.value.length === 0) {
-        page.value = Math.max(Math.ceil(filteredRows.value.length / pageSize), 1)
-      }
+      total.value = pageData.total || 0
+      page.value = pageData.page || targetPage
     } catch (error) {
+      rows.value = []
+      total.value = 0
       loadError.value = error.message || '部门列表加载失败'
     } finally {
       loading.value = false
@@ -172,20 +161,23 @@ export function useDepartmentManagement() {
   }
 
   async function refreshAll() {
-    await Promise.allSettled([
-      loadDepartments(),
-      loadLeaderOptions(),
-    ])
+    await Promise.allSettled([loadDepartments(), loadLeaderOptions()])
   }
 
   function handleSearch() {
     page.value = 1
+    loadDepartments(1)
   }
 
   function handleReset() {
     keyword.value = ''
     page.value = 1
-    loadDepartments()
+    loadDepartments(1)
+  }
+
+  function handlePageChange(nextPage) {
+    page.value = nextPage
+    loadDepartments(nextPage)
   }
 
   function resetForm() {
@@ -269,10 +261,10 @@ export function useDepartmentManagement() {
     try {
       await deleteDepartment(row.departmentId)
       ElMessage.success('部门已删除')
-      if (pagedRows.value.length === 1 && page.value > 1) {
+      if (rows.value.length === 1 && page.value > 1) {
         page.value -= 1
       }
-      await loadDepartments()
+      await loadDepartments(page.value)
     } catch (error) {
       ElMessage.error(error.message || '删除部门失败')
     }
@@ -332,11 +324,7 @@ export function useDepartmentManagement() {
       ElMessage.success('成员已加入部门')
       addMembersVisible.value = false
       selectedMemberIds.value = []
-      await Promise.all([
-        loadMembers(1),
-        loadDepartments(),
-        loadLeaderOptions(),
-      ])
+      await Promise.all([loadMembers(1), loadDepartments(), loadLeaderOptions()])
     } catch (error) {
       ElMessage.error(error.message || '加入成员失败')
     } finally {
@@ -350,12 +338,16 @@ export function useDepartmentManagement() {
     }
 
     try {
-      await confirm(`确定要将「${row.nickname || row.username}」移出「${activeDepartment.value.departmentName}」吗？`, '移出成员', {
-        confirmText: '移出',
-        cancelText: '取消',
-        type: 'danger',
-        confirmVariant: 'danger',
-      })
+      await confirm(
+        `确定要将「${row.nickname || row.username}」移出「${activeDepartment.value.departmentName}」吗？`,
+        '移出成员',
+        {
+          confirmText: '移出',
+          cancelText: '取消',
+          type: 'danger',
+          confirmVariant: 'danger',
+        },
+      )
     } catch {
       return
     }
@@ -366,30 +358,17 @@ export function useDepartmentManagement() {
       if (memberRows.value.length === 1 && membersPage.value > 1) {
         membersPage.value -= 1
       }
-      await Promise.all([
-        loadMembers(membersPage.value),
-        loadDepartments(),
-        loadLeaderOptions(),
-      ])
+      await Promise.all([loadMembers(membersPage.value), loadDepartments(), loadLeaderOptions()])
     } catch (error) {
       ElMessage.error(error.message || '移出成员失败')
     }
   }
 
-  watch(
-    () => filteredRows.value.length,
-    (length) => {
-      const maxPage = Math.max(Math.ceil(length / pageSize), 1)
-      if (page.value > maxPage) {
-        page.value = maxPage
-      }
-    },
-  )
-
   return {
     page,
     pageSize,
     rows,
+    total,
     loading,
     loadError,
     keyword,
@@ -411,8 +390,6 @@ export function useDepartmentManagement() {
     addMembersSaving,
     selectedMemberIds,
     columns,
-    filteredRows,
-    pagedRows,
     formTitle,
     formConfirmText,
     availableMemberOptions,
@@ -422,6 +399,7 @@ export function useDepartmentManagement() {
     refreshAll,
     handleSearch,
     handleReset,
+    handlePageChange,
     openCreateDialog,
     openEditDialog,
     saveDepartment,
