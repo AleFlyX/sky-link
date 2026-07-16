@@ -226,8 +226,10 @@ function openGroupChat(group) {
       :members-error="groupMembersError"
       :action-loading="groupActionLoading"
       @update:member-page="
-        groupMembersPage = $event
-        loadGroupMembersData(activeGroupId, $event)
+        (page) => {
+          groupMembersPage = page
+          loadGroupMembersData(activeGroupId, page)
+        }
       "
       @retry-detail="loadGroupDetailData"
       @retry-members="loadGroupMembersData"
