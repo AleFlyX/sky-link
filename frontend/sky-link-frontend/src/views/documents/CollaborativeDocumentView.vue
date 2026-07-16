@@ -15,6 +15,7 @@ import AppStatusTag from '../../components/common/AppStatusTag.vue'
 import { getDocument, updateDocument } from '../../api/document'
 import { useUserStore } from '../../stores/user'
 import { useCollaborationSession } from './composables/useCollaborationSession'
+import { usePageAgent } from './composables/usePageAgent'
 
 import { visibilityOptions } from './constant/enum.js'
 const route = useRoute()
@@ -26,6 +27,7 @@ const loading = ref(true)
 const titleSaving = ref(false)
 const statusSaving = ref(false)
 const session = useCollaborationSession(documentId)
+const pageAgent = usePageAgent()
 const colors = ['#0066CC', '#009966', '#CC6600', '#663399', '#CC3333']
 const userColor = colors[Math.abs(Number(userStore.user?.id) || 0) % colors.length]
 
@@ -171,8 +173,19 @@ function insertImage() {
   editor.value.chain().focus().setImage({ src: normalizedSrc, alt: '插入图片' }).run()
 }
 
+async function togglePageAgent() {
+  if (pageAgent.isOpen.value) {
+    pageAgent.close()
+    return
+  }
+  await pageAgent.show()
+}
+
 onMounted(load)
-onBeforeUnmount(() => editor.value?.destroy())
+onBeforeUnmount(() => {
+  pageAgent.close()
+  editor.value?.destroy()
+})
 </script>
 
 <template>
@@ -238,26 +251,69 @@ onBeforeUnmount(() => editor.value?.destroy())
       >
     </el-alert>
     <el-skeleton v-if="loading" :rows="12" animated />
-    <main v-else class="editor-paper" :aria-busy="session.status.value === 'connecting'">
-      <div class="editor-toolbar">
-        <AppButton size="small" variant="secondary" :disabled="!canEditContent" @click="insertTable"
-          >插入表格</AppButton
-        >
-        <AppButton
-          size="small"
-          variant="secondary"
-          :disabled="!canEditContent || !editor?.isActive('table')"
-          @click="removeTable"
-          >删除表格</AppButton
-        >
-        <AppButton size="small" variant="secondary" :disabled="!canEditContent" @click="insertImage"
-          >插入图片</AppButton
-        >
-      </div>
-      <EditorContent :editor="editor" />
-      <p class="editor-hint">图片通过 URL 插入，表格会作为协同文档节点保存。</p>
-      <div v-if="!session.editable.value" class="readonly-hint">当前文档为只读状态</div>
-    </main>
+    <div v-else class="editor-workspace">
+      <main class="editor-paper" :aria-busy="session.status.value === 'connecting'">
+        <div class="editor-toolbar">
+          <AppButton
+            size="small"
+            variant="secondary"
+            :disabled="!canEditContent"
+            @click="insertTable"
+            >插入表格</AppButton
+          >
+          <AppButton
+            size="small"
+            variant="secondary"
+            :disabled="!canEditContent || !editor?.isActive('table')"
+            @click="removeTable"
+            >删除表格</AppButton
+          >
+          <AppButton
+            size="small"
+            variant="secondary"
+            :disabled="!canEditContent"
+            @click="insertImage"
+            >插入图片</AppButton
+          >
+        </div>
+        <EditorContent :editor="editor" />
+        <p class="editor-hint">图片通过 URL 插入，表格会作为协同文档节点保存。</p>
+        <div v-if="!session.editable.value" class="readonly-hint">当前文档为只读状态</div>
+      </main>
+      <aside class="agent-sidebar">
+        <AppCard class="agent-sidebar__card">
+          <div class="agent-sidebar__body">
+            <div class="agent-sidebar__badge">Qwen Page Agent</div>
+            <h3 class="agent-sidebar__title">文档页智能助手</h3>
+            <p class="agent-sidebar__copy">
+              使用前端 `page-agent` 面板帮助你在当前编辑页内执行查找、点击和流程辅助，离开页面后会自动关闭。
+            </p>
+            <dl class="agent-sidebar__meta">
+              <div>
+                <dt>模型</dt>
+                <dd>`qwen3.5-plus`</dd>
+              </div>
+              <div>
+                <dt>接口</dt>
+                <dd>free testing API</dd>
+              </div>
+            </dl>
+            <AppButton
+              class="agent-sidebar__action"
+              :active="pageAgent.isOpen.value"
+              variant="primary"
+              block
+              @click="togglePageAgent"
+            >
+              {{ pageAgent.isOpen.value ? '关闭 Qwen Page Agent' : '打开 Qwen Page Agent' }}
+            </AppButton>
+            <p class="agent-sidebar__hint">
+              面板由 `PageAgent.panel.show()` 创建；切换路由或关闭本页时会自动 `dispose()`。
+            </p>
+          </div>
+        </AppCard>
+      </aside>
+    </div>
     <el-dialog v-model="visibilityDialog" title="修改可见范围" width="min(480px, 92vw)">
       <div class="visibility-dialog">
         <p class="visibility-dialog__hint">
@@ -292,6 +348,12 @@ onBeforeUnmount(() => editor.value?.destroy())
 .collaboration-page {
   display: grid;
   gap: 1rem;
+}
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
+  align-items: start;
 }
 .collaboration-header-card__body {
   padding-bottom: 1rem;
@@ -358,10 +420,8 @@ onBeforeUnmount(() => editor.value?.destroy())
 }
 .editor-paper {
   position: relative;
-  max-width: 980px;
   width: 100%;
   min-height: 70vh;
-  margin: 0 auto;
   padding: 2rem 2.25rem 3rem;
   background: #fff;
   border: 1px solid var(--color-border);
@@ -433,9 +493,74 @@ onBeforeUnmount(() => editor.value?.destroy())
   justify-content: flex-end;
   gap: 0.75rem;
 }
+.agent-sidebar {
+  position: sticky;
+  top: 1rem;
+}
+.agent-sidebar__card {
+  overflow: hidden;
+}
+.agent-sidebar__body {
+  display: grid;
+  gap: 1rem;
+}
+.agent-sidebar__badge {
+  width: fit-content;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(23, 37, 84, 0.08);
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.agent-sidebar__title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+.agent-sidebar__copy,
+.agent-sidebar__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+  font-size: 0.92rem;
+}
+.agent-sidebar__meta {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+.agent-sidebar__meta div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.85));
+}
+.agent-sidebar__meta dt {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.agent-sidebar__meta dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+}
+.agent-sidebar__action {
+  margin-top: 0.25rem;
+}
 @media (max-width: 720px) {
+  .editor-workspace {
+    grid-template-columns: 1fr;
+  }
   .editor-paper {
     padding: 1.5rem;
+  }
+  .agent-sidebar {
+    position: static;
   }
   .document-title-input {
     min-width: 0;

@@ -177,7 +177,8 @@ onMounted(loadDashboardData)
           <strong
             >{{ item.value }}<small>{{ item.unit }}</small></strong
           >
-          <AppStatusTag :label="item.hint" :tone="item.tone" />
+          <!-- <AppStatusTag v-show="label.hint" :label="item.hint" :tone="item.tone" /> -->
+          <AppStatusTag :label="item.hint.replace('暂无阻塞','正常')" :tone="item.tone" />
         </div>
       </AppCard>
     </section>

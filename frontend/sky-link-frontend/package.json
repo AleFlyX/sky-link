@@ -27,6 +27,7 @@
     "@tiptap/vue-3": "^3.27.4",
     "axios": "^1.18.1",
     "element-plus": "^2.14.3",
+    "page-agent": "^1.12.2",
     "pinia": "^3.0.4",
     "vue": "^3.5.38",
     "vue-router": "^5.1.0",

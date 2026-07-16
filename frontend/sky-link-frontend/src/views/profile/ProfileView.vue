@@ -1,11 +1,60 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { EditPen } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
+import AppDialog from '../../components/common/AppDialog.vue'
+import AppInput from '../../components/common/AppInput.vue'
+import { updateCurrentUser } from '../../api/user'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
 const systemIdentity = computed(() => userStore.user.roleLabel || '未分配')
 const profileDepartment = computed(() => userStore.user.department || '未加入部门')
+const editVisible = ref(false)
+const saving = ref(false)
+const profileForm = reactive({
+  nickname: '',
+  email: '',
+  phone: '',
+})
+
+function openEditDialog() {
+  profileForm.nickname = userStore.user.name || ''
+  profileForm.email = userStore.user.email || ''
+  profileForm.phone = userStore.user.phone || ''
+  editVisible.value = true
+}
+
+async function saveProfile() {
+  const payload = {
+    nickname: profileForm.nickname.trim(),
+    email: profileForm.email.trim(),
+    phone: profileForm.phone.trim(),
+  }
+
+  if (!payload.nickname || !payload.email || !payload.phone) {
+    ElMessage.warning('昵称、邮箱和手机号不能为空')
+    return
+  }
+
+  saving.value = true
+  try {
+    const response = await updateCurrentUser(payload)
+    const profile = response?.data ?? response ?? {}
+    userStore.patchUser({
+      ...profile,
+      name: profile.nickname || profile.username || payload.nickname,
+    })
+    editVisible.value = false
+    ElMessage.success('个人资料已更新')
+  } catch (error) {
+    ElMessage.error(error.message || '个人资料更新失败')
+  } finally {
+    saving.value = false
+  }
+}
 
 onMounted(() => {
   userStore.loadCurrentUser().catch(() => {
@@ -27,6 +76,14 @@ onMounted(() => {
             <span>{{ userStore.user.email }}</span>
           </div>
         </div>
+        <AppButton
+          v-permission="'user:me:update'"
+          class="profile-hero__edit"
+          :icon="EditPen"
+          @click="openEditDialog"
+        >
+          编辑资料
+        </AppButton>
       </div>
     </AppCard>
 
@@ -46,6 +103,30 @@ onMounted(() => {
         </div>
       </div>
     </AppCard>
+
+    <AppDialog v-model="editVisible" title="编辑个人资料" width="560px">
+      <div class="profile-form">
+        <label class="profile-form__field">
+          <span>昵称</span>
+          <AppInput v-model="profileForm.nickname" maxlength="50" placeholder="请输入昵称" />
+        </label>
+        <label class="profile-form__field">
+          <span>邮箱</span>
+          <AppInput v-model="profileForm.email" maxlength="100" placeholder="请输入邮箱" />
+        </label>
+        <label class="profile-form__field">
+          <span>手机号</span>
+          <AppInput v-model="profileForm.phone" maxlength="30" placeholder="请输入手机号" />
+        </label>
+      </div>
+
+      <template #footer>
+        <div class="profile-form__footer">
+          <AppButton :disabled="saving" @click="editVisible = false">取消</AppButton>
+          <AppButton variant="primary" :loading="saving" @click="saveProfile">保存修改</AppButton>
+        </div>
+      </template>
+    </AppDialog>
   </div>
 </template>
 
@@ -54,6 +135,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1.25rem;
+}
+
+.profile-hero__edit {
+  margin-left: auto;
 }
 
 .profile-hero__avatar {
@@ -124,11 +209,36 @@ onMounted(() => {
   text-align: right;
 }
 
+.profile-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-form__field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-form__field span {
+  color: var(--color-text-muted);
+}
+
+.profile-form__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 @media (max-width: 720px) {
   .profile-hero,
   .info-list div {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .profile-hero__edit {
+    width: 100%;
+    margin-left: 0;
   }
 
   .info-list span {
