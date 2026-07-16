@@ -66,7 +66,7 @@ async function handleLogin() {
     ElMessage.success('登录成功，正在进入系统')
     const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/app')
       ? route.query.redirect
-      : '/app/dashboard'
+      : '/app/profile'
     await router.push(redirect)
   } catch (error) {
     loginError.value = error.message || '登录失败，请检查账号和密码'

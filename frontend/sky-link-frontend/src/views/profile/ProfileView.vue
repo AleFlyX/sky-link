@@ -2,8 +2,10 @@
 import { computed, onMounted } from 'vue'
 import AppCard from '../../components/common/AppCard.vue'
 import { useUserStore } from '../../stores/user'
+import { useAppStore } from '../../stores/app'
 
 const userStore = useUserStore()
+const appStore = useAppStore()
 const systemIdentity = computed(() => userStore.user.roleLabel || '未分配')
 const profileDepartment = computed(() => userStore.user.department || '未加入部门')
 
@@ -38,7 +40,17 @@ onMounted(() => {
         <div><strong>系统身份</strong><span>{{ systemIdentity }}</span></div>
       </div>
     </AppCard>
+
+    <AppCard title="任务提醒" subtitle="显示待处理任务数量">
+      <div class="summary-card">
+        <strong>{{ appStore.unreadNotificationCount }} 条</strong>
+        <span>待处理任务和提醒</span>
+        <AppStatusTag label="待处理" tone="warning" />
+      </div>
+    </AppCard>
   </div>
+
+  
 </template>
 
 <style scoped>

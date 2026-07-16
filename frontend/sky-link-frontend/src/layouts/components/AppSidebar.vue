@@ -7,7 +7,7 @@ import {
   DArrowLeft,
   DArrowRight,
   Document,
-  House,
+  // House,
   Memo,
   OfficeBuilding,
   User,
@@ -30,7 +30,7 @@ const userStore = useUserStore()
 const isPrivilegedMenuCollapsed = ref(true)
 
 const navItems = [
-  { label: '工作台', to: '/app/dashboard', icon: House },
+  // { label: '工作台', to: '/app/dashboard', icon: House },
   { label: '在线文档', to: '/app/documents', icon: Document, permissions: ['document:list'] },
   { label: '消息中心', to: '/app/messages', icon: ChatDotRound, permissions: ['message:list'] },
   { label: '通讯录', to: '/app/contacts', icon: User, permissions: ['friend:list', 'group:list'] },

@@ -32,7 +32,7 @@ import AppCard from '../../components/common/AppCard.vue'
         </p>
 
         <div class="error-card__actions">
-          <router-link to="/app/dashboard">
+          <router-link to="/app/profile">
             <el-button type="primary" size="large">返回首页</el-button>
           </router-link>
           <router-link to="/login">
