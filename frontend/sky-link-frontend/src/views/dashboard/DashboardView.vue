@@ -2,36 +2,24 @@
 import AppCard from '../../components/common/AppCard.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
 import { useAppStore } from '../../stores/app'
-import { useUserStore } from '../../stores/user'
+// import { useUserStore } from '../../stores/user'
 
 const appStore = useAppStore()
-const userStore = useUserStore()
+// const userStore = useUserStore()
 
-const cards = [
-  { title: '用户与组织', text: '包含个人中心、用户管理和部门管理。' },
-  { title: '协作业务', text: '包含通讯录、消息、文档和任务功能。' },
-  { title: '公共组件', text: '已提供表格、分页、表单弹窗和状态标签。' },
-]
+// const cards = [
+//   { title: '用户与组织', text: '包含个人中心、用户管理和部门管理。' },
+//   { title: '协作业务', text: '包含通讯录、消息、文档和任务功能。' },
+//   { title: '公共组件', text: '已提供表格、分页、表单弹窗和状态标签。' },
+// ]
 </script>
 
 <template>
   <div class="dashboard">
-    <AppCard variant="hero" title="系统概览" padding="lg">
-      <div>
-        <p class="hero__text">
-          当前版本已提供登录、用户、通讯录、消息、文档、任务等主要功能页面。
-        </p>
-      </div>
-    </AppCard>
+
 
     <section class="summary-grid">
-      <AppCard title="当前登录用户" subtitle="显示当前账号信息">
-        <div class="summary-card">
-          <strong>{{ userStore.user.name }}</strong>
-          <span>{{ userStore.user.department }}</span>
-          <AppStatusTag :label="userStore.user.roleLabel" tone="primary" />
-        </div>
-      </AppCard>
+
 
       <AppCard title="任务提醒" subtitle="显示待处理任务数量">
         <div class="summary-card">
@@ -42,16 +30,7 @@ const cards = [
       </AppCard>
     </section>
 
-    <section class="cards">
-      <AppCard
-        v-for="card in cards"
-        :key="card.title"
-        variant="soft"
-        :title="card.title"
-      >
-        <p>{{ card.text }}</p>
-      </AppCard>
-    </section>
+    
   </div>
 </template>
 
