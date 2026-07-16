@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import AppButton from '../../../components/common/AppButton.vue'
 import AppDialog from '../../../components/common/AppDialog.vue'
 import AppInput from '../../../components/common/AppInput.vue'
@@ -37,6 +37,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'submit'])
+const userFormRef = ref()
 
 const localForm = reactive({
   username: '',
@@ -48,6 +49,37 @@ const localForm = reactive({
   status: 1,
   roleIds: [],
 })
+
+const formRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 50, message: '用户名长度为 3 至 50 个字符', trigger: 'blur' },
+    { pattern: /^[A-Za-z0-9_]+$/, message: '用户名仅支持字母、数字和下划线', trigger: 'blur' },
+  ],
+  nickname: [{ max: 50, message: '昵称不能超过 50 个字符', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    {
+      pattern: /^(?=.*[A-Za-z])(?=.*\d).{8,}$/,
+      message: '密码至少 8 位，且需同时包含字母和数字',
+      trigger: 'blur',
+    },
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
+    { max: 100, message: '邮箱不能超过 100 个字符', trigger: 'blur' },
+  ],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { max: 20, message: '手机号不能超过 20 个字符', trigger: 'blur' },
+    {
+      pattern: /^[0-9+()\-\s]{6,20}$/,
+      message: '请输入正确的手机号格式',
+      trigger: 'blur',
+    },
+  ],
+}
 
 function syncForm() {
   localForm.username = props.formData.username ?? ''
@@ -74,7 +106,28 @@ function closeDialog() {
   emit('update:modelValue', false)
 }
 
-function handleSubmit() {
+function hasValidFormData() {
+  const username = localForm.username.trim()
+  const password = localForm.password
+  const email = localForm.email.trim()
+  const phone = localForm.phone.trim()
+
+  return (
+    /^[A-Za-z0-9_]{3,50}$/.test(username) &&
+    /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password) &&
+    /^\S+@\S+\.\S+$/.test(email) &&
+    email.length <= 100 &&
+    /^[0-9+()\-\s]{6,20}$/.test(phone) &&
+    localForm.nickname.length <= 50
+  )
+}
+
+async function handleSubmit() {
+  const isValid = await userFormRef.value?.validate().catch(() => false)
+  if (!isValid || !hasValidFormData()) {
+    return
+  }
+
   emit('submit', {
     username: localForm.username,
     password: localForm.password,
@@ -90,9 +143,15 @@ function handleSubmit() {
 
 <template>
   <AppDialog :model-value="modelValue" :title="title" width="720px" @close="closeDialog">
-    <el-form label-position="top" class="user-form-dialog">
+    <el-form
+      ref="userFormRef"
+      :model="localForm"
+      :rules="formRules"
+      label-position="top"
+      class="user-form-dialog"
+    >
       <div class="user-form-dialog__grid">
-        <el-form-item label="用户名" required>
+        <el-form-item label="用户名" prop="username" required>
           <AppInput
             v-model="localForm.username"
             maxlength="50"
@@ -102,7 +161,7 @@ function handleSubmit() {
           />
         </el-form-item>
 
-        <el-form-item label="昵称">
+        <el-form-item label="昵称" prop="nickname">
           <AppInput
             v-model="localForm.nickname"
             maxlength="50"
@@ -112,7 +171,7 @@ function handleSubmit() {
           />
         </el-form-item>
 
-        <el-form-item label="密码" required>
+        <el-form-item label="密码" prop="password" required>
           <AppInput
             v-model="localForm.password"
             type="password"
@@ -123,7 +182,7 @@ function handleSubmit() {
           />
         </el-form-item>
 
-        <el-form-item label="邮箱" required>
+        <el-form-item label="邮箱" prop="email" required>
           <AppInput
             v-model="localForm.email"
             placeholder="请输入邮箱"
@@ -132,7 +191,7 @@ function handleSubmit() {
           />
         </el-form-item>
 
-        <el-form-item label="手机号" required>
+        <el-form-item label="手机号" prop="phone" required>
           <AppInput
             v-model="localForm.phone"
             placeholder="请输入手机号"
