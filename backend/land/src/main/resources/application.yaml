@@ -1,16 +1,15 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT:8080}
 
 spring:
   profiles:
     active: dev
   application:
     name: land
-  # 数据源（MySQL，与项目规格一致）
   datasource:
-    url: jdbc:mysql://localhost:3314/SkyLink?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
@@ -19,20 +18,14 @@ spring:
       data-locations: classpath:data.sql
       continue-on-error: false
 
-# MyBatis-Plus 配置
 mybatis-plus:
-  # XML 映射文件位置（有自定义 SQL 时放到 resources/mapper 下）
   mapper-locations: classpath*:/mapper/**/*.xml
-  # 实体类别名包（实体放在 entity 包下时，XML 里可省略全限定名）
   type-aliases-package: com.skylink.land.entity
   configuration:
-    # 下划线字段自动转驼峰（默认开启，显式声明更清晰）
     map-underscore-to-camel-case: true
   global-config:
     db-config:
-      # 主键策略：雪花算法（对应规格 BIGINT 主键）
       id-type: assign_id
-      # 逻辑删除（对应规格"逻辑删除保留历史"）
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
@@ -45,7 +38,7 @@ logging:
 skylink:
   jwt:
     issuer: sky-link
-    secret: ${JWT_SECRET:5111784662c3404488c90fe7114e37db391e5b8e29dc7ea7d9107f4d4fbdb9be}
+    secret: ${JWT_SECRET}
     ttl: 24h
     refresh-ttl: 7d
     header: Authorization
@@ -67,7 +60,7 @@ skylink:
   cors:
     allowed-origin-patterns: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5573,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080}
   collaboration:
-    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:5111784662c3404488c90fe7114e37db391e5b8e29dc7ea7d9107f4d4fbdb9be}
+    ticket-secret: ${SKYLINK_COLLABORATION_TICKET_SECRET:}
     ticket-ttl: 60s
     websocket-url: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:ws://127.0.0.1:8180}
     service-token: ${SKYLINK_COLLABORATION_SERVICE_TOKEN:}

@@ -6,14 +6,14 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-SkyLink}
-      MYSQL_USER: ${MYSQL_USER:-skylink}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-root-password}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-change-root-password}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 20
@@ -27,18 +27,15 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      SERVER_PORT: 8181
-      SPRING_PROFILES_ACTIVE: dev
-      SPRING_CONFIG_ADDITIONAL_LOCATION: /app/config/application-docker.yaml
-      DB_USERNAME: ${MYSQL_USER:-skylink}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       SKYLINK_COLLABORATION_TICKET_SECRET: ${SKYLINK_COLLABORATION_TICKET_SECRET}
       SKYLINK_COLLABORATION_SERVICE_TOKEN: ${SKYLINK_COLLABORATION_SERVICE_TOKEN}
-      SKYLINK_COLLABORATION_WEBSOCKET_URL: ${SKYLINK_COLLABORATION_WEBSOCKET_URL:-ws://localhost/collaboration}
-      SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost}
-    volumes:
-      - ./deploy/backend/application-docker.yaml:/app/config/application-docker.yaml:ro
+      SKYLINK_COLLABORATION_WEBSOCKET_URL: ${SKYLINK_COLLABORATION_WEBSOCKET_URL}
+      SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS: ${SKYLINK_CORS_ALLOWED_ORIGIN_PATTERNS}
     restart: unless-stopped
 
   collaboration:
@@ -53,15 +50,15 @@ services:
     environment:
       COLLABORATION_HOST: 0.0.0.0
       COLLABORATION_PORT: 8180
-      COLLABORATION_ALLOWED_ORIGINS: ${COLLABORATION_ALLOWED_ORIGINS:-http://localhost}
+      COLLABORATION_ALLOWED_ORIGINS: ${COLLABORATION_ALLOWED_ORIGINS}
       SKYLINK_COLLABORATION_TICKET_SECRET: ${SKYLINK_COLLABORATION_TICKET_SECRET}
       SKYLINK_COLLABORATION_SERVICE_TOKEN: ${SKYLINK_COLLABORATION_SERVICE_TOKEN}
       SKYLINK_INTERNAL_BASE_URL: http://backend:8080
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: ${MYSQL_DATABASE:-SkyLink}
-      DB_USERNAME: ${MYSQL_USER:-skylink}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
     restart: unless-stopped
 
   frontend:
@@ -78,7 +75,7 @@ services:
       - backend
       - collaboration
     ports:
-      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_PORT}:80"
     volumes:
       - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     restart: unless-stopped
