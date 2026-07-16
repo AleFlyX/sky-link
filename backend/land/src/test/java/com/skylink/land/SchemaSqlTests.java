@@ -27,6 +27,10 @@ class SchemaSqlTests {
 
         assertThat(schema).doesNotContainIgnoringCase("DROP TABLE");
         assertThat(schema).containsIgnoringCase("CREATE TABLE IF NOT EXISTS");
+        assertThat(schema)
+            .doesNotContainIgnoringCase("PREPARE ")
+            .doesNotContainIgnoringCase("EXECUTE ")
+            .doesNotContainIgnoringCase("information_schema.TABLE_CONSTRAINTS");
         assertThat(schemaTables(schema)).containsExactlyInAnyOrderElementsOf(ACTIVE_TABLES);
     }
 

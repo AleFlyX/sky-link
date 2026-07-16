@@ -25,6 +25,8 @@ const {
   pageSize,
   pagedRows,
   status,
+  taskCreationDisabled,
+  taskCreationNotice,
   taskFormFields,
   taskFormInitialData,
   updatingTaskId,
@@ -36,7 +38,7 @@ const {
     <AppCard
       variant="default"
       title="任务管理"
-      subtitle="任务状态枚举、筛选和新增弹窗已统一，可承接成员 B 的任务列表联调"
+      subtitle="任务只能分配给当前部门成员，状态枚举、筛选和新增弹窗已统一"
     >
       <div class="page-toolbar">
         <div class="page-toolbar__filters">
@@ -50,13 +52,29 @@ const {
             />
           </el-select>
         </div>
-        <AppButton v-permission="'task:create'" variant="primary" @click="dialogVisible = true">新建任务</AppButton>
+        <AppButton
+          v-permission="'task:create'"
+          variant="primary"
+          :disabled="taskCreationDisabled"
+          @click="dialogVisible = true"
+        >
+          新建任务
+        </AppButton>
       </div>
 
       <el-alert
         v-if="demoData"
         title="当前为演示数据模式，任务创建与筛选可完整演示"
         type="info"
+        show-icon
+        :closable="false"
+        class="page-feedback"
+      />
+
+      <el-alert
+        v-if="taskCreationNotice"
+        :title="taskCreationNotice"
+        type="warning"
         show-icon
         :closable="false"
         class="page-feedback"

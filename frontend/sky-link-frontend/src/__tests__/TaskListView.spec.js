@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, nextTick } from 'vue'
 
-import { createTask, updateTaskStatus } from '../api/workspace'
+import { createTask, getDepartmentMembers, getUsers, updateTaskStatus } from '../api/workspace'
 import { permission } from '../directives/permission'
 import { useUserStore } from '../stores/user'
 import TaskListView from '../views/tasks/TaskListView.vue'
@@ -81,23 +81,23 @@ const FormDialogStub = defineComponent({
   `,
 })
 
-function mountTaskList(permissions = ['task:create']) {
+function mountTaskList(permissions = ['task:create'], userOverrides = {}) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const userStore = useUserStore()
-  userStore.setUser({ userId: 1001, departmentId: 201, permissions })
+  userStore.setUser({ userId: 1001, departmentId: 201, permissions, ...userOverrides })
 
   return mount(TaskListView, {
     global: {
       directives: { permission },
       plugins: [pinia],
       stubs: {
-        AppButton: { template: '<button type="button"><slot /></button>' },
+        AppButton: { template: '<button type="button" v-bind="$attrs"><slot /></button>' },
         AppCard: { template: '<section><slot /></section>' },
         AppFormDialog: FormDialogStub,
         AppInput: { template: '<input />' },
         AppPagination: true,
-        ElAlert: { template: '<div><slot /></div>' },
+        ElAlert: { props: ['title'], template: '<div>{{ title }}<slot /></div>' },
         ElOption: true,
         ElSelect: { template: '<select><slot /></select>' },
         ElSkeleton: { template: '<div />' },
@@ -125,6 +125,8 @@ describe('TaskListView', () => {
 
     await flushPromises()
 
+    expect(getDepartmentMembers).toHaveBeenCalledWith(201, { page: 1, size: 500 })
+    expect(getUsers).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('负责人')
     expect(wrapper.text()).toContain('王嘉怡 · 产品研发中心')
 
@@ -137,6 +139,19 @@ describe('TaskListView', () => {
       priority: 3,
       deadline: '2026-07-20T10:00:00.000Z',
     })
+  })
+
+  it('disables task creation when the current user has no department', async () => {
+    const wrapper = mountTaskList(['task:create'], { departmentId: null })
+
+    await flushPromises()
+
+    expect(getDepartmentMembers).not.toHaveBeenCalled()
+    expect(getUsers).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('当前账号未分配部门，任务只能指派给同部门成员')
+
+    const createButton = wrapper.findAll('button').find((button) => button.text() === '新建任务')
+    expect(createButton.attributes('disabled')).toBeDefined()
   })
 
   it('hides create task action without task:create permission', async () => {

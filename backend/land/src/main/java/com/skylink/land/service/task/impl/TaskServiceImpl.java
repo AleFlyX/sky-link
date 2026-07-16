@@ -63,7 +63,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskDto.TaskResponse createTask(Long currentUserId, TaskDto.CreateTaskRequest request) {
         requireCurrentUserId(currentUserId);
         validateCreateRequest(request);
-        validateExecutor(request.getExecutorId());
+        validateExecutorAssignment(currentUserId, request.getExecutorId());
 
         Task task = new Task();
         task.setTitle(request.getTitle().trim());
@@ -124,7 +124,7 @@ public class TaskServiceImpl implements TaskService {
             task.setContent(trimToNull(request.getContent()));
         }
         if (request.getExecutorId() != null) {
-            validateExecutor(request.getExecutorId());
+            validateExecutorAssignment(task.getCreatorId(), request.getExecutorId());
             task.setExecutorId(request.getExecutorId());
         }
         if (request.getPriority() != null) {
@@ -215,6 +215,9 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
         }
         validateTitle(request.getTitle());
+        if (request.getExecutorId() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "executorId is required");
+        }
         validatePriority(request.getPriority());
     }
 
@@ -227,10 +230,47 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
-    private void validateExecutor(Long executorId) {
-        if (executorId != null && userMapper.selectById(executorId) == null) {
+    private void validateExecutorAssignment(Long creatorId, Long executorId) {
+        User creator = requireCreatorUser(creatorId);
+        User executor = requireExecutorUser(executorId);
+
+        if (creator.getDepartmentId() == null) {
+            throw new BusinessException(
+                ErrorCode.BAD_REQUEST,
+                "task creator must belong to a department before assigning tasks"
+            );
+        }
+        if (executor.getDepartmentId() == null) {
+            throw new BusinessException(
+                ErrorCode.BAD_REQUEST,
+                "executor must belong to the same department as the task creator"
+            );
+        }
+        if (!Objects.equals(creator.getDepartmentId(), executor.getDepartmentId())) {
+            throw new BusinessException(
+                ErrorCode.BAD_REQUEST,
+                "executor must belong to the same department as the task creator"
+            );
+        }
+    }
+
+    private User requireCreatorUser(Long creatorId) {
+        User creator = userMapper.selectById(creatorId);
+        if (creator == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "task creator not found");
+        }
+        return creator;
+    }
+
+    private User requireExecutorUser(Long executorId) {
+        if (executorId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "executorId is required");
+        }
+        User executor = userMapper.selectById(executorId);
+        if (executor == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "executor user does not exist");
         }
+        return executor;
     }
 
     private void validatePriority(Integer priority) {

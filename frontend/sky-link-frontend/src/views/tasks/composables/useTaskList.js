@@ -4,7 +4,6 @@ import {
   createTask,
   getDepartmentMembers,
   getTasks,
-  getUsers,
   isDemoMode,
   updateTaskStatus,
 } from '../../../api/workspace'
@@ -123,6 +122,15 @@ export function useTaskList() {
   const assigneeLoading = ref(false)
   const assigneeError = ref('')
   const updatingTaskId = ref(null)
+  const currentDepartmentId = computed(() => {
+    const value = userStore.user?.departmentId
+    if (value === '' || value === null || value === undefined) {
+      return null
+    }
+
+    const normalized = Number(value)
+    return Number.isFinite(normalized) ? normalized : null
+  })
 
   const columns = [
     { key: 'title', label: '任务标题' },
@@ -145,11 +153,23 @@ export function useTaskList() {
       clearable: true,
       disabled: assigneeLoading.value || assigneeOptions.value.length === 0,
       placeholder: assigneeLoading.value ? '正在加载部门成员' : '选择部门成员',
-      description: assigneeError.value || '负责人优先从当前用户所在部门成员中选择',
+      description: assigneeError.value || '只能为当前部门成员分配任务',
     },
     { key: 'priority', label: '优先级', type: 'select', options: priorityOptions, required: true },
     { key: 'deadline', label: '截止时间', type: 'datetime', clearable: true },
   ])
+  const taskCreationNotice = computed(() => {
+    if (!currentDepartmentId.value) {
+      return '当前账号未分配部门，任务只能指派给同部门成员，请先加入部门后再创建任务'
+    }
+    if (assigneeError.value) {
+      return assigneeError.value
+    }
+    return ''
+  })
+  const taskCreationDisabled = computed(() =>
+    assigneeLoading.value || Boolean(taskCreationNotice.value),
+  )
 
   const filteredRows = computed(() =>
     rows.value.filter((item) => {
@@ -196,24 +216,34 @@ export function useTaskList() {
     assigneeError.value = ''
 
     try {
-      const departmentId = userStore.user?.departmentId
-      const response = departmentId
-        ? await getDepartmentMembers(departmentId, { page: 1, size: 500 })
-        : await getUsers({ page: 1, size: 500 })
+      if (!currentDepartmentId.value) {
+        assigneeOptions.value = []
+        return
+      }
+
+      const response = await getDepartmentMembers(currentDepartmentId.value, { page: 1, size: 500 })
       const data = unwrapData(response)
       assigneeOptions.value = normalizePage(data)
         .records
         .map(normalizeUserOption)
         .filter((item) => item.value != null)
+      assigneeError.value = assigneeOptions.value.length
+        ? ''
+        : '当前部门暂无可分配成员，请先维护部门成员后再创建任务'
     } catch (error) {
       assigneeOptions.value = []
-      assigneeError.value = error.message || '部门成员加载失败'
+      assigneeError.value = error.message || '部门成员加载失败，暂时无法创建任务'
     } finally {
       assigneeLoading.value = false
     }
   }
 
   async function handleSubmit(form) {
+    if (taskCreationDisabled.value) {
+      ElMessage.warning(taskCreationNotice.value || '当前无法创建任务')
+      return
+    }
+
     const payload = {
       title: form.title,
       content: form.content || undefined,
@@ -267,6 +297,8 @@ export function useTaskList() {
     pagedRows,
     rows,
     status,
+    taskCreationDisabled,
+    taskCreationNotice,
     taskFormFields,
     taskFormInitialData,
     updatingTaskId,
