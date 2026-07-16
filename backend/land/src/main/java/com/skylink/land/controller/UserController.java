@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @GetMapping
-    @RequirePermission("user:list")
+    @RequirePermission("user:get")
     public PageResponse<UserDto.UserSummaryResponse> pageUsers(UserDto.UserQueryRequest request) {
         PageResponse<UserVO> page = userService.pageUsers(request);
         return PageResponse.<UserDto.UserSummaryResponse>builder()
