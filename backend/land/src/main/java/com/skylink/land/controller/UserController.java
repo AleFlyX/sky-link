@@ -73,6 +73,12 @@ public class UserController {
             .build();
     }
 
+    @PostMapping
+    @RequirePermission("user:create")
+    public UserDto.UserSummaryResponse createUser(@RequestBody UserDto.CreateUserRequest request) {
+        return toUserSummaryResponse(userService.createUser(request));
+    }
+
     @PutMapping("/{userId}/status")
     @RequirePermission("user:status:update")
     public UserDto.UserSummaryResponse updateUserStatus(
@@ -125,21 +131,6 @@ public class UserController {
             .createTime(profile.getCreateTime())
             .roles(toRoleInfos(profile.getRoles()))
             .permissions(profile.getPermissions())
-            .build();
-    }
-
-    private UserDto.UserDetailResponse toDetailResponse(UserVO user, List<RoleVO> roles) {
-        return UserDto.UserDetailResponse.builder()
-            .userId(user.getUserId())
-            .username(user.getUsername())
-            .nickname(user.getNickname())
-            .email(user.getEmail())
-            .status(user.getStatus())
-            .departmentId(user.getDepartmentId())
-            .departmentName(user.getDepartmentName())
-            .createTime(user.getCreateTime())
-            .updateTime(user.getUpdateTime())
-            .roles(toRoleInfos(roles))
             .build();
     }
 

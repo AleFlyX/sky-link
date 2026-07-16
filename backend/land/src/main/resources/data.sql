@@ -20,6 +20,7 @@ VALUES
     ('Delete User', 'user:delete', 3, 16, NOW(), NOW(), 0),
     ('Assign User Roles', 'user:role:add', 3, 17, NOW(), NOW(), 0),
     ('Remove User Role', 'user:role:delete', 3, 18, NOW(), NOW(), 0),
+    ('Create User', 'user:create', 3, 19, NOW(), NOW(), 0),
     ('List Friends', 'friend:list', 3, 20, NOW(), NOW(), 0),
     ('List Friend Requests', 'friend:request:list', 3, 21, NOW(), NOW(), 0),
     ('Send Friend Request', 'friend:request:create', 3, 22, NOW(), NOW(), 0),
@@ -33,6 +34,8 @@ VALUES
     ('Update Department', 'department:update', 3, 32, NOW(), NOW(), 0),
     ('Delete Department', 'department:delete', 3, 33, NOW(), NOW(), 0),
     ('List Department Members', 'department:members:list', 3, 34, NOW(), NOW(), 0),
+    ('Add Department Members', 'department:members:add', 3, 35, NOW(), NOW(), 0),
+    ('Remove Department Members', 'department:members:remove', 3, 36, NOW(), NOW(), 0),
     ('List Roles', 'role:list', 3, 40, NOW(), NOW(), 0),
     ('Create Role', 'role:create', 3, 41, NOW(), NOW(), 0),
     ('Update Role', 'role:update', 3, 42, NOW(), NOW(), 0),
@@ -82,6 +85,7 @@ FROM (
     SELECT 'ROLE_ADMIN', 'user:delete' UNION ALL
     SELECT 'ROLE_ADMIN', 'user:role:add' UNION ALL
     SELECT 'ROLE_ADMIN', 'user:role:delete' UNION ALL
+    SELECT 'ROLE_ADMIN', 'user:create' UNION ALL
     SELECT 'ROLE_ADMIN', 'friend:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'friend:request:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'friend:request:create' UNION ALL
@@ -95,6 +99,8 @@ FROM (
     SELECT 'ROLE_ADMIN', 'department:update' UNION ALL
     SELECT 'ROLE_ADMIN', 'department:delete' UNION ALL
     SELECT 'ROLE_ADMIN', 'department:members:list' UNION ALL
+    SELECT 'ROLE_ADMIN', 'department:members:add' UNION ALL
+    SELECT 'ROLE_ADMIN', 'department:members:remove' UNION ALL
     SELECT 'ROLE_ADMIN', 'role:list' UNION ALL
     SELECT 'ROLE_ADMIN', 'role:create' UNION ALL
     SELECT 'ROLE_ADMIN', 'role:update' UNION ALL

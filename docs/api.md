@@ -209,13 +209,37 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
   - `status`：按状态筛选（0禁用，1启用）
 - **响应**：分页数据，records 为用户信息摘要（不含密码等敏感字段）。
 
-### 3.5 获取指定用户信息
+### 3.5 创建用户（管理员）
+- **接口**：`POST /users`
+- **描述**：管理员创建后台用户，并可一次性指定部门、状态和角色
+- **权限**：`user:create`
+- **请求体**：
+```json
+{
+  "username": "zhangsan",
+  "password": "Abc123456",
+  "nickname": "张三",
+  "email": "zhangsan@example.com",
+  "phone": "13800138000",
+  "departmentId": 10,
+  "status": 1,
+  "roleIds": [2, 3]
+}
+```
+- **说明**：
+  - `username`、`password`、`email`、`phone` 必填。
+  - `password` 至少 8 位，且需同时包含字母和数字。
+  - `status` 可选，默认 1。
+  - `roleIds` 可选；不传或传空时，服务端会自动绑定默认 `ROLE_USER`。
+- **响应**：返回新建用户摘要信息。
+
+### 3.6 获取指定用户信息
 - **接口**：`GET /users/{userId}`
 - **描述**：查看其他用户公开资料
 - **路径参数**：`userId`
 - **响应**：同 3.1 结构（不含敏感信息如手机号，仅展示必要字段）。
 
-### 3.6 更新用户状态（管理员）
+### 3.7 更新用户状态（管理员）
 - **接口**：`PUT /users/{userId}/status`
 - **描述**：启用或禁用用户
 - **权限**：超级管理员或管理员
@@ -227,7 +251,7 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 ```
 - **响应**：返回该用户最新信息。
 
-### 3.7 删除用户（管理员）
+### 3.8 删除用户（管理员）
 - **接口**：`DELETE /users/{userId}`
 - **描述**：逻辑删除用户
 - **权限**：超级管理员
@@ -291,6 +315,24 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 - **描述**：分页获取该部门下的所有成员
 - **Query 参数**：分页参数
 - **响应**：分页用户列表（简要信息）。
+
+### 4.6 加入部门成员（管理员）
+- **接口**：`POST /departments/{departmentId}/members`
+- **描述**：将指定用户加入该部门；用户已有部门时视为迁移部门
+- **权限**：`department:members:add`
+- **请求体**：
+```json
+{
+  "userIds": [1001, 1002]
+}
+```
+- **响应**：返回该部门最新成员分页列表。
+
+### 4.7 移出部门成员（管理员）
+- **接口**：`DELETE /departments/{departmentId}/members/{userId}`
+- **描述**：将指定用户从该部门移出，用户部门归属置空
+- **权限**：`department:members:remove`
+- **响应**：成功消息。
 
 ---
 

@@ -132,11 +132,25 @@ public class DocumentServiceImpl implements DocumentService {
     @Transactional(rollbackFor = Exception.class)
     public DocumentDto.DocumentDetailResponse updateDocument(Long userId, Long documentId, DocumentDto.UpdateDocumentRequest request) {
         Document document = requireDocument(documentId);
-        requireAtLeast(userId, document, PERMISSION_EDIT);
-        if (document.getStatus() == STATUS_ARCHIVED && !canManage(userId, document)) {
-            throw new BusinessException(ErrorCode.CONFLICT, "archived document is read-only");
-        }
         if (request == null) throw badRequest("request body is required");
+        boolean updatingTitle = StringUtils.hasText(request.getTitle());
+        boolean updatingContent = request.getContent() != null;
+        boolean updatingStatus = StringUtils.hasText(request.getStatus());
+        boolean archived = document.getStatus() == STATUS_ARCHIVED;
+
+        if (archived) {
+            if (updatingTitle || updatingContent) {
+                throw new BusinessException(ErrorCode.CONFLICT, "archived document is read-only");
+            }
+            if (updatingStatus && !canManage(userId, document)) {
+                throw forbidden("manage permission is required to change status");
+            }
+        } else {
+            requireAtLeast(userId, document, PERMISSION_EDIT);
+            if (updatingStatus && !canManage(userId, document)) {
+                throw forbidden("manage permission is required to change status");
+            }
+        }
         if (request.getContent() != null && collaborationStateMapper.selectById(documentId) != null) {
             throw new BusinessException(ErrorCode.CONFLICT, "collaborative document content must be updated through Yjs");
         }
@@ -146,7 +160,6 @@ public class DocumentServiceImpl implements DocumentService {
         }
         if (request.getContent() != null) document.setContent(request.getContent());
         if (request.getStatus() != null) {
-            if (!canManage(userId, document)) throw forbidden("manage permission is required to change status");
             document.setStatus(parseStatus(request.getStatus(), document.getStatus()));
         }
         documentMapper.updateById(document);

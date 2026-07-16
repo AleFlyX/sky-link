@@ -21,4 +21,8 @@ public interface DepartmentService extends IService<Department> {
     void deleteDepartment(Long departmentId);
 
     PageResponse<UserVO> pageDepartmentMembers(Long departmentId, DepartmentDto.DepartmentMemberQueryRequest request);
+
+    PageResponse<UserVO> addDepartmentMembers(Long departmentId, List<Long> userIds);
+
+    void removeDepartmentMember(Long departmentId, Long userId);
 }

@@ -3,6 +3,7 @@ package com.skylink.land.dto.department;
 import com.skylink.land.dto.common.PageRequest;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,5 +53,17 @@ public final class DepartmentDto {
 
         @Serial
         private static final long serialVersionUID = 1L;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AddDepartmentMembersRequest implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private List<Long> userIds;
     }
 }

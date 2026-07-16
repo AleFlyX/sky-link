@@ -13,6 +13,8 @@ public interface UserService extends IService<User> {
 
     PageResponse<UserVO> pageUsers(UserDto.UserQueryRequest request);
 
+    UserVO createUser(UserDto.CreateUserRequest request);
+
     UserVO getUserVO(Long userId);
 
     UserVO updateUserStatus(Long userId, Integer status);

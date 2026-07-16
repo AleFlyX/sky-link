@@ -96,21 +96,19 @@ public final class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class UserDetailResponse implements Serializable {
+    public static class CreateUserRequest implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
-        private Long userId;
         private String username;
+        private String password;
         private String nickname;
         private String email;
+        private String phone;
         private Integer status;
         private Long departmentId;
-        private String departmentName;
-        private LocalDateTime createTime;
-        private LocalDateTime updateTime;
-        private List<UserRoleInfo> roles;
+        private List<Long> roleIds;
     }
 
     @Data

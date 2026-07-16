@@ -1,16 +1,18 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Delete, EditPen, Refresh, Search, SwitchButton, View } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, EditPen, Plus, Refresh, Search, SwitchButton, View } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppDataTable from '../../components/common/AppDataTable.vue'
 import AppDialog from '../../components/common/AppDialog.vue'
 import AppPagination from '../../components/common/AppPagination.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
+import { useConfirmDialog } from '../../composables/useConfirmDialog'
 import { getDepartments } from '../../api/department'
 import { getRoles } from '../../api/role'
 import {
+  createUser as createUserApi,
   assignUserRoles,
   deleteUser,
   getUser,
@@ -18,6 +20,7 @@ import {
   updateUserStatus,
 } from '../../api/user'
 import { userStatusMap, userStatusOptions } from '../../constants/enums'
+import UserFormDialog from './components/UserFormDialog.vue'
 
 const page = ref(1)
 const pageSize = 10
@@ -36,12 +39,26 @@ const filters = reactive({
 const departmentOptions = ref([])
 const roleOptions = ref([])
 
+const createVisible = ref(false)
+const createLoading = ref(false)
+const createForm = reactive({
+  username: '',
+  password: '',
+  nickname: '',
+  email: '',
+  phone: '',
+  departmentId: '',
+  status: 1,
+  roleIds: [],
+})
+
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detailError = ref('')
 const detailUser = ref(null)
 const detailRoleIds = ref([])
 const detailRoleSaving = ref(false)
+const { confirm } = useConfirmDialog()
 
 const columns = [
   { key: 'userId', label: '用户ID', width: '88px' },
@@ -91,6 +108,21 @@ function normalizeId(value) {
 
 function statusMeta(value) {
   return userStatusMap[value] || { label: '未知', tone: 'default' }
+}
+
+function buildCreateForm() {
+  const defaultRoleId = roleOptions.value.find((role) => role.roleCode === 'ROLE_USER')?.roleId
+
+  return {
+    username: '',
+    password: '',
+    nickname: '',
+    email: '',
+    phone: '',
+    departmentId: '',
+    status: 1,
+    roleIds: defaultRoleId ? [defaultRoleId] : [],
+  }
 }
 
 async function loadDepartments() {
@@ -155,6 +187,36 @@ function handlePageChange(nextPage) {
   loadUsers(nextPage)
 }
 
+function openCreateDialog() {
+  Object.assign(createForm, buildCreateForm())
+  createVisible.value = true
+}
+
+async function saveUser(payload) {
+  createLoading.value = true
+  try {
+    await createUserApi({
+      username: payload.username.trim(),
+      password: payload.password,
+      nickname: payload.nickname.trim() || undefined,
+      email: payload.email.trim(),
+      phone: payload.phone.trim(),
+      departmentId: normalizeId(payload.departmentId),
+      status: normalizeId(payload.status) ?? 1,
+      roleIds: Array.isArray(payload.roleIds)
+        ? payload.roleIds.map((roleId) => Number(roleId)).filter((roleId) => Number.isFinite(roleId))
+        : [],
+    })
+    ElMessage.success('用户已创建')
+    createVisible.value = false
+    await loadUsers(page.value)
+  } catch (error) {
+    ElMessage.error(error.message || '创建用户失败')
+  } finally {
+    createLoading.value = false
+  }
+}
+
 async function openDetail(userId) {
   detailVisible.value = true
   detailLoading.value = true
@@ -201,15 +263,11 @@ async function changeStatus(row) {
   const actionLabel = nextStatus === 1 ? '启用' : '禁用'
 
   try {
-    await ElMessageBox.confirm(
-      `确定要${actionLabel}用户「${row.nickname || row.username}」吗？`,
-      `${actionLabel}用户`,
-      {
-        confirmButtonText: actionLabel,
-        cancelButtonText: '取消',
-        type: 'warning',
-      },
-    )
+    await confirm(`确定要${actionLabel}用户「${row.nickname || row.username}」吗？`, `${actionLabel}用户`, {
+      confirmText: actionLabel,
+      cancelText: '取消',
+      type: 'warning',
+    })
   } catch {
     return
   }
@@ -228,15 +286,12 @@ async function changeStatus(row) {
 
 async function removeUser(row) {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除用户「${row.nickname || row.username}」吗？`,
-      '删除用户',
-      {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      },
-    )
+    await confirm(`确定要删除用户「${row.nickname || row.username}」吗？`, '删除用户', {
+      confirmText: '删除',
+      cancelText: '取消',
+      type: 'warning',
+      confirmVariant: 'danger',
+    })
   } catch {
     return
   }
@@ -304,6 +359,14 @@ onMounted(async () => {
         </div>
 
         <div class="page-toolbar__actions">
+          <AppButton
+            v-permission="'user:create'"
+            variant="primary"
+            :icon="Plus"
+            @click="openCreateDialog"
+          >
+            添加用户
+          </AppButton>
           <AppButton variant="primary" :icon="Search" @click="handleSearch">查询</AppButton>
           <AppButton :icon="Refresh" @click="handleReset">重置</AppButton>
         </div>
@@ -342,6 +405,7 @@ onMounted(async () => {
           <div class="row-actions">
             <AppButton size="small" :icon="View" @click="openDetail(row.userId)">详情</AppButton>
             <AppButton
+              v-permission="'user:status:update'"
               size="small"
               :icon="SwitchButton"
               :variant="row.status === 1 ? 'warning' : 'success'"
@@ -349,7 +413,7 @@ onMounted(async () => {
             >
               {{ row.status === 1 ? '禁用' : '启用' }}
             </AppButton>
-            <AppButton size="small" variant="danger" :icon="Delete" @click="removeUser(row)">
+            <AppButton v-permission="'user:delete'" size="small" variant="danger" :icon="Delete" @click="removeUser(row)">
               删除
             </AppButton>
           </div>
@@ -363,6 +427,17 @@ onMounted(async () => {
         @update:page="handlePageChange"
       />
     </AppCard>
+
+    <UserFormDialog
+      v-model="createVisible"
+      title="添加用户"
+      confirm-text="创建用户"
+      :saving="createLoading"
+      :department-options="departmentOptions"
+      :role-options="roleOptions"
+      :form-data="createForm"
+      @submit="saveUser"
+    />
 
     <AppDialog
       v-model="detailVisible"
@@ -452,6 +527,7 @@ onMounted(async () => {
             </el-select>
             <div class="detail-section__footer">
               <AppButton
+                v-permission="'user:role:add'"
                 variant="primary"
                 :icon="EditPen"
                 :loading="detailRoleSaving"

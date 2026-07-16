@@ -1,6 +1,8 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
+  ArrowDown,
+  ArrowUp,
   ChatDotRound,
   DArrowLeft,
   DArrowRight,
@@ -25,26 +27,35 @@ defineProps({
 defineEmits(['toggle'])
 
 const userStore = useUserStore()
+const isPrivilegedMenuCollapsed = ref(true)
 
 const navItems = [
   { label: '工作台', to: '/app/dashboard', icon: House },
-  { label: '个人中心', to: '/app/profile', icon: User },
-  { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
-  { label: '部门管理', to: '/app/departments', icon: OfficeBuilding, permissions: ['department:list'] },
-  { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
-  { label: '通讯录', to: '/app/contacts', icon: User, permissions: ['friend:list', 'group:list'] },
-  { label: '消息中心', to: '/app/messages', icon: ChatDotRound, permissions: ['message:list'] },
   { label: '在线文档', to: '/app/documents', icon: Document, permissions: ['document:list'] },
+  { label: '消息中心', to: '/app/messages', icon: ChatDotRound, permissions: ['message:list'] },
+  { label: '通讯录', to: '/app/contacts', icon: User, permissions: ['friend:list', 'group:list'] },
+  { label: '个人中心', to: '/app/profile', icon: User },
 ]
 
-const visibleNavItems = computed(() => {
+const privilegedNavItems = [
+  { label: '用户管理', to: '/app/users', icon: User, permissions: ['user:list'] },
+  { label: '部门管理', to: '/app/departments', icon: OfficeBuilding, permissions: ['department:list'] },
+  { label: '角色管理', to: '/app/roles', icon: Memo, permissions: ['role:list'] },
+  { label: '权限管理', to: '/app/permissions', icon: Document, permissions: ['permission:list'] },
+  { label: '任务管理', to: '/app/tasks', icon: Memo, permissions: ['task:list'] },
+]
+
+function filterVisibleItems(items) {
   const permissions = new Set(userStore.user.permissions || [])
 
-  return navItems.filter((item) => {
+  return items.filter((item) => {
     if (!item.permissions?.length) return true
     return item.permissions.some((permission) => permissions.has(permission))
   })
-})
+}
+
+const visibleNavItems = computed(() => filterVisibleItems(navItems))
+const visiblePrivilegedNavItems = computed(() => filterVisibleItems(privilegedNavItems))
 </script>
 
 <template>
@@ -82,6 +93,36 @@ const visibleNavItems = computed(() => {
         :label="item.label"
         :to="item.to"
       />
+
+      <div v-if="visiblePrivilegedNavItems.length" class="app-sidebar__group">
+        <button
+          class="app-sidebar__group-toggle"
+          :class="{ 'app-sidebar__group-toggle--collapsed': collapsed }"
+          type="button"
+          :aria-expanded="String(!isPrivilegedMenuCollapsed)"
+          :title="collapsed ? '展开管理入口' : ''"
+          @click="isPrivilegedMenuCollapsed = !isPrivilegedMenuCollapsed"
+        >
+          <span v-if="!collapsed" class="app-sidebar__group-label">管理入口</span>
+          <ElIcon class="app-sidebar__group-icon">
+            <component :is="isPrivilegedMenuCollapsed ? ArrowDown : ArrowUp" />
+          </ElIcon>
+        </button>
+
+        <div
+          v-show="!isPrivilegedMenuCollapsed && !collapsed"
+          class="app-sidebar__group-list"
+        >
+          <AppNavItem
+            v-for="item in visiblePrivilegedNavItems"
+            :key="item.to"
+            :collapsed="collapsed"
+            :icon="item.icon"
+            :label="item.label"
+            :to="item.to"
+          />
+        </div>
+      </div>
     </nav>
   </aside>
 </template>
@@ -164,6 +205,58 @@ const visibleNavItems = computed(() => {
   gap: 0.45rem;
 }
 
+.app-sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.app-sidebar__group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-sidebar__group-toggle:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.app-sidebar__group-toggle--collapsed {
+  justify-content: center;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.app-sidebar__group-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.app-sidebar__group-icon {
+  font-size: 0.95rem;
+}
+
+.app-sidebar__group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-left: 0.6rem;
+}
+
 .sidebar-workspace-enter-active,
 .sidebar-workspace-leave-active {
   transition:
@@ -213,6 +306,20 @@ const visibleNavItems = computed(() => {
   .app-sidebar__nav {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+
+  .app-sidebar__group {
+    width: 100%;
+  }
+
+  .app-sidebar__group-toggle--collapsed {
+    justify-content: space-between;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .app-sidebar__group-list {
+    padding-left: 0;
   }
 
   .app-sidebar--collapsed .app-sidebar__top {

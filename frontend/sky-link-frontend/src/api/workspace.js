@@ -22,6 +22,7 @@ const demoCurrentUser = {
   id: 1001,
   name: '陈雨桐',
   account: 'chenyt',
+  departmentId: 201,
   department: '产品研发中心',
   roleLabel: '产品管理员',
 }
@@ -383,7 +384,147 @@ export function createUser(data) {
 }
 
 export function getDepartments({ page = 1, size = 5, keyword = '' } = {}) {
-  return remoteOrDemo(() => departmentApi.getDepartments({ page, size, keyword }), () => pageOf(searchRecords(state.departments, keyword, ['name', 'leader', 'roleScope']), page, size))
+  refreshDemoDepartmentCounts()
+  return remoteOrDemo(() => departmentApi.getDepartments({ page, size, keyword }), () => pageOf(searchRecords(state.departments, keyword, ['name', 'leader', 'description']), page, size))
+}
+
+export function createDepartment(data) {
+  const payload = {
+    departmentName: data?.departmentName || data?.name,
+    leaderId: data?.leaderId || undefined,
+    description: data?.description || undefined,
+  }
+
+  return remoteOrDemo(() => departmentApi.createDepartment(payload), () => {
+    if (!String(payload.departmentName || '').trim()) {
+      throw new Error('departmentName is required')
+    }
+    if (state.departments.some((item) => item.name === payload.departmentName)) {
+      throw new Error('department name already exists')
+    }
+
+    const leader = state.users.find((item) => Number(item.id) === Number(payload.leaderId))
+    const item = {
+      id: Date.now(),
+      name: payload.departmentName.trim(),
+      leader: leader?.name || '',
+      leaderId: payload.leaderId || null,
+      memberCount: 0,
+      description: payload.description || '',
+    }
+    state.departments.unshift(item)
+    return item
+  })
+}
+
+export function updateDepartment(departmentId, data) {
+  const payload = {
+    departmentName: data?.departmentName || data?.name,
+    leaderId: data?.leaderId || undefined,
+    description: data?.description || undefined,
+  }
+
+  return remoteOrDemo(() => departmentApi.updateDepartment(departmentId, payload), () => {
+    const item = state.departments.find((department) => Number(department.id) === Number(departmentId))
+    if (!item) {
+      throw new Error('department not found')
+    }
+    if (payload.departmentName != null) {
+      const nextName = String(payload.departmentName).trim()
+      if (!nextName) {
+        throw new Error('departmentName cannot be blank')
+      }
+      if (state.departments.some((department) => department.id !== item.id && department.name === nextName)) {
+        throw new Error('department name already exists')
+      }
+      item.name = nextName
+    }
+    if (payload.leaderId !== undefined) {
+      const leader = state.users.find((user) => Number(user.id) === Number(payload.leaderId))
+      item.leaderId = payload.leaderId || null
+      item.leader = leader?.name || ''
+    }
+    if (payload.description !== undefined) {
+      item.description = payload.description || ''
+    }
+    return item
+  })
+}
+
+export function deleteDepartment(departmentId) {
+  return remoteOrDemo(() => departmentApi.deleteDepartment(departmentId), () => {
+    const item = state.departments.find((department) => Number(department.id) === Number(departmentId))
+    if (!item) {
+      throw new Error('department not found')
+    }
+    if (item.memberCount > 0) {
+      throw new Error('department still has members')
+    }
+    state.departments = state.departments.filter((department) => Number(department.id) !== Number(departmentId))
+    return null
+  })
+}
+
+export function getDepartmentMembers(departmentId, { page = 1, size = 10 } = {}) {
+  return remoteOrDemo(() => departmentApi.getDepartmentMembers(departmentId, { page, size }), () => {
+    const department = state.departments.find((item) => Number(item.id) === Number(departmentId))
+    if (!department) {
+      throw new Error('department not found')
+    }
+    return pageOf(state.users.filter((user) => user.department === department.name), page, size)
+  })
+}
+
+export function addDepartmentMembers(departmentId, userIds) {
+  return remoteOrDemo(() => departmentApi.addDepartmentMembers(departmentId, userIds), () => {
+    const department = state.departments.find((item) => Number(item.id) === Number(departmentId))
+    if (!department) {
+      throw new Error('department not found')
+    }
+
+    const normalizedUserIds = [...new Set((userIds || []).map((item) => Number(item)).filter(Boolean))]
+    if (!normalizedUserIds.length) {
+      throw new Error('userIds are required')
+    }
+
+    for (const userId of normalizedUserIds) {
+      const user = state.users.find((item) => Number(item.id) === userId)
+      if (!user) {
+        throw new Error('some users do not exist')
+      }
+      user.department = department.name
+    }
+
+    refreshDemoDepartmentCounts()
+    return pageOf(state.users.filter((user) => user.department === department.name), 1, Math.max(20, normalizedUserIds.length))
+  })
+}
+
+export function removeDepartmentMember(departmentId, userId) {
+  return remoteOrDemo(() => departmentApi.removeDepartmentMember(departmentId, userId), () => {
+    const department = state.departments.find((item) => Number(item.id) === Number(departmentId))
+    if (!department) {
+      throw new Error('department not found')
+    }
+
+    const user = state.users.find((item) => Number(item.id) === Number(userId))
+    if (!user) {
+      throw new Error('user not found')
+    }
+    if (user.department !== department.name) {
+      throw new Error('user is not in this department')
+    }
+
+    user.department = '未分配部门'
+    refreshDemoDepartmentCounts()
+    return null
+  })
+}
+
+function refreshDemoDepartmentCounts() {
+  for (const department of state.departments) {
+    department.memberCount = state.users.filter((user) => user.department === department.name).length
+  }
 }
 
 export function getFiles({ page = 1, size = 5, keyword = '' } = {}) {
@@ -404,8 +545,28 @@ export function getTasks({ page = 1, size = 5, keyword = '', status = '' } = {})
 
 export function createTask(data) {
   return remoteOrDemo(() => taskApi.createTask(data), () => {
-    const item = { ...data, id: Date.now(), priority: data.priority || '中', status: data.status || 'todo', dueDate: data.dueDate || '待定' }
+    const executor = state.users.find((user) => Number(user.id) === Number(data.executorId))
+    const item = {
+      ...data,
+      id: Date.now(),
+      assignee: executor?.name || executor?.account || '未指定',
+      priority: data.priority || 2,
+      status: 'todo',
+      dueDate: data.dueDate || data.deadline || '待定',
+    }
     state.tasks.unshift(item)
+    return item
+  })
+}
+
+export function updateTaskStatus(taskId, status) {
+  return remoteOrDemo(() => taskApi.updateTaskStatus(taskId, status), () => {
+    const item = state.tasks.find((task) => Number(task.id ?? task.taskId) === Number(taskId))
+    if (!item) {
+      throw new Error('task not found')
+    }
+
+    item.status = status
     return item
   })
 }

@@ -18,7 +18,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['update:modelValue', 'close'])
+const emit = defineEmits(['update:modelValue', 'close', 'closed'])
 
 function closeDialog() {
   emit('update:modelValue', false)
@@ -33,8 +33,9 @@ function closeDialog() {
     :model-value="modelValue"
     :title="title"
     :width="width"
-    :destroy-on-close="destroyOnClose"
-    @close="closeDialog"
+  :destroy-on-close="destroyOnClose"
+  @close="closeDialog"
+  @closed="emit('closed')"
   >
     <slot />
 

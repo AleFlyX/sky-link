@@ -63,6 +63,17 @@ function getFieldId(field) {
         />
       </el-select>
 
+      <el-date-picker
+        v-else-if="field.type === 'datetime'"
+        :id="getFieldId(field)"
+        :model-value="modelValue[field.key]"
+        type="datetime"
+        :placeholder="field.placeholder || `请选择${field.label}`"
+        :disabled="Boolean(field.disabled)"
+        :clearable="field.clearable !== false"
+        @update:model-value="updateField(field.key, $event)"
+      />
+
       <AppInput
         v-else
         :id="getFieldId(field)"
@@ -123,7 +134,8 @@ function getFieldId(field) {
   line-height: normal;
 }
 
-.app-generated-form :deep(.el-select) {
+.app-generated-form :deep(.el-select),
+.app-generated-form :deep(.el-date-editor) {
   width: 100%;
 }
 
