@@ -693,11 +693,18 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 
 #### 10.1.1 获取角色列表
 - **接口**：`GET /roles`
-- **权限**：超级管理员
-- **响应**：返回所有角色。
+- **描述**：分页查询角色，支持按名称、编码和状态筛选
+- **权限**：`role:list`
+- **Query 参数**：
+  - `page`、`size`（通用）
+  - `roleName`：模糊搜索角色名称
+  - `roleCode`：模糊搜索角色编码
+  - `status`：按状态筛选（0 禁用，1 启用）
+- **响应**：分页角色列表，`records` 中包含角色基础信息及已分配权限摘要。
 
 #### 10.1.2 创建角色
 - **接口**：`POST /roles`
+- **权限**：`role:create`
 - **请求体**：
 ```json
 {
@@ -710,27 +717,109 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 
 #### 10.1.3 更新角色
 - **接口**：`PUT /roles/{roleId}`
-- **请求体**：字段可选。
+- **权限**：`role:update`
+- **请求体**（字段可选）：
+```json
+{
+  "roleName": "项目主管",
+  "roleCode": "ROLE_PROJECT_LEADER",
+  "description": "负责项目管理",
+  "status": 1
+}
+```
 - **响应**：更新后角色。
 
 #### 10.1.4 删除角色
 - **接口**：`DELETE /roles/{roleId}`
+- **权限**：`role:delete`
 - **响应**：成功消息。
 
-#### 10.1.5 为角色分配权限（需扩展权限表）
+#### 10.1.5 为角色分配权限
 - **接口**：`PUT /roles/{roleId}/permissions`
+- **描述**：按权限编码整体覆盖当前角色的权限集合
+- **权限**：`role:permission:set`
 - **请求体**：
 ```json
 {
-  "permissionCodes": ["user:add", "user:update"]
+  "permissionCodes": ["user:list", "user:create", "permission:list"]
 }
 ```
-- **响应**：成功。
+- **响应**：返回最新角色信息及其权限列表。
 
-### 10.2 权限管理（仅超管）
+### 10.2 权限管理
 #### 10.2.1 获取所有权限列表
 - **接口**：`GET /permissions`
+- **描述**：返回完整权限目录，常用于角色权限分配时加载可选项
+- **权限**：`permission:list`
 - **响应**：平铺权限列表。
+
+#### 10.2.2 分页获取权限列表
+- **接口**：`GET /permissions/page`
+- **描述**：分页查询权限，支持按名称、编码和类型筛选
+- **权限**：`permission:list`
+- **Query 参数**：
+  - `page`、`size`（通用）
+  - `permissionName`：模糊搜索权限名称
+  - `permissionCode`：模糊搜索权限编码
+  - `permissionType`：按权限类型筛选（1 菜单，2 按钮，3 接口）
+- **响应**：分页权限列表。
+
+#### 10.2.3 获取单个权限详情
+- **接口**：`GET /permissions/{permissionId}`
+- **权限**：`permission:list`
+- **路径参数**：`permissionId`
+- **响应**：
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "permissionId": 21,
+    "permissionName": "角色列表",
+    "permissionCode": "role:list",
+    "permissionType": 3,
+    "sortNo": 10
+  }
+}
+```
+
+#### 10.2.4 创建权限
+- **接口**：`POST /permissions`
+- **权限**：`permission:create`
+- **请求体**：
+```json
+{
+  "permissionName": "角色列表",
+  "permissionCode": "role:list",
+  "permissionType": 3,
+  "sortNo": 10
+}
+```
+- **说明**：
+  - `permissionCode` 必须唯一。
+  - `permissionType` 当前取值为 `1`、`2`、`3`，分别表示菜单、按钮、接口权限。
+  - `sortNo` 可选，默认按 `0` 处理。
+- **响应**：返回新建后的权限信息。
+
+#### 10.2.5 更新权限
+- **接口**：`PUT /permissions/{permissionId}`
+- **权限**：`permission:update`
+- **请求体**：
+```json
+{
+  "permissionName": "角色查看",
+  "permissionCode": "role:list",
+  "permissionType": 3,
+  "sortNo": 20
+}
+```
+- **响应**：返回更新后的权限信息。
+
+#### 10.2.6 删除权限
+- **接口**：`DELETE /permissions/{permissionId}`
+- **权限**：`permission:delete`
+- **路径参数**：`permissionId`
+- **响应**：成功消息。
 
 ### 10.3 用户角色分配（管理员）
 #### 10.3.1 为用户分配角色
@@ -761,11 +850,12 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 | 任务状态 (status)    | 未开始, 进行中, 已完成                                    |
 | 任务优先级 (priority) | 1-低，2-中，3-高                                           |
 | 文档权限 (permissionType) | read, comment, edit, manage                           |
+| 权限类型 (permissionType) | 1-菜单，2-按钮，3-接口                                  |
 | 好友申请状态 (status) | pending, accepted, rejected                              |
 | 群成员角色 (role)    | owner, admin, member                                     |
 
 ---
 
-**文档版本**：v1.0  
-**最后更新**：2026-07-13  
+**文档版本**：v1.1  
+**最后更新**：2026-07-16  
 **维护人**：SkyLink 开发团队
