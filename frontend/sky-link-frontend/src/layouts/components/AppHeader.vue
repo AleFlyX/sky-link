@@ -10,9 +10,7 @@ const router = useRouter()
 const appStore = useAppStore()
 
 const pageTitle = computed(() => route.meta.title || 'SkyLink')
-const pageEyebrow = computed(
-  () => route.meta.eyebrow || 'Connected Workspace',
-)
+const pageEyebrow = computed(() => route.meta.eyebrow || 'Connected Workspace')
 const unreadCount = computed(() => appStore.unreadNotificationCount)
 
 function goToTasks() {

@@ -17,14 +17,21 @@ import { useUserStore } from '../../stores/user'
 import { useCollaborationSession } from './composables/useCollaborationSession'
 
 import { visibilityOptions } from './constant/enum.js'
-const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
+const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
 const documentId = Number(route.params.documentId)
-const document = ref(null); const loading = ref(true); const titleSaving = ref(false); const statusSaving = ref(false)
+const document = ref(null)
+const loading = ref(true)
+const titleSaving = ref(false)
+const statusSaving = ref(false)
 const session = useCollaborationSession(documentId)
 const colors = ['#0066CC', '#009966', '#CC6600', '#663399', '#CC3333']
 const userColor = colors[Math.abs(Number(userStore.user?.id) || 0) % colors.length]
 
-const visibilityLabels = Object.fromEntries(visibilityOptions.map((option) => [option.value, option.label]))
+const visibilityLabels = Object.fromEntries(
+  visibilityOptions.map((option) => [option.value, option.label]),
+)
 const adminRoleCodes = new Set(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'])
 const previousStatus = ref('private')
 const visibilityDialog = ref(false)
@@ -36,43 +43,81 @@ const canManageDocument = computed(() => {
   const roles = Array.isArray(userStore.user?.roles) ? userStore.user.roles : []
   const hasAdminRole = roles.some((role) => {
     if (!role) return false
-    const code = String(role.roleCode || role.code || role.name || role.roleName || role.label || '').trim().toUpperCase()
+    const code = String(
+      role.roleCode || role.code || role.name || role.roleName || role.label || '',
+    )
+      .trim()
+      .toUpperCase()
     return adminRoleCodes.has(code)
   })
 
-  return session.permission.value === 'manage' || (Number.isFinite(currentUserId) && currentUserId === creatorId) || hasAdminRole
+  return (
+    session.permission.value === 'manage' ||
+    (Number.isFinite(currentUserId) && currentUserId === creatorId) ||
+    hasAdminRole
+  )
 })
-const currentVisibilityLabel = computed(() => visibilityLabels[document.value?.status] || visibilityLabels.private)
+const currentVisibilityLabel = computed(
+  () => visibilityLabels[document.value?.status] || visibilityLabels.private,
+)
 
 const editor = shallowRef(null)
 
 watch(session.editable, (value) => editor.value?.setEditable(value), { immediate: true })
-const statusCopy = computed(() => ({ connecting: '正在连接', syncing: '正在同步', synced: '已同步', saving: '保存中', saved: '已保存',
-  offline: '离线编辑中', readonly: '只读', error: '同步失败' })[session.status.value] || '正在连接')
+const statusCopy = computed(
+  () =>
+    ({
+      connecting: '正在连接',
+      syncing: '正在同步',
+      synced: '已同步',
+      saving: '保存中',
+      saved: '已保存',
+      offline: '离线编辑中',
+      readonly: '只读',
+      error: '同步失败',
+    })[session.status.value] || '正在连接',
+)
 
 async function load() {
   try {
-    const payload = await getDocument(documentId); document.value = payload?.data ?? payload; previousStatus.value = document.value?.status || 'private'
+    const payload = await getDocument(documentId)
+    document.value = payload?.data ?? payload
+    previousStatus.value = document.value?.status || 'private'
     await session.connect()
-    editor.value = new Editor({ editable: session.editable.value, extensions: [
-      StarterKit.configure({ undoRedo: false }),
-      Image.configure({ allowBase64: true, inline: false }),
-      Table.configure({ resizable: true }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      Collaboration.configure({ document: session.ydoc, field: 'default' }),
-      CollaborationCaret.configure({ provider: session.provider.value, user: { name: userStore.displayName || '协作者', color: userColor } }),
-    ] })
-  } catch (error) { session.error.value = error.message; session.status.value = 'error' }
-  finally { loading.value = false }
+    editor.value = new Editor({
+      editable: session.editable.value,
+      extensions: [
+        StarterKit.configure({ undoRedo: false }),
+        Image.configure({ allowBase64: true, inline: false }),
+        Table.configure({ resizable: true }),
+        TableRow,
+        TableHeader,
+        TableCell,
+        Collaboration.configure({ document: session.ydoc, field: 'default' }),
+        CollaborationCaret.configure({
+          provider: session.provider.value,
+          user: { name: userStore.displayName || '协作者', color: userColor },
+        }),
+      ],
+    })
+  } catch (error) {
+    session.error.value = error.message
+    session.status.value = 'error'
+  } finally {
+    loading.value = false
+  }
 }
 async function saveTitle() {
   if (!document.value?.title?.trim()) return ElMessage.warning('文档标题不能为空')
   titleSaving.value = true
-  try { await updateDocument(documentId, { title: document.value.title.trim() }); ElMessage.success('标题已保存') }
-  catch (error) { ElMessage.error(error.message) }
-  finally { titleSaving.value = false }
+  try {
+    await updateDocument(documentId, { title: document.value.title.trim() })
+    ElMessage.success('标题已保存')
+  } catch (error) {
+    ElMessage.error(error.message)
+  } finally {
+    titleSaving.value = false
+  }
 }
 function openVisibilityDialog() {
   if (!document.value) return
@@ -132,36 +177,82 @@ onBeforeUnmount(() => editor.value?.destroy())
 
 <template>
   <div class="collaboration-page">
-    <AppCard variant="hero" padding="lg" class="collaboration-header-card" body-class="collaboration-header-card__body">
+    <AppCard
+      variant="hero"
+      padding="lg"
+      class="collaboration-header-card"
+      body-class="collaboration-header-card__body"
+    >
       <div class="collaboration-header">
         <div class="collaboration-header__nav">
           <AppButton variant="secondary" @click="router.push('/app/documents')">返回文档</AppButton>
-          <div class="sync-status sync-status--compact" :class="`sync-status--${session.status.value}`">
+          <div
+            class="sync-status sync-status--compact"
+            :class="`sync-status--${session.status.value}`"
+          >
             <span>{{ statusCopy }}</span>
-            <small v-if="session.savedAt.value">{{ new Date(session.savedAt.value).toLocaleTimeString() }}</small>
+            <small v-if="session.savedAt.value">{{
+              new Date(session.savedAt.value).toLocaleTimeString()
+            }}</small>
           </div>
         </div>
         <div class="document-meta">
           <div class="document-meta__title-row">
-            <AppInput v-if="document" v-model="document.title" class="document-title-input" :disabled="!canEditContent || titleSaving || statusSaving" @blur="saveTitle" />
+            <AppInput
+              v-if="document"
+              v-model="document.title"
+              class="document-title-input"
+              :disabled="!canEditContent || titleSaving || statusSaving"
+              @blur="saveTitle"
+            />
             <div class="document-actions">
-              <AppStatusTag v-if="document" :label="currentVisibilityLabel" :tone="document.status === 'archived' ? 'info' : 'primary'" />
-              <AppButton v-if="canManageDocument" size="small" variant="secondary" @click="openVisibilityDialog">修改可见范围</AppButton>
+              <AppStatusTag
+                v-if="document"
+                :label="currentVisibilityLabel"
+                :tone="document.status === 'archived' ? 'info' : 'primary'"
+              />
+              <AppButton
+                v-if="canManageDocument"
+                size="small"
+                variant="secondary"
+                @click="openVisibilityDialog"
+                >修改可见范围</AppButton
+              >
             </div>
           </div>
-          <p class="document-meta__hint">标题、可见范围和协同内容彼此分离，方便单独调整文档状态。</p>
+          <p class="document-meta__hint">
+            标题、可见范围和协同内容彼此分离，方便单独调整文档状态。
+          </p>
         </div>
       </div>
     </AppCard>
-    <el-alert v-if="session.error.value" :title="session.error.value" type="warning" show-icon :closable="false">
-      <template #default><AppButton variant="secondary" @click="copyContent">复制当前内容</AppButton></template>
+    <el-alert
+      v-if="session.error.value"
+      :title="session.error.value"
+      type="warning"
+      show-icon
+      :closable="false"
+    >
+      <template #default
+        ><AppButton variant="secondary" @click="copyContent">复制当前内容</AppButton></template
+      >
     </el-alert>
     <el-skeleton v-if="loading" :rows="12" animated />
     <main v-else class="editor-paper" :aria-busy="session.status.value === 'connecting'">
       <div class="editor-toolbar">
-        <AppButton size="small" variant="secondary" :disabled="!canEditContent" @click="insertTable">插入表格</AppButton>
-        <AppButton size="small" variant="secondary" :disabled="!canEditContent || !editor?.isActive('table')" @click="removeTable">删除表格</AppButton>
-        <AppButton size="small" variant="secondary" :disabled="!canEditContent" @click="insertImage">插入图片</AppButton>
+        <AppButton size="small" variant="secondary" :disabled="!canEditContent" @click="insertTable"
+          >插入表格</AppButton
+        >
+        <AppButton
+          size="small"
+          variant="secondary"
+          :disabled="!canEditContent || !editor?.isActive('table')"
+          @click="removeTable"
+          >删除表格</AppButton
+        >
+        <AppButton size="small" variant="secondary" :disabled="!canEditContent" @click="insertImage"
+          >插入图片</AppButton
+        >
       </div>
       <EditorContent :editor="editor" />
       <p class="editor-hint">图片通过 URL 插入，表格会作为协同文档节点保存。</p>
@@ -169,15 +260,28 @@ onBeforeUnmount(() => editor.value?.destroy())
     </main>
     <el-dialog v-model="visibilityDialog" title="修改可见范围" width="min(480px, 92vw)">
       <div class="visibility-dialog">
-        <p class="visibility-dialog__hint">修改可见范围会影响成员是否可以直接查看该文档；归档后会暂时转为只读，恢复后可继续编辑。</p>
-        <el-select v-model="visibilityDraft" class="visibility-dialog__select" :disabled="statusSaving">
-          <el-option v-for="option in visibilityOptions" :key="option.value" :label="option.label" :value="option.value" />
+        <p class="visibility-dialog__hint">
+          修改可见范围会影响成员是否可以直接查看该文档；归档后会暂时转为只读，恢复后可继续编辑。
+        </p>
+        <el-select
+          v-model="visibilityDraft"
+          class="visibility-dialog__select"
+          :disabled="statusSaving"
+        >
+          <el-option
+            v-for="option in visibilityOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
         </el-select>
       </div>
       <template #footer>
         <div class="visibility-dialog__footer">
           <AppButton :disabled="statusSaving" @click="visibilityDialog = false">取消</AppButton>
-          <AppButton variant="primary" :disabled="statusSaving" @click="saveVisibility">保存</AppButton>
+          <AppButton variant="primary" :disabled="statusSaving" @click="saveVisibility"
+            >保存</AppButton
+          >
         </div>
       </template>
     </el-dialog>
@@ -185,24 +289,163 @@ onBeforeUnmount(() => editor.value?.destroy())
 </template>
 
 <style scoped>
-.collaboration-page{display:grid;gap:1rem}.collaboration-header-card__body{padding-bottom:1rem}.collaboration-header{display:grid;gap:1rem}
-.collaboration-header__nav{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
-.document-meta{display:grid;gap:.5rem;flex:1;min-width:min(100%,32rem)}.document-meta__title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-.document-title-input{flex:1;min-width:min(100%,28rem);max-width:48rem}.document-actions{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;justify-content:flex-end}
-.document-meta__hint{margin:0;color:var(--color-text-muted);font-size:.9rem;line-height:1.7}
-.sync-status{display:flex;gap:.5rem;align-items:baseline;color:var(--color-text-muted)}
-.sync-status--compact{padding-top:.25rem;text-align:right}
-.sync-status--saved,.sync-status--synced{color:#087f5b}.sync-status--offline,.sync-status--error{color:#c2410c}
-.editor-paper{position:relative;max-width:980px;width:100%;min-height:70vh;margin:0 auto;padding:2rem 2.25rem 3rem;background:#fff;border:1px solid var(--color-border);border-radius:18px;box-shadow:0 18px 50px rgb(15 23 42 / 8%)}
-.editor-toolbar{display:flex;flex-wrap:wrap;gap:.75rem;padding-bottom:1rem;margin-bottom:1.25rem;border-bottom:1px solid rgba(148,163,184,.24)}
-.editor-paper :deep(.tiptap){min-height:60vh;outline:none;line-height:1.75}
-.editor-paper :deep(.tiptap img){display:block;max-width:100%;height:auto;border-radius:12px;box-shadow:0 10px 24px rgb(15 23 42 / 10%)}
-.editor-paper :deep(.tiptap table){width:100%;border-collapse:collapse;margin:1rem 0;overflow:hidden}
+.collaboration-page {
+  display: grid;
+  gap: 1rem;
+}
+.collaboration-header-card__body {
+  padding-bottom: 1rem;
+}
+.collaboration-header {
+  display: grid;
+  gap: 1rem;
+}
+.collaboration-header__nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.document-meta {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: min(100%, 32rem);
+}
+.document-meta__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.document-title-input {
+  flex: 1;
+  min-width: min(100%, 28rem);
+  max-width: 48rem;
+}
+.document-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.document-meta__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.sync-status {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  color: var(--color-text-muted);
+}
+.sync-status--compact {
+  padding-top: 0.25rem;
+  text-align: right;
+}
+.sync-status--saved,
+.sync-status--synced {
+  color: #087f5b;
+}
+.sync-status--offline,
+.sync-status--error {
+  color: #c2410c;
+}
+.editor-paper {
+  position: relative;
+  max-width: 980px;
+  width: 100%;
+  min-height: 70vh;
+  margin: 0 auto;
+  padding: 2rem 2.25rem 3rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgb(15 23 42 / 8%);
+}
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+}
+.editor-paper :deep(.tiptap) {
+  min-height: 60vh;
+  outline: none;
+  line-height: 1.75;
+}
+.editor-paper :deep(.tiptap img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 10%);
+}
+.editor-paper :deep(.tiptap table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  overflow: hidden;
+}
 .editor-paper :deep(.tiptap th),
-.editor-paper :deep(.tiptap td){border:1px solid var(--color-border);padding:.65rem .8rem;vertical-align:top}
-.editor-paper :deep(.tiptap th){background:#f8fafc;font-weight:600}
-.editor-hint{margin:.8rem 0 0;color:var(--color-text-muted);font-size:.88rem}
-.readonly-hint{position:absolute;right:1rem;bottom:1rem;color:var(--color-text-muted);font-size:.85rem}
-.visibility-dialog{display:grid;gap:1rem}.visibility-dialog__hint{margin:0;color:var(--color-text-muted);line-height:1.7}.visibility-dialog__select{width:100%}.visibility-dialog__footer{display:flex;justify-content:flex-end;gap:.75rem}
-@media(max-width:720px){.editor-paper{padding:1.5rem}.document-title-input{min-width:0;width:100%}.document-actions{justify-content:flex-start}.sync-status--compact{text-align:left}}
+.editor-paper :deep(.tiptap td) {
+  border: 1px solid var(--color-border);
+  padding: 0.65rem 0.8rem;
+  vertical-align: top;
+}
+.editor-paper :deep(.tiptap th) {
+  background: #f8fafc;
+  font-weight: 600;
+}
+.editor-hint {
+  margin: 0.8rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+.readonly-hint {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+.visibility-dialog {
+  display: grid;
+  gap: 1rem;
+}
+.visibility-dialog__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+.visibility-dialog__select {
+  width: 100%;
+}
+.visibility-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+@media (max-width: 720px) {
+  .editor-paper {
+    padding: 1.5rem;
+  }
+  .document-title-input {
+    min-width: 0;
+    width: 100%;
+  }
+  .document-actions {
+    justify-content: flex-start;
+  }
+  .sync-status--compact {
+    text-align: left;
+  }
+}
 </style>

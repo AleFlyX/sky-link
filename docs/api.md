@@ -269,22 +269,30 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 
 ### 4.1 获取部门列表
 - **接口**：`GET /departments`
-- **描述**：获取所有部门列表（含成员数）
+- **描述**：分页获取部门列表（含成员数），支持关键字搜索
+- **Query 参数**：
+  - `page`、`size`（通用）
+  - `keyword`：可选，按部门名称、负责人用户名/昵称、部门说明模糊搜索
 - **响应**：
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": [
-    {
-      "departmentId": 1,
-      "departmentName": "研发部",
-      "leaderId": 1001,
-      "leaderName": "张三",
-      "description": "负责产品研发",
-      "memberCount": 20
-    }
-  ]
+  "data": {
+    "total": 1,
+    "page": 1,
+    "size": 10,
+    "records": [
+      {
+        "departmentId": 1,
+        "departmentName": "研发部",
+        "leaderId": 1001,
+        "leaderName": "张三",
+        "description": "负责产品研发",
+        "memberCount": 20
+      }
+    ]
+  }
 }
 ```
 
@@ -560,8 +568,10 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 ### 8.2 获取文档列表
 - **接口**：`GET /documents`
 - **描述**：获取当前用户可查看的文档列表（自己创建或被授权的）
-- **Query 参数**：分页、`title` 搜索
-- **响应**：分页文档摘要（不含完整内容）。
+- **Query 参数**：
+  - `page`、`size`（通用）
+  - `title`：可选，按文档标题模糊搜索
+- **响应**：分页文档摘要（不含完整内容），每条记录包含当前用户对该文档的 `permission` 字段（`read`、`edit`、`manage`）。
 
 ### 8.3 获取文档详情
 - **接口**：`GET /documents/{documentId}`
@@ -654,7 +664,8 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 - **接口**：`GET /tasks`
 - **描述**：获取当前用户参与的任务（创建或负责），支持筛选
 - **Query 参数**：
-  - `status`：未开始、进行中、已完成（可枚举）
+  - `keyword`：可选，按任务标题、任务内容、创建者用户名/昵称、负责人用户名/昵称模糊搜索
+  - `status`：可选，支持 `todo` / `doing` / `done` / `cancelled`；也兼容 `未开始` / `进行中` / `已完成` / `已取消`
   - `priority`：筛选优先级
   - `executorId`：按负责人筛选
   - `page`, `size`
@@ -675,7 +686,7 @@ Access Token 通过登录接口获取，有效期由服务端 `skylink.jwt.ttl` 
 - **请求体**：
 ```json
 {
-  "status": "进行中"   // 未开始 / 进行中 / 已完成
+  "status": "进行中"   // 推荐传值：未开始 / 进行中 / 已完成；同时兼容 todo / doing / done / cancelled
 }
 ```
 - **响应**：任务状态更新后的信息。

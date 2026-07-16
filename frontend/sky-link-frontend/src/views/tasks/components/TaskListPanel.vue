@@ -1,4 +1,5 @@
 <script setup>
+import { Refresh, Search } from '@element-plus/icons-vue'
 import AppButton from '../../../components/common/AppButton.vue'
 import AppCard from '../../../components/common/AppCard.vue'
 import AppInput from '../../../components/common/AppInput.vue'
@@ -9,12 +10,16 @@ import AppStatusTag from '../../../components/common/AppStatusTag.vue'
 import { getTaskStatusMeta, taskStatusOptions } from '../../../constants/enums'
 import { useTaskList } from '../composables/useTaskList'
 
+const searchStatusOptions = taskStatusOptions.filter((item) => item.value !== 'blocked')
+
 const {
   columns,
   demoData,
   dialogVisible,
-  filteredRows,
   getNextStatusAction,
+  handlePageChange,
+  handleReset,
+  handleSearch,
   handleStatusUpdate,
   handleSubmit,
   keyword,
@@ -23,12 +28,13 @@ const {
   loading,
   page,
   pageSize,
-  pagedRows,
+  rows,
   status,
   taskCreationDisabled,
   taskCreationNotice,
   taskFormFields,
   taskFormInitialData,
+  total,
   updatingTaskId,
 } = useTaskList()
 </script>
@@ -42,10 +48,15 @@ const {
     >
       <div class="page-toolbar">
         <div class="page-toolbar__filters">
-          <AppInput v-model="keyword" placeholder="搜索任务 / 负责人 / 优先级" clearable />
-          <el-select v-model="status" placeholder="筛选任务状态" clearable>
+          <AppInput
+            v-model="keyword"
+            placeholder="搜索任务 / 负责人"
+            clearable
+            @keyup.enter="handleSearch"
+          />
+          <el-select v-model="status" placeholder="筛选任务状态" clearable @change="handleSearch">
             <el-option
-              v-for="item in taskStatusOptions"
+              v-for="item in searchStatusOptions"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -60,6 +71,8 @@ const {
         >
           新建任务
         </AppButton>
+        <AppButton variant="primary" :icon="Search" @click="handleSearch">查询</AppButton>
+        <AppButton :icon="Refresh" @click="handleReset">重置</AppButton>
       </div>
 
       <el-alert
@@ -82,14 +95,17 @@ const {
 
       <AppDataTable
         :columns="columns"
-        :rows="pagedRows"
+        :rows="rows"
         :loading="loading"
         :error="loadError"
         empty-text="暂无任务数据"
         @retry="loadData"
       >
         <template #status="{ value }">
-          <AppStatusTag :label="getTaskStatusMeta(value).label" :tone="getTaskStatusMeta(value).tone" />
+          <AppStatusTag
+            :label="getTaskStatusMeta(value).label"
+            :tone="getTaskStatusMeta(value).tone"
+          />
         </template>
         <template #actions="{ row }">
           <AppButton
@@ -105,7 +121,12 @@ const {
         </template>
       </AppDataTable>
 
-      <AppPagination v-model:page="page" :page-size="pageSize" :total="filteredRows.length" />
+      <AppPagination
+        :page="page"
+        :page-size="pageSize"
+        :total="total"
+        @update:page="handlePageChange"
+      />
     </AppCard>
 
     <AppFormDialog

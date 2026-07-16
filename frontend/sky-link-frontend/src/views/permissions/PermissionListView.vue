@@ -49,7 +49,9 @@ const permissionTypeOptions = [
   { value: 3, label: '接口权限', tone: 'success' },
 ]
 
-const permissionTypeMap = Object.fromEntries(permissionTypeOptions.map((item) => [item.value, item]))
+const permissionTypeMap = Object.fromEntries(
+  permissionTypeOptions.map((item) => [item.value, item]),
+)
 
 const columns = [
   { key: 'permissionName', label: '权限名称' },
@@ -197,10 +199,7 @@ onMounted(async () => {
 
 <template>
   <div class="page-shell">
-    <AppCard
-      title="权限管理"
-      subtitle="维护全局权限目录，角色页会基于这里的权限编码进行能力分配。"
-    >
+    <AppCard title="权限管理" subtitle="维护全局权限目录，角色页会基于这里的权限编码进行能力分配。">
       <div class="page-toolbar">
         <div class="page-toolbar__filters">
           <AppInput
@@ -298,12 +297,20 @@ onMounted(async () => {
       <div class="dialog-form">
         <label class="dialog-form__field">
           <span>权限名称</span>
-          <AppInput v-model="permissionForm.permissionName" maxlength="50" placeholder="例如：角色列表" />
+          <AppInput
+            v-model="permissionForm.permissionName"
+            maxlength="50"
+            placeholder="例如：角色列表"
+          />
         </label>
 
         <label class="dialog-form__field">
           <span>权限编码</span>
-          <AppInput v-model="permissionForm.permissionCode" maxlength="100" placeholder="例如：role:list" />
+          <AppInput
+            v-model="permissionForm.permissionCode"
+            maxlength="100"
+            placeholder="例如：role:list"
+          />
         </label>
 
         <label class="dialog-form__field">

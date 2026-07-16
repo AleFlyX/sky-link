@@ -78,7 +78,11 @@ const emojiPopoverVisibleProxy = computed({
           </button>
         </div>
       </ElPopover>
-      <AppButton variant="primary" :disabled="!draft.trim() || !activeSession" @click="emit('send-text')">
+      <AppButton
+        variant="primary"
+        :disabled="!draft.trim() || !activeSession"
+        @click="emit('send-text')"
+      >
         发送
       </AppButton>
     </div>

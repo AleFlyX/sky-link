@@ -11,9 +11,7 @@ import { createUser as createUserApi } from '../api/user'
 vi.mock('../api/department', () => ({
   getDepartments: vi.fn(() =>
     Promise.resolve({
-      data: [
-        { departmentId: 201, departmentName: '产品研发中心' },
-      ],
+      data: [{ departmentId: 201, departmentName: '产品研发中心' }],
     }),
   ),
 }))
@@ -100,10 +98,14 @@ function mountUserList(permissions = ['user:list', 'user:create']) {
       directives: { permission },
       plugins: [pinia],
       stubs: {
-        AppButton: { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+        AppButton: {
+          template: '<button type="button" @click="$emit(\'click\')"><slot /></button>',
+        },
         AppCard: { template: '<section><slot /></section>' },
         AppDataTable: { template: '<div><slot name="actions" :row="{}" /><slot /></div>' },
-        AppDialog: { template: '<div v-if="$attrs.modelValue"><slot /><slot name="footer" /></div>' },
+        AppDialog: {
+          template: '<div v-if="$attrs.modelValue"><slot /><slot name="footer" /></div>',
+        },
         AppPagination: true,
         AppStatusTag: { template: '<span><slot /></span>' },
         UserFormDialog: UserFormDialogStub,

@@ -45,9 +45,7 @@ async function handleRegister() {
     <section class="register-page__intro">
       <div class="register-page__badge">账号注册</div>
       <h1>注册账号</h1>
-      <p>
-        填写基础信息后即可登录系统。
-      </p>
+      <p>填写基础信息后即可登录系统。</p>
     </section>
 
     <section class="register-page__panel">

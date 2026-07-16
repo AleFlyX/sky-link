@@ -35,11 +35,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits([
-  'update:page',
-  'open-request-dialog',
-  'open-chat',
-])
+const emit = defineEmits(['update:page', 'open-request-dialog', 'open-chat'])
 </script>
 
 <template>

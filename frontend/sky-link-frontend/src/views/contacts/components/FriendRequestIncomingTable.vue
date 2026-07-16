@@ -55,7 +55,10 @@ function getRequestStatusMeta(status) {
     @retry="emit('retry')"
   >
     <template #status="{ value }">
-      <AppStatusTag :label="getRequestStatusMeta(value).label" :tone="getRequestStatusMeta(value).tone" />
+      <AppStatusTag
+        :label="getRequestStatusMeta(value).label"
+        :tone="getRequestStatusMeta(value).tone"
+      />
     </template>
 
     <template #actions="{ row }">

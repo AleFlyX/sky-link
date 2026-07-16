@@ -72,12 +72,10 @@ const {
           </div>
 
           <el-skeleton v-if="messageLoading" :rows="6" animated />
-          <div v-else-if="activeSession && !messages.length" class="message-empty">暂无历史消息，先发一条吧</div>
-          <div
-            v-else
-            ref="threadBodyRef"
-            class="message-thread__body"
-          >
+          <div v-else-if="activeSession && !messages.length" class="message-empty">
+            暂无历史消息，先发一条吧
+          </div>
+          <div v-else ref="threadBodyRef" class="message-thread__body">
             <div class="message-thread__history">
               <AppButton
                 v-if="hasMoreHistory"
@@ -99,7 +97,9 @@ const {
               ]"
             >
               <div class="message-bubble__meta">
-                <span class="message-bubble__sender">{{ message.senderName }} · {{ message.sentAt }}</span>
+                <span class="message-bubble__sender"
+                  >{{ message.senderName }} · {{ message.sentAt }}</span
+                >
                 <button
                   v-if="canRecall(message)"
                   type="button"

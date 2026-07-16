@@ -57,7 +57,9 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
       return ''
     }
 
-    return groupDetail.value.members.find((member) => member.userId === getCurrentUserId())?.role || ''
+    return (
+      groupDetail.value.members.find((member) => member.userId === getCurrentUserId())?.role || ''
+    )
   })
 
   async function loadGroupDetailData(groupId = activeGroupId.value) {
@@ -77,7 +79,10 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
     }
   }
 
-  async function loadGroupMembersData(groupId = activeGroupId.value, page = groupMembersPage.value) {
+  async function loadGroupMembersData(
+    groupId = activeGroupId.value,
+    page = groupMembersPage.value,
+  ) {
     if (!groupId) {
       return
     }
@@ -196,9 +201,10 @@ export function useGroupManagement({ getCurrentUserId, reloadContacts }) {
       return
     }
 
-    const message = role === 'admin'
-      ? `确认将 ${member.nickname || member.username} 设为管理员吗？`
-      : `确认取消 ${member.nickname || member.username} 的管理员身份吗？`
+    const message =
+      role === 'admin'
+        ? `确认将 ${member.nickname || member.username} 设为管理员吗？`
+        : `确认取消 ${member.nickname || member.username} 的管理员身份吗？`
 
     try {
       await confirm(message, '修改成员角色', {

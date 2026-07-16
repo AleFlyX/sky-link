@@ -5,15 +5,22 @@ const PHONE_PATTERN = /^1\d{10}$/
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function sanitizeNickname(value) {
-  return String(value ?? '').normalize('NFKC').trim()
+  return String(value ?? '')
+    .normalize('NFKC')
+    .trim()
 }
 
 function sanitizePhone(value) {
-  return String(value ?? '').replace(/\D/g, '').trim()
+  return String(value ?? '')
+    .replace(/\D/g, '')
+    .trim()
 }
 
 function sanitizeEmail(value) {
-  return String(value ?? '').normalize('NFKC').trim().toLowerCase()
+  return String(value ?? '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
 }
 
 export function useRegisterForm() {

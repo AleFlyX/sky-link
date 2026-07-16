@@ -82,7 +82,9 @@ const emit = defineEmits([
       <template #actions="{ row }">
         <div class="group-space__actions">
           <AppButton size="small" @click="emit('open-manage', row)">管理</AppButton>
-          <AppButton size="small" variant="primary" @click="emit('open-chat', row)">发消息</AppButton>
+          <AppButton size="small" variant="primary" @click="emit('open-chat', row)"
+            >发消息</AppButton
+          >
         </div>
       </template>
     </AppDataTable>

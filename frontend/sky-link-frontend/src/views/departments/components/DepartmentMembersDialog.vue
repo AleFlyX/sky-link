@@ -44,7 +44,13 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['update:modelValue', 'page-change', 'retry', 'open-add-members', 'remove-member'])
+const emit = defineEmits([
+  'update:modelValue',
+  'page-change',
+  'retry',
+  'open-add-members',
+  'remove-member',
+])
 
 const memberColumns = [
   { key: 'userId', label: '用户ID', width: '88px' },
@@ -69,7 +75,11 @@ const memberColumns = [
         <strong>{{ department?.departmentName || '部门' }}</strong>
         <span>当前 {{ membersTotal }} 人</span>
       </div>
-      <AppButton v-permission="'department:members:add'" variant="primary" @click="emit('open-add-members')">
+      <AppButton
+        v-permission="'department:members:add'"
+        variant="primary"
+        @click="emit('open-add-members')"
+      >
         加入成员
       </AppButton>
     </div>
@@ -84,14 +94,16 @@ const memberColumns = [
       @retry="emit('retry')"
     >
       <template #status="{ value }">
-        <AppStatusTag
-          :label="formatStatus(value).label"
-          :tone="formatStatus(value).tone"
-        />
+        <AppStatusTag :label="formatStatus(value).label" :tone="formatStatus(value).tone" />
       </template>
 
       <template #actions="{ row }">
-        <AppButton v-permission="'department:members:remove'" size="small" variant="danger" @click="emit('remove-member', row)">
+        <AppButton
+          v-permission="'department:members:remove'"
+          size="small"
+          variant="danger"
+          @click="emit('remove-member', row)"
+        >
           移出
         </AppButton>
       </template>

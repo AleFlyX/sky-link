@@ -20,10 +20,8 @@ const props = defineProps({
 const emit = defineEmits(['update:page'])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
-const total = computed(()=>props.total)
-const pages = computed(() =>
-  Array.from({ length: totalPages.value }, (_, index) => index + 1),
-)
+const total = computed(() => props.total)
+const pages = computed(() => Array.from({ length: totalPages.value }, (_, index) => index + 1))
 
 function setPage(page) {
   if (page < 1 || page > totalPages.value || page === props.page) {
@@ -40,9 +38,7 @@ function setPage(page) {
     </div>
 
     <div class="app-pagination__actions">
-      <AppButton :disabled="page <= 1" @click="setPage(page - 1)">
-        上一页
-      </AppButton>
+      <AppButton :disabled="page <= 1" @click="setPage(page - 1)"> 上一页 </AppButton>
 
       <AppButton
         v-for="pageNumber in pages"
@@ -54,9 +50,7 @@ function setPage(page) {
         {{ pageNumber }}
       </AppButton>
 
-      <AppButton :disabled="page >= totalPages" @click="setPage(page + 1)">
-        下一页
-      </AppButton>
+      <AppButton :disabled="page >= totalPages" @click="setPage(page + 1)"> 下一页 </AppButton>
     </div>
   </div>
 </template>

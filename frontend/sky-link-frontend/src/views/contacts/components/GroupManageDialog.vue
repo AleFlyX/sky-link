@@ -101,7 +101,9 @@ const roleToneMap = {
 const canEditGroup = computed(() => ['owner', 'admin'].includes(props.currentRole))
 const canInviteMembers = computed(() => ['owner', 'admin'].includes(props.currentRole))
 const canDissolveGroup = computed(() => props.currentRole === 'owner')
-const canLeaveGroup = computed(() => props.currentRole === 'member' || props.currentRole === 'admin')
+const canLeaveGroup = computed(
+  () => props.currentRole === 'member' || props.currentRole === 'admin',
+)
 
 watch(
   () => props.group,
@@ -163,23 +165,12 @@ function handleSaveGroup() {
 </script>
 
 <template>
-  <AppDialog
-    :model-value="modelValue"
-    title="群管理"
-    width="1100px"
-    @close="closeDialog"
-  >
+  <AppDialog :model-value="modelValue" title="群管理" width="1100px" @close="closeDialog">
     <div class="group-manage-dialog">
       <el-skeleton v-if="loading && !group" :rows="8" animated />
 
       <template v-else>
-        <el-alert
-          v-if="error"
-          :title="error"
-          type="error"
-          show-icon
-          :closable="false"
-        />
+        <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
 
         <AppCard v-if="group" variant="hero" padding="sm">
           <div class="group-manage-dialog__overview">
@@ -208,7 +199,11 @@ function handleSaveGroup() {
 
                   <label class="group-manage-dialog__field">
                     <span>群公告</span>
-                    <AppInput v-model="groupForm.notice" type="textarea" :disabled="!canEditGroup" />
+                    <AppInput
+                      v-model="groupForm.notice"
+                      type="textarea"
+                      :disabled="!canEditGroup"
+                    />
                   </label>
 
                   <div class="group-manage-dialog__meta-list">

@@ -14,6 +14,8 @@ import { useDepartmentManagement } from './composables/useDepartmentManagement'
 const {
   page,
   pageSize,
+  rows,
+  total,
   loading,
   loadError,
   keyword,
@@ -35,14 +37,13 @@ const {
   addMembersSaving,
   selectedMemberIds,
   columns,
-  filteredRows,
-  pagedRows,
   availableMemberOptions,
   formatStatus,
   loadDepartments,
   refreshAll,
   handleSearch,
   handleReset,
+  handlePageChange,
   openCreateDialog,
   openEditDialog,
   saveDepartment,
@@ -79,7 +80,7 @@ onMounted(async () => {
       <AppDataTable
         row-key="departmentId"
         :columns="columns"
-        :rows="pagedRows"
+        :rows="rows"
         :loading="loading"
         :error="loadError"
         empty-text="暂无部门数据"
@@ -102,8 +103,20 @@ onMounted(async () => {
         <template #actions="{ row }">
           <div class="row-actions">
             <AppButton size="small" :icon="View" @click="openMembers(row)">成员</AppButton>
-            <AppButton v-permission="'department:update'" size="small" :icon="EditPen" @click="openEditDialog(row)">编辑</AppButton>
-            <AppButton v-permission="'department:delete'" size="small" variant="danger" :icon="Delete" @click="removeDepartment(row)">
+            <AppButton
+              v-permission="'department:update'"
+              size="small"
+              :icon="EditPen"
+              @click="openEditDialog(row)"
+              >编辑</AppButton
+            >
+            <AppButton
+              v-permission="'department:delete'"
+              size="small"
+              variant="danger"
+              :icon="Delete"
+              @click="removeDepartment(row)"
+            >
               删除
             </AppButton>
           </div>
@@ -111,9 +124,10 @@ onMounted(async () => {
       </AppDataTable>
 
       <AppPagination
-        v-model:page="page"
+        :page="page"
         :page-size="pageSize"
-        :total="filteredRows.length"
+        :total="total"
+        @update:page="handlePageChange"
       />
     </AppCard>
 

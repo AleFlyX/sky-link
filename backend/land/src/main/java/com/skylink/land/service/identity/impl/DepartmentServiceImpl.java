@@ -38,10 +38,28 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
     }
 
     @Override
-    public List<DepartmentVO> listDepartmentVO() {
-        return list(new LambdaQueryWrapper<Department>().orderByAsc(Department::getDepartmentId)).stream()
-            .map(this::toDepartmentVO)
-            .toList();
+    public PageResponse<DepartmentVO> pageDepartments(DepartmentDto.DepartmentQueryRequest request) {
+        DepartmentDto.DepartmentQueryRequest query = request == null
+            ? new DepartmentDto.DepartmentQueryRequest()
+            : request;
+
+        LambdaQueryWrapper<Department> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(query.getKeyword())) {
+            String keyword = query.getKeyword().trim();
+            Set<Long> matchedLeaderIds = findLeaderIdsByKeyword(keyword);
+            wrapper.and(nested -> {
+                nested.like(Department::getDepartmentName, keyword)
+                    .or()
+                    .like(Department::getDescription, keyword);
+                if (!matchedLeaderIds.isEmpty()) {
+                    nested.or().in(Department::getLeaderId, matchedLeaderIds);
+                }
+            });
+        }
+        wrapper.orderByAsc(Department::getDepartmentId);
+
+        Page<Department> page = page(query.toMybatisPage(), wrapper);
+        return PageResponse.of(page.convert(this::toDepartmentVO));
     }
 
     @Override
@@ -216,6 +234,17 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
         if (leaderId != null && userMapper.selectById(leaderId) == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "leader user does not exist");
         }
+    }
+
+    private Set<Long> findLeaderIdsByKeyword(String keyword) {
+        return userMapper.selectList(
+            new LambdaQueryWrapper<User>()
+                .select(User::getUserId)
+                .and(wrapper -> wrapper
+                    .like(User::getUsername, keyword)
+                    .or()
+                    .like(User::getNickname, keyword))
+        ).stream().map(User::getUserId).collect(java.util.stream.Collectors.toSet());
     }
 
     private Set<Long> normalizeUserIds(List<Long> userIds) {

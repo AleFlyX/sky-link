@@ -59,11 +59,21 @@ vi.mock('@tiptap/core', () => ({
     destroy() {}
     chain() {
       const api = {
-        focus() { return api },
-        insertTable() { return api },
-        deleteTable() { return api },
-        setImage() { return api },
-        run() { return api },
+        focus() {
+          return api
+        },
+        insertTable() {
+          return api
+        },
+        deleteTable() {
+          return api
+        },
+        setImage() {
+          return api
+        },
+        run() {
+          return api
+        },
       }
       return api
     }
@@ -82,7 +92,12 @@ vi.mock('@tiptap/vue-3', () => ({
 
 vi.mock('@tiptap/starter-kit', () => ({ default: { configure: () => ({}) } }))
 vi.mock('@tiptap/extension-image', () => ({ Image: { configure: () => ({}) } }))
-vi.mock('@tiptap/extension-table', () => ({ Table: { configure: () => ({}) }, TableCell: {}, TableHeader: {}, TableRow: {} }))
+vi.mock('@tiptap/extension-table', () => ({
+  Table: { configure: () => ({}) },
+  TableCell: {},
+  TableHeader: {},
+  TableRow: {},
+}))
 vi.mock('@tiptap/extension-collaboration', () => ({ default: { configure: () => ({}) } }))
 vi.mock('@tiptap/extension-collaboration-caret', () => ({ default: { configure: () => ({}) } }))
 
@@ -193,7 +208,8 @@ const ElOptionStub = defineComponent({
 })
 
 async function mountView() {
-  const { default: CollaborativeDocumentView } = await import('../views/documents/CollaborativeDocumentView.vue')
+  const { default: CollaborativeDocumentView } =
+    await import('../views/documents/CollaborativeDocumentView.vue')
   const pinia = createPinia()
   setActivePinia(pinia)
   const userStore = useUserStore()

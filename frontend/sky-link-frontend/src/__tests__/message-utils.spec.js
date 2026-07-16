@@ -62,11 +62,13 @@ describe('message utils', () => {
     })
     expect(getSessionIdFromParams({ groupId: 701 })).toBe('group-701')
 
-    expect(buildRouteSession({
-      type: 'group',
-      id: '701',
-      name: 'Day 3 联调小组',
-    })).toMatchObject({
+    expect(
+      buildRouteSession({
+        type: 'group',
+        id: '701',
+        name: 'Day 3 联调小组',
+      }),
+    ).toMatchObject({
       id: 'group-701',
       targetName: 'Day 3 联调小组',
       sessionType: 'group',
@@ -74,36 +76,56 @@ describe('message utils', () => {
   })
 
   it('computes the conversation key relative to the current user', () => {
-    expect(getConversationKeyFromMessage({
-      senderId: 1001,
-      receiverId: 1002,
-    }, 1001)).toBe('single-1002')
+    expect(
+      getConversationKeyFromMessage(
+        {
+          senderId: 1001,
+          receiverId: 1002,
+        },
+        1001,
+      ),
+    ).toBe('single-1002')
 
-    expect(getConversationKeyFromMessage({
-      senderId: 1003,
-      groupId: 701,
-    }, 1001)).toBe('group-701')
+    expect(
+      getConversationKeyFromMessage(
+        {
+          senderId: 1003,
+          groupId: 701,
+        },
+        1001,
+      ),
+    ).toBe('group-701')
   })
 
   it('deduplicates realtime session and message updates', () => {
-    const nextSessions = upsertSession([
-      { id: 'single-1002', sessionType: 'single', targetId: 1002, targetName: '李明浩', lastTime: '2026-07-15T09:00:00' },
-    ], {
-      sessionType: 'single',
-      targetId: 1002,
-      targetName: '李明浩',
-      lastMessage: { content: '最新消息', sendTime: '2026-07-15T10:00:00' },
-      lastTime: '2026-07-15T10:00:00',
-    })
+    const nextSessions = upsertSession(
+      [
+        {
+          id: 'single-1002',
+          sessionType: 'single',
+          targetId: 1002,
+          targetName: '李明浩',
+          lastTime: '2026-07-15T09:00:00',
+        },
+      ],
+      {
+        sessionType: 'single',
+        targetId: 1002,
+        targetName: '李明浩',
+        lastMessage: { content: '最新消息', sendTime: '2026-07-15T10:00:00' },
+        lastTime: '2026-07-15T10:00:00',
+      },
+    )
 
-    const nextMessages = upsertMessage([
-      { id: 1, senderId: 1001, content: '旧消息', sendTime: '2026-07-15T09:00:00' },
-    ], {
-      id: 1,
-      senderId: 1001,
-      content: '旧消息（已更新）',
-      sendTime: '2026-07-15T09:00:00',
-    })
+    const nextMessages = upsertMessage(
+      [{ id: 1, senderId: 1001, content: '旧消息', sendTime: '2026-07-15T09:00:00' }],
+      {
+        id: 1,
+        senderId: 1001,
+        content: '旧消息（已更新）',
+        sendTime: '2026-07-15T09:00:00',
+      },
+    )
 
     expect(nextSessions).toHaveLength(1)
     expect(nextSessions[0].lastMessage).toBe('最新消息')
@@ -115,17 +137,27 @@ describe('message utils', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-07-15T10:02:00'))
 
-    expect(canRecallMessage({
-      senderId: 1001,
-      recalled: false,
-      sendTime: '2026-07-15T10:01:10',
-    }, 1001)).toBe(true)
+    expect(
+      canRecallMessage(
+        {
+          senderId: 1001,
+          recalled: false,
+          sendTime: '2026-07-15T10:01:10',
+        },
+        1001,
+      ),
+    ).toBe(true)
 
-    expect(canRecallMessage({
-      senderId: 1001,
-      recalled: false,
-      sendTime: '2026-07-15T09:58:30',
-    }, 1001)).toBe(false)
+    expect(
+      canRecallMessage(
+        {
+          senderId: 1001,
+          recalled: false,
+          sendTime: '2026-07-15T09:58:30',
+        },
+        1001,
+      ),
+    ).toBe(false)
 
     vi.useRealTimers()
   })

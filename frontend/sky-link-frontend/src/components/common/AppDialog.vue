@@ -33,9 +33,9 @@ function closeDialog() {
     :model-value="modelValue"
     :title="title"
     :width="width"
-  :destroy-on-close="destroyOnClose"
-  @close="closeDialog"
-  @closed="emit('closed')"
+    :destroy-on-close="destroyOnClose"
+    @close="closeDialog"
+    @closed="emit('closed')"
   >
     <slot />
 

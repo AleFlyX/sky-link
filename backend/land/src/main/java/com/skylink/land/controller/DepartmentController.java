@@ -9,7 +9,6 @@ import com.skylink.land.exception.ErrorCode;
 import com.skylink.land.service.identity.DepartmentService;
 import com.skylink.land.vo.identity.DepartmentVO;
 import com.skylink.land.vo.identity.UserVO;
-import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,10 +30,14 @@ public class DepartmentController {
 
     @GetMapping
     @RequirePermission("department:list")
-    public List<DepartmentDto.DepartmentResponse> listDepartments() {
-        return departmentService.listDepartmentVO().stream()
-            .map(this::toDepartmentResponse)
-            .toList();
+    public PageResponse<DepartmentDto.DepartmentResponse> listDepartments(DepartmentDto.DepartmentQueryRequest request) {
+        PageResponse<DepartmentVO> page = departmentService.pageDepartments(request);
+        return PageResponse.<DepartmentDto.DepartmentResponse>builder()
+            .total(page.getTotal())
+            .page(page.getPage())
+            .size(page.getSize())
+            .records(page.getRecords().stream().map(this::toDepartmentResponse).toList())
+            .build();
     }
 
     @PostMapping

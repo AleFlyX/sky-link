@@ -4,10 +4,19 @@ import { login, refreshToken } from '../api/auth'
 import { downloadFile } from '../api/file'
 import { getSentFriendRequests, handleFriendRequest } from '../api/friend'
 import { sendMessage } from '../api/message'
-import { createPermission, deletePermission, getPermissionPage, updatePermission } from '../api/permission'
+import {
+  createPermission,
+  deletePermission,
+  getPermissionPage,
+  updatePermission,
+} from '../api/permission'
 import { updateRolePermissions } from '../api/role'
 import { assignUserRoles } from '../api/user'
-import { createCollaborationTicket, setDocumentPermission, setDocumentGroupPermission } from '../api/document'
+import {
+  createCollaborationTicket,
+  setDocumentPermission,
+  setDocumentGroupPermission,
+} from '../api/document'
 import {
   addGroupMembers,
   deleteGroup,
@@ -95,8 +104,12 @@ describe('business API contracts', () => {
     setDocumentGroupPermission(9, 3, 'read')
     createCollaborationTicket(9)
 
-    expect(request.put).toHaveBeenCalledWith('/documents/9/permissions/12', { permissionType: 'edit' })
-    expect(request.put).toHaveBeenCalledWith('/documents/9/group-permissions/3', { permissionType: 'read' })
+    expect(request.put).toHaveBeenCalledWith('/documents/9/permissions/12', {
+      permissionType: 'edit',
+    })
+    expect(request.put).toHaveBeenCalledWith('/documents/9/group-permissions/3', {
+      permissionType: 'read',
+    })
     expect(request.post).toHaveBeenCalledWith('/documents/9/collaboration-ticket')
   })
 

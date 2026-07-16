@@ -38,7 +38,9 @@ async function loadData() {
 async function handleCreate(form) {
   const result = await createSchedule(form)
   dialogVisible.value = false
-  ElMessage[result.degraded ? 'warning' : 'success'](result.degraded ? '日程接口不可用，已创建演示日程' : '日程已创建')
+  ElMessage[result.degraded ? 'warning' : 'success'](
+    result.degraded ? '日程接口不可用，已创建演示日程' : '日程已创建',
+  )
   await loadData()
 }
 
@@ -49,12 +51,31 @@ onMounted(loadData)
   <div class="page-shell">
     <AppCard title="日程安排" subtitle="查看和创建日程">
       <div class="page-toolbar">
-        <AppInput v-model="keyword" clearable placeholder="搜索日程主题 / 内容" @keyup.enter="loadData" />
+        <AppInput
+          v-model="keyword"
+          clearable
+          placeholder="搜索日程主题 / 内容"
+          @keyup.enter="loadData"
+        />
         <AppButton variant="primary" @click="dialogVisible = true">创建日程</AppButton>
       </div>
 
-      <el-alert v-if="demoData" title="当前为演示数据模式，创建日程后会立即出现在列表顶部" type="info" show-icon :closable="false" class="page-feedback" />
-      <AppDataTable :columns="columns" :rows="rows" :loading="loading" :error="loadError" empty-text="暂无日程" @retry="loadData" />
+      <el-alert
+        v-if="demoData"
+        title="当前为演示数据模式，创建日程后会立即出现在列表顶部"
+        type="info"
+        show-icon
+        :closable="false"
+        class="page-feedback"
+      />
+      <AppDataTable
+        :columns="columns"
+        :rows="rows"
+        :loading="loading"
+        :error="loadError"
+        empty-text="暂无日程"
+        @retry="loadData"
+      />
       <AppPagination v-model:page="page" :page-size="pageSize" :total="rows.length" />
     </AppCard>
 
@@ -66,7 +87,17 @@ onMounted(loadData)
         { key: 'title', label: '日程主题', required: true },
         { key: 'startTime', label: '开始时间', placeholder: '2026-07-14 09:00' },
         { key: 'endTime', label: '结束时间', placeholder: '2026-07-14 10:00' },
-        { key: 'repeatType', label: '重复方式', type: 'select', options: [{ value: 'none', label: '不重复' }, { value: 'daily', label: '每天' }, { value: 'weekly', label: '每周' }, { value: 'monthly', label: '每月' }] },
+        {
+          key: 'repeatType',
+          label: '重复方式',
+          type: 'select',
+          options: [
+            { value: 'none', label: '不重复' },
+            { value: 'daily', label: '每天' },
+            { value: 'weekly', label: '每周' },
+            { value: 'monthly', label: '每月' },
+          ],
+        },
         { key: 'content', label: '日程说明', type: 'textarea' },
       ]"
       :form-data="{ title: '', startTime: '', endTime: '', repeatType: 'none', content: '' }"

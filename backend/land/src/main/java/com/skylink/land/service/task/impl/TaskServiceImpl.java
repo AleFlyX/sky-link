@@ -84,12 +84,24 @@ public class TaskServiceImpl implements TaskService {
         TaskDto.TaskQueryRequest query = request == null ? new TaskDto.TaskQueryRequest() : request;
         Integer status = parseOptionalStatus(query.getStatus());
         validatePriority(query.getPriority());
+        Set<Long> matchedUserIds = findUserIdsByKeyword(query.getKeyword());
 
         LambdaQueryWrapper<Task> wrapper = new LambdaQueryWrapper<Task>()
             .and(participant -> participant
                 .eq(Task::getCreatorId, currentUserId)
                 .or()
                 .eq(Task::getExecutorId, currentUserId))
+            .and(StringUtils.hasText(query.getKeyword()), keyword -> {
+                String value = query.getKeyword().trim();
+                keyword.like(Task::getTitle, value)
+                    .or()
+                    .like(Task::getContent, value);
+                if (!matchedUserIds.isEmpty()) {
+                    keyword.or().in(Task::getExecutorId, matchedUserIds)
+                        .or()
+                        .in(Task::getCreatorId, matchedUserIds);
+                }
+            })
             .eq(status != null, Task::getStatus, status)
             .eq(query.getPriority() != null, Task::getPriority, query.getPriority())
             .eq(query.getExecutorId() != null, Task::getExecutorId, query.getExecutorId())
@@ -285,12 +297,13 @@ public class TaskServiceImpl implements TaskService {
 
     private int parseStatus(String status) {
         return switch (status.trim()) {
-            case "未开始" -> STATUS_NOT_STARTED;
-            case "进行中" -> STATUS_IN_PROGRESS;
-            case "已完成" -> STATUS_COMPLETED;
+            case "未开始", "todo" -> STATUS_NOT_STARTED;
+            case "进行中", "doing" -> STATUS_IN_PROGRESS;
+            case "已完成", "done" -> STATUS_COMPLETED;
+            case "已取消", "cancelled" -> 4;
             default -> throw new BusinessException(
                 ErrorCode.BAD_REQUEST,
-                "status must be 未开始, 进行中 or 已完成"
+                "status must be 未开始/todo, 进行中/doing, 已完成/done or 已取消/cancelled"
             );
         };
     }
@@ -330,6 +343,22 @@ public class TaskServiceImpl implements TaskService {
             return Map.of();
         }
         return users.stream().collect(Collectors.toMap(User::getUserId, Function.identity()));
+    }
+
+    private Set<Long> findUserIdsByKeyword(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return Set.of();
+        }
+
+        String value = keyword.trim();
+        return userMapper.selectList(
+            new LambdaQueryWrapper<User>()
+                .select(User::getUserId)
+                .and(wrapper -> wrapper
+                    .like(User::getUsername, value)
+                    .or()
+                    .like(User::getNickname, value))
+        ).stream().map(User::getUserId).collect(Collectors.toSet());
     }
 
     private TaskDto.TaskResponse toTaskResponse(Task task, Map<Long, User> users) {

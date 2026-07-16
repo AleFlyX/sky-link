@@ -11,13 +11,7 @@ import AppPagination from '../../components/common/AppPagination.vue'
 import AppStatusTag from '../../components/common/AppStatusTag.vue'
 import { useConfirmDialog } from '../../composables/useConfirmDialog'
 import { getPermissions } from '../../api/permission'
-import {
-  createRole,
-  deleteRole,
-  getRoles,
-  updateRole,
-  updateRolePermissions,
-} from '../../api/role'
+import { createRole, deleteRole, getRoles, updateRole, updateRolePermissions } from '../../api/role'
 
 const page = ref(1)
 const pageSize = 10
@@ -77,10 +71,12 @@ const dialogTitle = computed(() => (dialogMode.value === 'create' ? '新建角�
 const dialogConfirmText = computed(() => (dialogMode.value === 'create' ? '创建角色' : '保存修改'))
 
 const groupedPermissionOptions = computed(() =>
-  permissionTypeOptions.map((group) => ({
-    ...group,
-    items: permissionOptions.value.filter((item) => Number(item.permissionType) === group.value),
-  })).filter((group) => group.items.length),
+  permissionTypeOptions
+    .map((group) => ({
+      ...group,
+      items: permissionOptions.value.filter((item) => Number(item.permissionType) === group.value),
+    }))
+    .filter((group) => group.items.length),
 )
 
 function unwrapData(response) {
@@ -108,7 +104,10 @@ function rolePermissionSummary(role) {
   if (!permissions.length) {
     return '未分配权限'
   }
-  return permissions.slice(0, 3).map((item) => item.permissionCode).join('、')
+  return permissions
+    .slice(0, 3)
+    .map((item) => item.permissionCode)
+    .join('、')
 }
 
 async function loadRoles(targetPage = page.value) {
@@ -283,10 +282,7 @@ onMounted(async () => {
 
 <template>
   <div class="page-shell">
-    <AppCard
-      title="角色管理"
-      subtitle="集中维护角色元数据，并为每个角色分配可访问的系统权限。"
-    >
+    <AppCard title="角色管理" subtitle="集中维护角色元数据，并为每个角色分配可访问的系统权限。">
       <div class="page-toolbar">
         <div class="page-toolbar__filters">
           <AppInput
@@ -400,12 +396,22 @@ onMounted(async () => {
 
         <label class="dialog-form__field">
           <span>角色编码</span>
-          <AppInput v-model="roleForm.roleCode" maxlength="50" placeholder="例如：ROLE_PROJECT_LEADER" />
+          <AppInput
+            v-model="roleForm.roleCode"
+            maxlength="50"
+            placeholder="例如：ROLE_PROJECT_LEADER"
+          />
         </label>
 
         <label class="dialog-form__field">
           <span>角色说明</span>
-          <AppInput v-model="roleForm.description" type="textarea" maxlength="255" show-word-limit placeholder="说明该角色的职责边界" />
+          <AppInput
+            v-model="roleForm.description"
+            type="textarea"
+            maxlength="255"
+            show-word-limit
+            placeholder="说明该角色的职责边界"
+          />
         </label>
 
         <label v-if="dialogMode === 'edit'" class="dialog-form__field">
@@ -482,7 +488,9 @@ onMounted(async () => {
 
       <template #footer>
         <div class="dialog-footer">
-          <AppButton :disabled="permissionDialogSaving" @click="permissionDialogVisible = false">取消</AppButton>
+          <AppButton :disabled="permissionDialogSaving" @click="permissionDialogVisible = false"
+            >取消</AppButton
+          >
           <AppButton
             variant="primary"
             :loading="permissionDialogSaving"

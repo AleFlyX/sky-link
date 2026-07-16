@@ -1,7 +1,7 @@
 import { reactive, ref } from 'vue'
 
 // oxlint-disable-next-line no-control-regex -- authentication input must strip C0/C1 controls
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g // 控制字符范围
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g // 控制字符范围所有 ASCII 0–31、127，以及 Latin-1 128–159 的字符
 const ZERO_WIDTH_CHARACTERS = /[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g // 零宽字符范围
 const ACCOUNT_PATTERN = /^[A-Za-z0-9@._+-]+$/ // 账号允许的字符范围
 
@@ -14,7 +14,7 @@ const ACCOUNT_PATTERN = /^[A-Za-z0-9@._+-]+$/ // 账号允许的字符范围
 export function sanitizeAuthAccount(value) {
   return String(value ?? '')
     .normalize('NFKC') // 将全角字符转换为半角字符
-    .replace(CONTROL_CHARACTERS, '')  // 移除控制字符
+    .replace(CONTROL_CHARACTERS, '') // 移除控制字符
     .replace(ZERO_WIDTH_CHARACTERS, '') // 移除零宽字符
     .trim() // 移除首尾空格
 }
@@ -26,7 +26,9 @@ export function sanitizeAuthAccount(value) {
  * @returns
  */
 export function sanitizeLoginPassword(value) {
-  return String(value ?? '').replace(CONTROL_CHARACTERS, '').replace(ZERO_WIDTH_CHARACTERS, '')
+  return String(value ?? '')
+    .replace(CONTROL_CHARACTERS, '')
+    .replace(ZERO_WIDTH_CHARACTERS, '')
 }
 
 export function useLoginForm() {

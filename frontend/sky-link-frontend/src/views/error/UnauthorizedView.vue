@@ -21,9 +21,7 @@ import AppCard from '../../components/common/AppCard.vue'
       <AppCard variant="elevated" padding="lg" class="error-card">
         <div class="error-card__code">401</div>
         <div class="error-card__title">无权访问当前页面</div>
-        <p class="error-card__text">
-          当前登录状态无效，或账号没有对应权限。请重新登录后再试。
-        </p>
+        <p class="error-card__text">当前登录状态无效，或账号没有对应权限。请重新登录后再试。</p>
 
         <div class="error-card__actions">
           <router-link to="/login">

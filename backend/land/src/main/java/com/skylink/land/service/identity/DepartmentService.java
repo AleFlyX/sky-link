@@ -12,7 +12,7 @@ public interface DepartmentService extends IService<Department> {
 
     DepartmentVO getDepartmentVO(Long departmentId);
 
-    List<DepartmentVO> listDepartmentVO();
+    PageResponse<DepartmentVO> pageDepartments(DepartmentDto.DepartmentQueryRequest request);
 
     DepartmentVO createDepartment(DepartmentDto.SaveDepartmentRequest request);
 

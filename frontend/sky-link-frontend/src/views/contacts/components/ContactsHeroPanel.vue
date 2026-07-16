@@ -50,19 +50,15 @@ const emit = defineEmits([
 </script>
 
 <template>
-  <AppCard
-    class="contacts-hero"
-    variant="hero"
-    padding="lg"
-  >
+  <AppCard class="contacts-hero" variant="hero" padding="lg">
     <div class="contacts-hero__body">
       <div class="contacts-hero__top">
-          <ContactsStatsBoard
-            :friends-count="friendsCount"
-            :groups-count="groupsCount"
-            :incoming-requests-count="incomingRequestsCount"
-            :pending-incoming-count="pendingIncomingCount"
-          />
+        <ContactsStatsBoard
+          :friends-count="friendsCount"
+          :groups-count="groupsCount"
+          :incoming-requests-count="incomingRequestsCount"
+          :pending-incoming-count="pendingIncomingCount"
+        />
       </div>
 
       <AppCard variant="ghost" padding="sm" body-class="contacts-hero__toolbar">
@@ -115,7 +111,7 @@ const emit = defineEmits([
 }
 
 .contacts-hero__top {
-width: 100%;
+  width: 100%;
 }
 .contacts-hero__summary {
   max-width: 32rem;
@@ -127,7 +123,6 @@ width: 100%;
 
 .contacts-hero__stats-wrap {
   min-width: 0;
-
 }
 
 :deep(.contacts-hero__toolbar) {

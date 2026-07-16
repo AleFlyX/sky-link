@@ -18,7 +18,9 @@ vi.mock('../api/workspace', () => ({
   createDepartment: vi.fn(() => Promise.resolve({})),
   deleteDepartment: vi.fn(),
   getDepartmentMembers: vi.fn(),
-  getDepartments: vi.fn(() => Promise.resolve({ data: { records: [], total: 0, page: 1, size: 500 } })),
+  getDepartments: vi.fn(() =>
+    Promise.resolve({ data: { records: [], total: 0, page: 1, size: 10 } }),
+  ),
   getUsers: vi.fn(),
   removeDepartmentMember: vi.fn(),
   updateDepartment: vi.fn(),

@@ -32,7 +32,10 @@ const emit = defineEmits(['select'])
           v-for="session in sessions"
           :key="session.id"
           type="button"
-          :class="['message-session', { 'message-session--active': session.id === activeSessionId }]"
+          :class="[
+            'message-session',
+            { 'message-session--active': session.id === activeSessionId },
+          ]"
           @click="emit('select', session.id)"
         >
           <span class="message-session__avatar">{{ session.targetName?.slice(0, 1) || '?' }}</span>

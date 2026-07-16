@@ -47,16 +47,20 @@ export function useMessageCenter() {
   const { confirm } = useConfirmDialog()
 
   const currentUserId = computed(() => userStore.user.id ?? null)
-  const activeSession = computed(() => sessions.value.find((session) => session.id === activeSessionId.value))
+  const activeSession = computed(() =>
+    sessions.value.find((session) => session.id === activeSessionId.value),
+  )
   const connectionLabel = computed(() => {
     if (demoData.value) {
       return '演示模式'
     }
-    return {
-      connected: '实时在线',
-      connecting: '连接中',
-      disconnected: '连接已断开',
-    }[connectionState.value] || '连接中'
+    return (
+      {
+        connected: '实时在线',
+        connecting: '连接中',
+        disconnected: '连接已断开',
+      }[connectionState.value] || '连接中'
+    )
   })
 
   function buildWebSocketUrl() {
@@ -66,7 +70,8 @@ export function useMessageCenter() {
     }
 
     const explicitWebSocketUrl = import.meta.env.VITE_WS_URL
-    const apiBase = explicitWebSocketUrl || import.meta.env.VITE_API_BASE_URL || window.location.origin
+    const apiBase =
+      explicitWebSocketUrl || import.meta.env.VITE_API_BASE_URL || window.location.origin
     const url = new URL(apiBase, window.location.origin)
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
     url.pathname = explicitWebSocketUrl ? url.pathname : '/ws/messages'
@@ -137,10 +142,11 @@ export function useMessageCenter() {
       return
     }
 
-    if (socket.value && (
-      socket.value.readyState === WebSocket.OPEN
-      || socket.value.readyState === WebSocket.CONNECTING
-    )) {
+    if (
+      socket.value &&
+      (socket.value.readyState === WebSocket.OPEN ||
+        socket.value.readyState === WebSocket.CONNECTING)
+    ) {
       return
     }
 
@@ -205,10 +211,11 @@ export function useMessageCenter() {
       }
       sessions.value = normalized
       demoData.value = result.source === 'demo' || demoData.value
-      const nextActiveSession = routeSession?.id
-        || sessions.value.find((session) => session.id === activeSessionId.value)?.id
-        || sessions.value[0]?.id
-        || ''
+      const nextActiveSession =
+        routeSession?.id ||
+        sessions.value.find((session) => session.id === activeSessionId.value)?.id ||
+        sessions.value[0]?.id ||
+        ''
       activeSessionId.value = nextActiveSession
       if (!nextActiveSession) {
         messages.value = []
@@ -383,10 +390,14 @@ export function useMessageCenter() {
     },
   )
 
-  watch(currentUserId, () => {
-    closeSocket()
-    connectSocket()
-  }, { immediate: true })
+  watch(
+    currentUserId,
+    () => {
+      closeSocket()
+      connectSocket()
+    },
+    { immediate: true },
+  )
 
   onMounted(async () => {
     await loadSessions()

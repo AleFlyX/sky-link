@@ -67,13 +67,7 @@ const emit = defineEmits(['update:modelValue', 'update:selected-member-ids', 'sa
     <template #footer>
       <div class="dialog-footer">
         <AppButton @click="emit('update:modelValue', false)">取消</AppButton>
-        <AppButton
-          variant="primary"
-          :loading="saving"
-          @click="emit('save')"
-        >
-          加入部门
-        </AppButton>
+        <AppButton variant="primary" :loading="saving" @click="emit('save')"> 加入部门 </AppButton>
       </div>
     </template>
   </AppDialog>
