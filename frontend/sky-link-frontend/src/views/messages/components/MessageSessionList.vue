@@ -25,33 +25,41 @@ const emit = defineEmits(['select'])
       <strong>最近会话</strong>
       <span>{{ sessions.length }}</span>
     </div>
-    <el-skeleton v-if="loading" :rows="5" animated />
-    <button
-      v-for="session in sessions"
-      v-else
-      :key="session.id"
-      type="button"
-      :class="['message-session', { 'message-session--active': session.id === activeSessionId }]"
-      @click="emit('select', session.id)"
-    >
-      <span class="message-session__avatar">{{ session.targetName?.slice(0, 1) || '?' }}</span>
-      <span class="message-session__copy">
-        <strong>{{ session.targetName }}</strong>
-        <small>{{ session.lastMessage }}</small>
-      </span>
-    </button>
-    <div v-if="!loading && !sessions.length" class="message-empty">暂无会话</div>
+    <div class="message-sessions__body">
+      <el-skeleton v-if="loading" :rows="5" animated />
+      <template v-else>
+        <button
+          v-for="session in sessions"
+          :key="session.id"
+          type="button"
+          :class="['message-session', { 'message-session--active': session.id === activeSessionId }]"
+          @click="emit('select', session.id)"
+        >
+          <span class="message-session__avatar">{{ session.targetName?.slice(0, 1) || '?' }}</span>
+          <span class="message-session__copy">
+            <strong>{{ session.targetName }}</strong>
+            <small>{{ session.lastMessage }}</small>
+          </span>
+        </button>
+        <div v-if="!sessions.length" class="message-empty">暂无会话</div>
+      </template>
+    </div>
   </aside>
 </template>
 
 <style scoped>
 .message-sessions {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 1rem;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface-muted);
+  overflow: hidden;
 }
 
 .message-sessions__heading {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -63,6 +71,12 @@ const emit = defineEmits(['select'])
 .message-sessions__heading span {
   color: var(--color-text-muted);
   font-size: 0.82rem;
+}
+
+.message-sessions__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .message-session {
