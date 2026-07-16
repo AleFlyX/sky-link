@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AddFriendDialog from './components/AddFriendDialog.vue'
 import ContactsHeroPanel from './components/ContactsHeroPanel.vue'
@@ -34,6 +35,10 @@ const {
   requestDialog,
   requestTab,
   requestActionLoading,
+  selectableUsers,
+  userOptionsLoading,
+  userOptionsError,
+  addFriendUserOptions,
   filteredFriends,
   pagedFriends,
   filteredGroups,
@@ -46,6 +51,21 @@ const {
   resetFriendPage,
   resetGroupPage,
 } = useContactsDirectory()
+
+const inviteGroupUserOptions = computed(() => {
+  const memberIds = new Set(
+    (groupDetail.value?.members || [])
+      .map((member) => Number(member.userId))
+      .filter(Number.isFinite),
+  )
+
+  return selectableUsers.value
+    .filter((user) => !memberIds.has(Number(user.userId)))
+    .map((user) => ({
+      value: user.userId,
+      label: `${user.nickname || user.username || `用户#${user.userId}`}${user.departmentName ? ` · ${user.departmentName}` : ''}`,
+    }))
+})
 
 const groupColumns = [
   { key: 'name', label: '群聊名称' },
@@ -184,13 +204,13 @@ function openGroupChat(group) {
 
     <AddFriendDialog
       v-model="friendDialog"
+      :options="addFriendUserOptions"
+      :loading="userOptionsLoading"
+      :error="userOptionsError"
       @submit="handleAddFriend"
     />
 
-    <CreateGroupDialog
-      v-model="groupDialog"
-      @submit="handleCreateGroup"
-    />
+    <CreateGroupDialog v-model="groupDialog" @submit="handleCreateGroup" />
 
     <GroupManageDialog
       v-model="groupManageDialog"
@@ -205,7 +225,10 @@ function openGroupChat(group) {
       :error="groupDetailError"
       :members-error="groupMembersError"
       :action-loading="groupActionLoading"
-      @update:member-page="groupMembersPage = $event; loadGroupMembersData(activeGroupId, $event)"
+      @update:member-page="
+        groupMembersPage = $event
+        loadGroupMembersData(activeGroupId, $event)
+      "
       @retry-detail="loadGroupDetailData"
       @retry-members="loadGroupMembersData"
       @save-group="handleSaveGroup"
@@ -219,6 +242,8 @@ function openGroupChat(group) {
     <InviteGroupMembersDialog
       v-model="inviteGroupMembersDialog"
       :loading="groupActionLoading === 'invite-members'"
+      :options="inviteGroupUserOptions"
+      :error="userOptionsError"
       @submit="handleInviteGroupMembers"
     />
   </div>

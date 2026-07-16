@@ -7,9 +7,11 @@ import {
   getFriends,
   getGroups,
   getSentFriendRequests,
+  getUsers,
   handleFriendRequest,
   isDemoMode,
 } from '../../../api/workspace'
+import { useUserStore } from '../../../stores/user'
 
 const friendPageSize = 6
 const groupPageSize = 5
@@ -80,7 +82,30 @@ function normalizeOutgoingRequest(row) {
   }
 }
 
+function normalizeUser(item) {
+  const userId = item?.userId ?? item?.id
+  const username = item?.username ?? item?.account ?? ''
+  const nickname = item?.nickname ?? item?.name ?? ''
+  const departmentName = item?.departmentName ?? item?.department ?? ''
+
+  return {
+    userId,
+    username,
+    nickname,
+    departmentName,
+    status: item?.status,
+  }
+}
+
+function normalizeUserOption(user) {
+  return {
+    value: user.userId,
+    label: `${user.nickname || user.username || `用户#${user.userId}`}${user.departmentName ? ` · ${user.departmentName}` : ''}`,
+  }
+}
+
 export function useContactsDirectory() {
+  const userStore = useUserStore()
   const keyword = ref('')
   const groupKeyword = ref('')
   const friendPage = ref(1)
@@ -97,6 +122,33 @@ export function useContactsDirectory() {
   const requestDialog = ref(false)
   const requestTab = ref('incoming')
   const requestActionLoading = ref('')
+  const selectableUsers = ref([])
+  const userOptionsLoading = ref(false)
+  const userOptionsError = ref('')
+
+  const currentUserId = computed(() => {
+    const value = userStore.user?.id ?? userStore.user?.userId
+    const normalized = Number(value)
+    return Number.isFinite(normalized) ? normalized : null
+  })
+
+  const addFriendUserOptions = computed(() => {
+    const friendIds = new Set(
+      friends.value.map((item) => Number(item.userId)).filter(Number.isFinite),
+    )
+    const outgoingIds = new Set(
+      outgoingRequests.value
+        .filter((item) => item.status === 'pending')
+        .map((item) => Number(item.userId))
+        .filter(Number.isFinite),
+    )
+
+    return selectableUsers.value
+      .filter((user) => Number(user.userId) !== currentUserId.value)
+      .filter((user) => !friendIds.has(Number(user.userId)))
+      .filter((user) => !outgoingIds.has(Number(user.userId)))
+      .map(normalizeUserOption)
+  })
 
   const filteredFriends = computed(() => {
     const value = keyword.value.trim().toLowerCase()
@@ -104,10 +156,13 @@ export function useContactsDirectory() {
       return friends.value
     }
 
-    return friends.value.filter((friend) => (
-      [friend.name, friend.account, friend.department]
-        .some((field) => String(field || '').toLowerCase().includes(value))
-    ))
+    return friends.value.filter((friend) =>
+      [friend.name, friend.account, friend.department].some((field) =>
+        String(field || '')
+          .toLowerCase()
+          .includes(value),
+      ),
+    )
   })
 
   const pagedFriends = computed(() => {
@@ -121,10 +176,13 @@ export function useContactsDirectory() {
       return groups.value
     }
 
-    return groups.value.filter((group) => (
-      [group.name, group.notice]
-        .some((field) => String(field || '').toLowerCase().includes(value))
-    ))
+    return groups.value.filter((group) =>
+      [group.name, group.notice].some((field) =>
+        String(field || '')
+          .toLowerCase()
+          .includes(value),
+      ),
+    )
   })
 
   const pagedGroups = computed(() => {
@@ -132,9 +190,9 @@ export function useContactsDirectory() {
     return filteredGroups.value.slice(start, start + groupPageSize)
   })
 
-  const pendingIncomingCount = computed(() => (
-    incomingRequests.value.filter((item) => item.status === 'pending').length
-  ))
+  const pendingIncomingCount = computed(
+    () => incomingRequests.value.filter((item) => item.status === 'pending').length,
+  )
 
   async function loadData() {
     loading.value = true
@@ -150,10 +208,12 @@ export function useContactsDirectory() {
       groups.value = (groupResult.data.records || []).map(normalizeGroup)
       incomingRequests.value = (incomingResult.data.records || []).map(normalizeIncomingRequest)
       outgoingRequests.value = (outgoingResult.data.records || []).map(normalizeOutgoingRequest)
-      demoData.value = [friendResult, groupResult, incomingResult, outgoingResult]
-        .some((result) => result.source === 'demo')
-      const degraded = [friendResult, groupResult, incomingResult, outgoingResult]
-        .find((result) => result.degraded)
+      demoData.value = [friendResult, groupResult, incomingResult, outgoingResult].some(
+        (result) => result.source === 'demo',
+      )
+      const degraded = [friendResult, groupResult, incomingResult, outgoingResult].find(
+        (result) => result.degraded,
+      )
       if (degraded) {
         loadError.value = `接口暂不可用，已切换演示数据：${degraded.error || '请稍后重试'}`
       }
@@ -163,6 +223,21 @@ export function useContactsDirectory() {
       loadError.value = error.message || '通讯录数据加载失败'
     } finally {
       loading.value = false
+    }
+  }
+
+  async function loadSelectableUsers() {
+    userOptionsLoading.value = true
+    userOptionsError.value = ''
+
+    try {
+      const response = await getUsers({ page: 1, size: 500 })
+      selectableUsers.value = (response?.data?.records || []).map(normalizeUser)
+    } catch (error) {
+      selectableUsers.value = []
+      userOptionsError.value = error.message || '用户列表加载失败'
+    } finally {
+      userOptionsLoading.value = false
     }
   }
 
@@ -207,7 +282,10 @@ export function useContactsDirectory() {
     groupPage.value = 1
   }
 
-  onMounted(loadData)
+  onMounted(() => {
+    loadData()
+    loadSelectableUsers()
+  })
 
   return {
     keyword,
@@ -228,12 +306,18 @@ export function useContactsDirectory() {
     requestDialog,
     requestTab,
     requestActionLoading,
+    selectableUsers,
+    userOptionsLoading,
+    userOptionsError,
+    currentUserId,
+    addFriendUserOptions,
     filteredFriends,
     pagedFriends,
     filteredGroups,
     pagedGroups,
     pendingIncomingCount,
     loadData,
+    loadSelectableUsers,
     handleAddFriend,
     handleCreateGroup,
     handleIncomingRequest,
