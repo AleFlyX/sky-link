@@ -13,6 +13,8 @@
 
 这份文档主要面向部署、联调和排查配置问题。
 
+如果你使用仓库自带的 Docker Compose，建议先复制 `deploy/.env.example` 为根目录 `.env`。现在数据库、JWT、协同密钥和公网域名相关变量都以这一个文件作为入口，不再分散到额外的 Docker 覆盖 YAML 中。
+
 ## 先看整体链路
 
 当前仓库里其实有两条不同的 WebSocket 链路：
@@ -275,6 +277,10 @@ SKYLINK_INTERNAL_BASE_URL=http://backend:8080
 对应最关键的生产环境变量至少应包括：
 
 ```env
+DB_NAME=skylink
+DB_USERNAME=skylink
+DB_PASSWORD=replace-with-a-strong-password
+DB_ROOT_PASSWORD=replace-with-another-strong-password
 JWT_SECRET=replace-with-a-random-secret-longer-than-32-bytes
 SKYLINK_COLLABORATION_TICKET_SECRET=replace-with-another-random-secret-longer-than-32-bytes
 SKYLINK_COLLABORATION_SERVICE_TOKEN=replace-with-a-service-token-longer-than-32-bytes

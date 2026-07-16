@@ -26,6 +26,10 @@ CREATE TABLE `department` (
   KEY `idx_department_leader_id` (`leader_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
 
+-- `department.leader_id` 与 `user.department_id` 会形成循环引用。
+-- 当前运行时初始化脚本只保留索引，由服务层校验目标记录存在，
+-- 以避免 Spring Boot 启动时重复执行脚本出现动态 DDL 兼容问题。
+
 -- ----------------------------
 -- 2. 用户表
 -- ----------------------------
@@ -47,12 +51,8 @@ CREATE TABLE `user` (
   UNIQUE KEY `uk_user_email` (`email`),
   UNIQUE KEY `uk_user_phone` (`phone`),
   KEY `idx_user_department_id` (`department_id`),
-  KEY `idx_user_status` (`status`),
-  CONSTRAINT `fk_user_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON DELETE SET NULL
+  KEY `idx_user_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-
-ALTER TABLE `department`
-  ADD CONSTRAINT `fk_department_leader` FOREIGN KEY (`leader_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL;
 
 -- ----------------------------
 -- 3. 角色表
@@ -336,6 +336,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 ## 自动建表
 
-应用默认启用 Spring SQL 初始化并按顺序执行 `backend/land/src/main/resources/schema.sql` 和 `backend/land/src/main/resources/data.sql`。运行时脚本只使用 `CREATE TABLE IF NOT EXISTS` 与幂等 `INSERT IGNORE`，不会删除已有业务数据；数据库本身仍需由部署环境提前创建。
+应用默认启用 Spring SQL 初始化并按顺序执行 `backend/land/src/main/resources/schema.sql` 和 `backend/land/src/main/resources/data.sql`。运行时脚本只使用 `CREATE TABLE IF NOT EXISTS` 与幂等 `INSERT IGNORE`，不会删除已有业务数据；数据库本身仍需由部署环境提前创建。为避免 `department` / `user` 循环引用在重复启动时触发动态 DDL 兼容问题，这两个字段当前只保留索引和服务层校验，不在启动脚本中补建外键。
 
 当前自动建表范围以 `docs/spec-current.md` 定义的数据边界和本文件中的 17 张表为准。文件、日程、系统公告、任务附件和业务审计已因工期从本期需求中移出；仓库中对应保留实体不参与当前 schema 初始化。

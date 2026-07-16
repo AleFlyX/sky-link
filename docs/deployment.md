@@ -42,7 +42,7 @@
 
 ## Compose 使用说明
 
-1. 复制 `deploy/.env.example` 为 `.env`。
+1. 复制 `deploy/.env.example` 为根目录 `.env`。
 2. 填写强密码/密钥。
 3. 启动服务栈：
 
@@ -54,6 +54,6 @@ docker compose up -d --build
 
 ## 注意事项
 
-- 后端默认的 `application.yaml` 使用本地 MySQL 主机，因此 Compose 栈通过 `deploy/backend/application-docker.yaml` 进行覆盖。
+- Compose 变量已经统一到根目录 `.env`；模板文件固定放在 `deploy/.env.example`，后端通过 `SPRING_DATASOURCE_URL` 直接读取 Docker 内部数据库地址，不再额外挂载 `application-docker.yaml`。
 - 协作服务需要 `COLLABORATION_ALLOWED_ORIGINS` 环境变量，缺少该变量将导致启动失败。
 - 当前消息 WebSocket 仍使用查询字符串传递 token 进行认证。该方式可以工作，但并非生产环境的首选长期方案。
