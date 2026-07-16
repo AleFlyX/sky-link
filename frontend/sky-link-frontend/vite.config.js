@@ -48,6 +48,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           ws: true,
         },
+        '/collaboration': {
+          target: 'http://localhost:8180',
+          changeOrigin: true,
+          ws: true,
+        },
       },
     },
   }
