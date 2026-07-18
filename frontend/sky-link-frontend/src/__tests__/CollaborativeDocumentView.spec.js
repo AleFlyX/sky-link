@@ -20,6 +20,9 @@ const testState = vi.hoisted(() => ({
   connectSpy: vi.fn(async () => {}),
   sessionPermission: null,
   sessionEditable: null,
+  pageAgentCtor: vi.fn(),
+  pageAgentShow: vi.fn(),
+  pageAgentDispose: vi.fn(),
 }))
 
 vi.mock('../api/document', () => ({
@@ -40,6 +43,18 @@ vi.mock('../views/documents/composables/useCollaborationSession', () => ({
     connect: testState.connectSpy,
     disconnect: vi.fn(),
   })),
+}))
+
+vi.mock('page-agent', () => ({
+  PageAgent: class {
+    constructor(config) {
+      testState.pageAgentCtor(config)
+      this.panel = {
+        show: testState.pageAgentShow,
+        dispose: testState.pageAgentDispose,
+      }
+    }
+  },
 }))
 
 vi.mock('vue-router', () => ({
@@ -274,5 +289,33 @@ describe('CollaborativeDocumentView', () => {
     await flushPromises()
 
     expect(testState.updateDocument).toHaveBeenCalledWith(10, { status: 'team' })
+  })
+
+  it('opens qwen page agent from the editor sidebar and disposes it on unmount', async () => {
+    const wrapper = await mountView()
+
+    await flushPromises()
+
+    const agentButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === '打开 Qwen Page Agent')
+    expect(agentButton).toBeTruthy()
+
+    await agentButton.trigger('click')
+    await flushPromises()
+
+    expect(testState.pageAgentCtor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'qwen3.5-plus',
+        baseURL: 'https://page-ag-testing-ohftxirgbn.cn-shanghai.fcapp.run',
+        apiKey: 'NA',
+        language: 'zh-CN',
+      }),
+    )
+    expect(testState.pageAgentShow).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+
+    expect(testState.pageAgentDispose).toHaveBeenCalledTimes(1)
   })
 })
