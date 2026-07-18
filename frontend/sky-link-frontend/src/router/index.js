@@ -16,6 +16,7 @@ function hasPersistedAuthState() {
 
   const token = window.localStorage.getItem(TOKEN_KEY)
   if (token) {
+    // 登录页只需要判断本地是否存在凭据；真正的有效性仍由后端接口和 401 刷新流程确认。
     return true
   }
 
@@ -31,7 +32,7 @@ function hasPersistedAuthState() {
   }
 }
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (AUTH_ROUTE_NAMES.has(String(to.name))) {
     if (hasPersistedAuthState()) {
       return { name: 'dashboard' }
@@ -50,7 +51,17 @@ router.beforeEach((to) => {
 
   const token = window.localStorage.getItem(TOKEN_KEY)
   if (!token) {
+    // 未登录时保留原目标地址，登录成功后页面可以回到用户最初想访问的地址。
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  const userStore = useUserStore()
+  try {
+    await userStore.ensureCurrentUserLoaded()
+  } catch {
+    if (!window.localStorage.getItem(TOKEN_KEY)) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
   }
 
   const requiredPermissions = Array.isArray(to.meta.permissions) ? to.meta.permissions : []
@@ -58,10 +69,10 @@ router.beforeEach((to) => {
     return true
   }
 
-  const userStore = useUserStore()
   const permissions = new Set(userStore.user.permissions || [])
   const allowed = requiredPermissions.some((permission) => permissions.has(permission))
   if (!allowed) {
+    // 路由数组采用“任一权限满足即可进入”的语义；这只是前端体验控制，不替代后端鉴权。
     return { name: 'unauthorized', query: { redirect: to.fullPath } }
   }
 

@@ -6,7 +6,7 @@ import AppButton from '../../components/common/AppButton.vue'
 import AppCard from '../../components/common/AppCard.vue'
 import AppInput from '../../components/common/AppInput.vue'
 import { useUserStore } from '../../stores/user'
-import { setToken } from '../../utils/request'
+import { clearToken, setToken } from '../../utils/request'
 import { useLoginForm } from './composables/useLoginForm'
 
 const route = useRoute()
@@ -63,6 +63,7 @@ async function handleLogin() {
       roles: result.userInfo?.roles || [],
       permissions: result.userInfo?.permissions || [],
     })
+    await userStore.loadCurrentUser()
     ElMessage.success('登录成功，正在进入系统')
     const redirect =
       typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/app')
@@ -70,6 +71,8 @@ async function handleLogin() {
         : '/app/dashboard'
     await router.push(redirect)
   } catch (error) {
+    clearToken()
+    userStore.resetUser()
     loginError.value = error.message || '登录失败，请检查账号和密码'
     ElMessage.error(loginError.value)
   } finally {

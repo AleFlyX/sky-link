@@ -10,6 +10,7 @@ const emptyUser = {
   account: '',
   email: '',
   phone: '',
+  departmentId: null,
   department: '',
   roleLabel: '',
   bio: '',
@@ -83,6 +84,7 @@ function normalizeUser(user = {}) {
     department: rest.department || rest.departmentName || '',
     roleLabel,
     roles,
+    // 始终把权限整理成数组；路由守卫和 v-permission 都从这一个可信的前端状态读取。
     permissions: Array.isArray(rest.permissions) ? [...rest.permissions] : [],
   }
 }
@@ -115,14 +117,20 @@ function unwrapUserResponse(response) {
 export const useUserStore = defineStore('user', () => {
   const user = ref(readUserFromStorage())
   const isLoaded = ref(true)
+  const currentUserLoaded = ref(false)
+  let currentUserPromise = null
 
   const displayName = computed(() => user.value.name || user.value.account || '未登录')
   const avatarText = computed(() => displayName.value.slice(0, 1))
 
-  function setUser(payload) {
+  function setUser(payload, options = {}) {
+    // 先规范化再保存，避免不同接口字段名差异扩散到页面、路由和权限指令中。
     user.value = normalizeUser(payload)
     writeUserToStorage(user.value)
     isLoaded.value = true
+    if (options.currentUserLoaded) {
+      currentUserLoaded.value = true
+    }
   }
 
   function patchUser(payload = {}) {
@@ -133,23 +141,44 @@ export const useUserStore = defineStore('user', () => {
     user.value = { ...emptyUser }
     clearUserStorage()
     isLoaded.value = false
+    currentUserLoaded.value = false
   }
 
   async function loadCurrentUser() {
-    const response = await fetchCurrentUser()
-    setUser(unwrapUserResponse(response))
-    isLoaded.value = true
-    return user.value
+    // 登录或刷新后重新向后端获取用户与权限，不能仅相信 localStorage 中的旧缓存。
+    if (!currentUserPromise) {
+      currentUserPromise = fetchCurrentUser()
+        .then((response) => {
+          setUser(unwrapUserResponse(response), { currentUserLoaded: true })
+          isLoaded.value = true
+          return user.value
+        })
+        .finally(() => {
+          currentUserPromise = null
+        })
+    }
+
+    return currentUserPromise
+  }
+
+  async function ensureCurrentUserLoaded() {
+    if (currentUserLoaded.value) {
+      return user.value
+    }
+
+    return loadCurrentUser()
   }
 
   return {
     user,
     isLoaded,
+    currentUserLoaded,
     displayName,
     avatarText,
     setUser,
     patchUser,
     resetUser,
     loadCurrentUser,
+    ensureCurrentUserLoaded,
   }
 })
