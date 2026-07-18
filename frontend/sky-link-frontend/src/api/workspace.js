@@ -445,6 +445,12 @@ function removeDemoGroupSession(groupId) {
   delete state.messages[sessionId]
 }
 
+function removeDemoSingleSession(userId) {
+  const sessionId = `single-${userId}`
+  state.sessions = state.sessions.filter((item) => item.id !== sessionId)
+  delete state.messages[sessionId]
+}
+
 export function isDemoMode() {
   return mockEnabled
 }
@@ -858,6 +864,26 @@ export function addFriend(data) {
       }
       state.outgoingFriendRequests.unshift(request)
       return { requestId: request.requestId, status: request.status }
+    },
+  )
+}
+
+export function deleteFriend(friendUserId) {
+  return remoteOrDemo(
+    () => friendApi.deleteFriend(friendUserId),
+    () => {
+      const targetUserId = Number(friendUserId)
+      const nextFriends = state.friends.filter(
+        (item) => Number(item.userId ?? item.id) !== targetUserId,
+      )
+
+      if (nextFriends.length === state.friends.length) {
+        throw new Error('friend not found')
+      }
+
+      state.friends = nextFriends
+      removeDemoSingleSession(targetUserId)
+      return { message: '好友关系已解除' }
     },
   )
 }

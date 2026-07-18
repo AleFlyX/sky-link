@@ -37,6 +37,9 @@ public interface MessageMapper extends BaseMapper<Message> {
             AND (m.sender_id = #{currentUserId} OR m.receiver_id = #{currentUserId})
           GROUP BY CASE WHEN m.sender_id = #{currentUserId} THEN m.receiver_id ELSE m.sender_id END
         ) conversation
+        JOIN friendship f
+          ON f.user_id = LEAST(#{currentUserId}, conversation.target_id)
+         AND f.friend_user_id = GREATEST(#{currentUserId}, conversation.target_id)
         JOIN message latest
           ON latest.message_id = conversation.last_message_id
         LEFT JOIN user target_user

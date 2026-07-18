@@ -8,9 +8,13 @@ defineProps({
     type: Object,
     required: true,
   },
+  actionLoading: {
+    type: String,
+    default: '',
+  },
 })
 
-const emit = defineEmits(['open-chat'])
+const emit = defineEmits(['open-chat', 'delete-friend'])
 
 function getStatusTone(status) {
   if (status === '在线' || status === '启用') {
@@ -49,6 +53,14 @@ function getStatusTone(status) {
     <div class="friend-profile-card__actions">
       <AppButton size="small" variant="primary" @click="emit('open-chat', friend)"
         >发消息</AppButton
+      >
+      <AppButton
+        size="small"
+        variant="danger"
+        :loading="actionLoading === `delete-${friend.userId ?? friend.id}`"
+        :disabled="Boolean(actionLoading)"
+        @click="emit('delete-friend', friend)"
+        >删除</AppButton
       >
     </div>
   </AppCard>
@@ -162,6 +174,7 @@ function getStatusTone(status) {
 .friend-profile-card__actions {
   display: flex;
   flex: 0 0 auto;
+  gap: 0.5rem;
 }
 
 @media (max-width: 760px) {
@@ -172,6 +185,8 @@ function getStatusTone(status) {
 
   .friend-profile-card__actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .friend-profile-card__actions :deep(.app-button) {
