@@ -66,14 +66,17 @@ public class GroupServiceImpl implements GroupService {
         group.setNotice(trimToNull(request.getNotice()));
         group.setOwnerId(currentUserId);
         group.setStatus(GROUP_STATUS_NORMAL);
+        // 先写群主表记录，insert 后 MyBatis-Plus 会把生成的 groupId 回填到 group 中。
         chatGroupMapper.insert(group);
 
         GroupMember ownerMember = new GroupMember();
         ownerMember.setGroupId(group.getGroupId());
         ownerMember.setUserId(currentUserId);
+        // 创建者既是群表 ownerId，也是成员表中的 owner；两处数据共同支撑群内权限判断。
         ownerMember.setMemberRole(ROLE_OWNER);
         groupMemberMapper.insert(ownerMember);
 
+        // 初始成员沿用邀请逻辑，避免“建群时邀请”和“后续邀请”出现两套不一致规则。
         inviteMembersInternal(group.getGroupId(), normalizeUserIds(request.getMemberIds()), currentUserId);
         return buildGroupDetailResponse(group.getGroupId());
     }
@@ -104,6 +107,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupDto.GroupDetailResponse getGroupDetail(Long currentUserId, Long groupId) {
+        // 查看详情也要先确认是该群的有效成员，不能只凭 groupId 枚举别人群聊。
         requireActiveMember(groupId, currentUserId);
         return buildGroupDetailResponse(groupId);
     }
@@ -115,6 +119,7 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
         }
 
+        // 群资料由群主或管理员维护；普通成员只有查看权。
         requireAdminOrOwner(groupId, currentUserId);
         ChatGroup group = getActiveGroup(groupId);
         if (group == null) {
@@ -141,12 +146,14 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void dissolveGroup(Long currentUserId, Long groupId) {
+        // 解散是群的最终操作，只授权给 owner，不授权给普通管理员。
         requireOwner(groupId, currentUserId);
         ChatGroup group = getActiveGroup(groupId);
         if (group == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "group not found");
         }
 
+        // 先让所有成员关系失效，再删群；事务保证不会留下“群已删但成员仍有效”的中间状态。
         groupMemberMapper.deactivateAllMembers(groupId);
         chatGroupMapper.deleteById(groupId);
     }
@@ -187,6 +194,7 @@ public class GroupServiceImpl implements GroupService {
         Long groupId,
         GroupDto.InviteGroupMembersRequest request
     ) {
+        // 邀请属于群内管理动作，管理员和群主均可执行。
         requireAdminOrOwner(groupId, currentUserId);
         getActiveGroupOrThrow(groupId);
         if (request == null) {
@@ -215,6 +223,7 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "userId is required");
         }
         if (currentUserId.equals(userId)) {
+            // 自己退出应走专门接口，便于应用“群主不能退出”的独立规则。
             throw new BusinessException(ErrorCode.BAD_REQUEST, "use leave endpoint to quit the group");
         }
 
@@ -224,9 +233,11 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "group member not found");
         }
         if (Integer.valueOf(ROLE_OWNER).equals(target.getMemberRole())) {
+            // 无论操作人是谁，都不允许移除群主，避免群聊失去所有者。
             throw new BusinessException(ErrorCode.FORBIDDEN, "cannot remove the group owner");
         }
         if (Integer.valueOf(ROLE_ADMIN).equals(operator.getMemberRole()) && !Integer.valueOf(ROLE_MEMBER).equals(target.getMemberRole())) {
+            // 管理员只能管理普通成员，不能移除同级管理员或越权处理更高角色。
             throw new BusinessException(ErrorCode.FORBIDDEN, "admin can only remove normal members");
         }
 
@@ -245,6 +256,7 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "userId and role are required");
         }
 
+        // 提升或降级管理员会改变管理边界，因此只允许群主执行。
         requireOwner(groupId, currentUserId);
         GroupMember membership = getActiveMembership(groupId, userId);
         if (membership == null) {
@@ -280,6 +292,7 @@ public class GroupServiceImpl implements GroupService {
     public void leaveGroup(Long currentUserId, Long groupId) {
         GroupMember membership = requireActiveMember(groupId, currentUserId);
         if (Integer.valueOf(ROLE_OWNER).equals(membership.getMemberRole())) {
+            // 不能让群主直接退出；当前实现要求先解散群，以保持所有权模型完整。
             throw new BusinessException(ErrorCode.BAD_REQUEST, "group owner cannot leave directly, dissolve the group instead");
         }
 
@@ -376,6 +389,7 @@ public class GroupServiceImpl implements GroupService {
     private GroupMember requireOwner(Long groupId, Long currentUserId) {
         GroupMember membership = requireActiveMember(groupId, currentUserId);
         if (!Integer.valueOf(ROLE_OWNER).equals(membership.getMemberRole())) {
+            // 这里查的是“当前群中的角色”，不是用户在其他群里的身份。
             throw new BusinessException(ErrorCode.FORBIDDEN, "only group owner can perform this operation");
         }
         return membership;
@@ -391,6 +405,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     private GroupMember requireActiveMember(Long groupId, Long currentUserId) {
+        // 先确认群仍存在且正常，再确认用户在这个群中仍有有效成员关系。
         getActiveGroupOrThrow(groupId);
         GroupMember membership = getActiveMembership(groupId, currentUserId);
         if (membership == null) {

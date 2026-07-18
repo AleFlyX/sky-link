@@ -27,8 +27,10 @@ public class GlobalExceptionHandler {
         BusinessException exception,
         HttpServletRequest request
     ) {
+        // 业务拒绝（例如无权限、资源不存在）是可预期问题，用 warn 留下排查线索而非吞掉原因。
         log.warn("Business exception on {} {}: {}", request.getMethod(), request.getRequestURI(), exception.getMessage());
         return ResponseEntity
+            // ErrorCode 同时决定 HTTP 状态和响应体中的业务 code，前后端能用同一套语义判断失败原因。
             .status(resolveStatus(exception.getErrorCode()))
             .body(ApiResponse.fail(exception.getErrorCode(), exception.getMessage()));
     }
@@ -36,6 +38,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ApiResponse<Void> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
+        // 把多个字段错误合并成可直接展示的文字，例如“title 不能为空; page 必须大于 0”。
         String message = exception.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + " " + error.getDefaultMessage())
             .collect(Collectors.joining("; "));
@@ -76,6 +79,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleException(Exception exception, HttpServletRequest request) {
+        // 完整堆栈只记录服务端日志；不返回给客户端，避免泄露代码、数据库或服务器细节。
         log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), exception);
         return ApiResponse.fail(ErrorCode.INTERNAL_ERROR);
     }

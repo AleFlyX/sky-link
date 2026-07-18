@@ -23,6 +23,7 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+        // 所有 Controller 响应都进入统一处理；是否跳过包装在 beforeBodyWrite 中再判断。
         return true;
     }
 
@@ -36,11 +37,14 @@ public class GlobalResponseAdvice implements ResponseBodyAdvice<Object> {
         ServerHttpResponse response
     ) {
         if (body instanceof ApiResponse<?> || body instanceof Resource || body instanceof byte[]) {
+            // 已是统一响应不能再包一层；文件/字节流也必须保持原样，否则下载会变成 JSON。
             return body;
         }
 
+        // 普通 Java 对象在这里被统一变成 { code, message, data }，Controller 无须反复手写成功包装。
         ApiResponse<Object> apiResponse = ApiResponse.success(body);
         if (StringHttpMessageConverter.class.isAssignableFrom(selectedConverterType)) {
+            // String 使用专门的消息转换器，需先手动转为 JSON 字符串，避免转换器类型冲突。
             response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
             try {
                 return objectMapper.writeValueAsString(apiResponse);

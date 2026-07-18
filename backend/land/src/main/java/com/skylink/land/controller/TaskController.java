@@ -28,6 +28,7 @@ public class TaskController {
     @PostMapping
     @RequirePermission("task:create")
     public TaskDto.TaskResponse createTask(@RequestBody TaskDto.CreateTaskRequest request) {
+        // 不使用前端可能伪造的 creatorId，而是从已通过 JWT 认证的上下文取得当前用户。
         return taskService.createTask(AuthContext.requireUserId(), request);
     }
 
@@ -58,12 +59,14 @@ public class TaskController {
         @PathVariable Long taskId,
         @RequestBody TaskDto.UpdateTaskStatusRequest request
     ) {
+        // “拥有状态修改功能”由注解检查；“是否是这条任务的执行人”由 Service 再检查。
         return taskService.updateTaskStatus(AuthContext.requireUserId(), taskId, request);
     }
 
     @DeleteMapping("/{taskId}")
     @RequirePermission("task:delete")
     public ApiResponse<Void> deleteTask(@PathVariable Long taskId) {
+        // Service 会在删除前确认当前用户是创建者或系统管理员，Controller 不直接写数据库。
         taskService.deleteTask(AuthContext.requireUserId(), taskId);
         return ApiResponse.success("task deleted", null);
     }

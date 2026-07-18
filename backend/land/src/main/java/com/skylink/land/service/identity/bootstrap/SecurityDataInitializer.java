@@ -57,6 +57,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) {
+        // 启动时按固定顺序补齐安全地基；任一步失败会回滚，避免只创建一半角色或权限。
         Map<String, Permission> permissions = ensurePermissions();
         Role userRole = ensureRole("User", SecurityBootstrapCatalog.ROLE_USER, "Default role for authenticated users");
         Role adminRole = ensureRole(
@@ -78,9 +79,11 @@ public class SecurityDataInitializer implements ApplicationRunner {
         bindPermissions(userRole, permissions, SecurityBootstrapCatalog.USER_PERMISSION_CODES);
         bindPermissions(adminRole, permissions, SecurityBootstrapCatalog.ADMIN_PERMISSION_CODES);
         bindPermissions(projectLeaderRole, permissions, SecurityBootstrapCatalog.PROJECT_LEADER_PERMISSION_CODES);
+        // 历史上已存在但还没有任何角色的启用用户，会得到最小的默认角色，避免登录后完全无权限。
         bindDefaultRoleToUsersMissingRoles(userRole);
         Map<String, Permission> allPermissions = permissionMapper.selectList(new LambdaQueryWrapper<Permission>()).stream()
             .collect(Collectors.toMap(Permission::getPermissionCode, permission -> permission));
+        // 超级管理员不是写死在代码判断中，而是通过“绑定所有权限”得到最终能力。
         bindPermissions(superAdminRole, allPermissions, allPermissions.keySet().stream().toList());
         bootstrapAdminService.bootstrap(superAdminRole);
     }
@@ -97,6 +100,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
                 permission.setSortNo(definition.sortNo());
                 permissionMapper.insert(permission);
             } else if (Integer.valueOf(1).equals(permission.getDeleted())) {
+                // 系统目录中仍声明需要的权限被逻辑删除时，恢复旧记录而不是新建同码数据。
                 permissionMapper.restoreSystemPermission(permission.getPermissionId());
                 permission.setDeleted(0);
             }
@@ -131,6 +135,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
         for (String permissionCode : permissionCodes) {
             Permission permission = permissions.get(permissionCode);
             if (permission == null || existingPermissionIds.contains(permission.getPermissionId())) {
+                // 不存在的目录项无法绑定；已存在的关系也无需重复插入，保证重复启动结果稳定。
                 continue;
             }
             RolePermission relation = new RolePermission();
@@ -153,6 +158,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
                 new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, user.getUserId())
             ).isEmpty();
             if (hasRole) {
+                // 用户已有任意角色时保持现有授权，不在启动阶段擅自覆盖。
                 continue;
             }
             UserRole relation = new UserRole();

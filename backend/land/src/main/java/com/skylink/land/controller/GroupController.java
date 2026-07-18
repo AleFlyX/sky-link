@@ -27,6 +27,7 @@ public class GroupController {
 
     @PostMapping
     public ApiResponse<GroupDto.GroupDetailResponse> createGroup(@RequestBody GroupDto.CreateGroupRequest request) {
+        // 创建人只从当前登录上下文读取，Service 会同时创建群记录和群主成员记录。
         return ApiResponse.success("group created", groupService.createGroup(AuthContext.requireUserId(), request));
     }
 
@@ -50,6 +51,7 @@ public class GroupController {
 
     @DeleteMapping("/{groupId}")
     public ApiResponse<Void> dissolveGroup(@PathVariable Long groupId) {
+        // 是否为群主不是 Controller 的猜测，而由 Service 查询该群内成员角色后决定。
         groupService.dissolveGroup(AuthContext.requireUserId(), groupId);
         return ApiResponse.success("group dissolved", null);
     }
@@ -90,6 +92,7 @@ public class GroupController {
 
     @DeleteMapping("/{groupId}/members/me")
     public ApiResponse<Void> leaveGroup(@PathVariable Long groupId) {
+        // 群主不能直接退出，否则会留下没有所有者的群；Service 会给出明确的业务错误。
         groupService.leaveGroup(AuthContext.requireUserId(), groupId);
         return ApiResponse.success("left group", null);
     }

@@ -75,6 +75,7 @@ public class DocumentServiceImpl implements DocumentService {
         Document document = new Document();
         document.setTitle(request.getTitle().trim());
         document.setContent(request.getContent());
+        // 创建者来自当前登录用户，后续默认拥有 manage 权限，前端不能代填别人作为创建者。
         document.setCreatorId(userId);
         document.setStatus(parseStatus(request.getStatus(), STATUS_PRIVATE));
         documentMapper.insert(document);
@@ -110,6 +111,7 @@ public class DocumentServiceImpl implements DocumentService {
         Document document = requireDocument(documentId);
         String permission = resolvePermission(userId, document);
         if (permission == null) {
+            // 对无权用户按“不存在”返回，避免通过 documentId 枚举出他人的文档标题或状态。
             throw new BusinessException(ErrorCode.NOT_FOUND, "document not found");
         }
         User creator = userMapper.selectById(document.getCreatorId());
@@ -143,6 +145,7 @@ public class DocumentServiceImpl implements DocumentService {
                 throw new BusinessException(ErrorCode.CONFLICT, "archived document is read-only");
             }
             if (updatingStatus && !canManage(userId, document)) {
+                // 文档状态会影响其他人的可见性，只有 manage 级别可以切换。
                 throw forbidden("manage permission is required to change status");
             }
         } else {
@@ -152,6 +155,7 @@ public class DocumentServiceImpl implements DocumentService {
             }
         }
         if (request.getContent() != null && collaborationStateMapper.selectById(documentId) != null) {
+            // 协同文档内容由 Yjs 状态同步；普通 REST 更新会破坏协同版本，因此明确拒绝。
             throw new BusinessException(ErrorCode.CONFLICT, "collaborative document content must be updated through Yjs");
         }
         if (request.getTitle() != null) {
