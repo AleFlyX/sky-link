@@ -80,6 +80,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserVO createUser(UserDto.CreateUserRequest request) {
+        // 新建用户会同时校验账号、联系方式、部门和默认角色；失败时不留下半成品账号。
         if (request == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
         }
@@ -259,6 +260,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public List<String> listPermissionCodes(Long userId) {
+        // 权限不是直接挂在用户身上：先找用户角色，再找角色权限，最后转换成权限码。
         List<Long> roleIds = listEnabledRoles(userId).stream()
             .map(Role::getRoleId)
             .toList();
@@ -284,6 +286,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<RoleVO> assignRoles(Long userId, List<Long> roleIds) {
+        // 这是“用新列表整体替换旧角色”的语义，所以先清旧关联，再校验并插入新关联。
         requireUser(userId);
         userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
         List<Long> normalizedRoleIds = normalizeIds("roleIds", roleIds);

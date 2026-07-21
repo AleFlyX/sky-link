@@ -35,6 +35,7 @@ const {
   requestDialog,
   requestTab,
   requestActionLoading,
+  friendActionLoading,
   selectableUsers,
   userOptionsLoading,
   userOptionsError,
@@ -47,6 +48,7 @@ const {
   loadData,
   handleAddFriend,
   handleCreateGroup,
+  handleDeleteFriend,
   handleIncomingRequest,
   resetFriendPage,
   resetGroupPage,
@@ -165,9 +167,11 @@ function openGroupChat(group) {
         :pending-incoming-count="pendingIncomingCount"
         :page="friendPage"
         :page-size="friendPageSize"
+        :action-loading="friendActionLoading"
         @update:page="friendPage = $event"
         @open-request-dialog="requestDialog = true"
         @open-chat="openSingleChat"
+        @delete-friend="handleDeleteFriend"
       />
 
       <GroupSpaceSection

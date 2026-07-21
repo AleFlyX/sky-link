@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus'
 import {
   addFriend,
   createGroup,
+  deleteFriend,
   getFriendRequests,
   getFriends,
   getGroups,
@@ -11,6 +12,7 @@ import {
   handleFriendRequest,
   isDemoMode,
 } from '../../../api/workspace'
+import { useConfirmDialog } from '../../../composables/useConfirmDialog'
 import { useUserStore } from '../../../stores/user'
 
 const friendPageSize = 6
@@ -106,6 +108,7 @@ function normalizeUserOption(user) {
 
 export function useContactsDirectory() {
   const userStore = useUserStore()
+  const { confirm } = useConfirmDialog()
   const keyword = ref('')
   const groupKeyword = ref('')
   const friendPage = ref(1)
@@ -122,6 +125,7 @@ export function useContactsDirectory() {
   const requestDialog = ref(false)
   const requestTab = ref('incoming')
   const requestActionLoading = ref('')
+  const friendActionLoading = ref('')
   const selectableUsers = ref([])
   const userOptionsLoading = ref(false)
   const userOptionsError = ref('')
@@ -198,6 +202,7 @@ export function useContactsDirectory() {
     loading.value = true
     loadError.value = ''
     try {
+      // 四类通讯录数据彼此独立，使用 Promise.all 并行请求可缩短页面首次加载等待时间。
       const [friendResult, groupResult, incomingResult, outgoingResult] = await Promise.all([
         getFriends({ page: 1, size: 100, keyword: keyword.value }),
         getGroups({ page: 1, size: 100 }),
@@ -215,6 +220,7 @@ export function useContactsDirectory() {
         (result) => result.degraded,
       )
       if (degraded) {
+        // 某接口降级为演示数据时明确告知用户，避免把演示结果误认为真实服务端数据。
         loadError.value = `接口暂不可用，已切换演示数据：${degraded.error || '请稍后重试'}`
       }
       friendPage.value = 1
@@ -231,6 +237,7 @@ export function useContactsDirectory() {
     userOptionsError.value = ''
 
     try {
+      // 此处只负责加载“可选用户”；最终能否加好友或入群仍由后端的业务规则决定。
       const response = await getUsers({ page: 1, size: 500 })
       selectableUsers.value = (response?.data?.records || []).map(normalizeUser)
     } catch (error) {
@@ -259,7 +266,43 @@ export function useContactsDirectory() {
     await loadData()
   }
 
+  async function handleDeleteFriend(friend) {
+    const friendUserId = friend?.userId ?? friend?.id
+    if (!friendUserId) {
+      ElMessage.error('缺少好友用户 ID，无法删除')
+      return
+    }
+
+    try {
+      await confirm({
+        title: '删除好友',
+        message: `确定要删除好友「${friend.name || `用户#${friendUserId}`}」吗？`,
+        hint: '删除后将解除双方好友关系，如需恢复需要重新发送好友申请。',
+        type: 'danger',
+        confirmText: '删除好友',
+        confirmVariant: 'danger',
+      })
+    } catch {
+      return
+    }
+
+    friendActionLoading.value = `delete-${friendUserId}`
+    try {
+      const result = await deleteFriend(friendUserId)
+      ElMessage[result?.degraded ? 'warning' : 'success'](
+        result?.degraded ? '好友接口不可用，已从演示通讯录移除' : '好友已删除',
+      )
+      await loadData()
+      await loadSelectableUsers()
+    } catch (error) {
+      ElMessage.error(error.message || '删除好友失败')
+    } finally {
+      friendActionLoading.value = ''
+    }
+  }
+
   async function handleIncomingRequest(requestId, action) {
+    // 按“动作-申请 ID”标记加载状态，避免用户对同一条申请连续点击多次。
     requestActionLoading.value = `${action}-${requestId}`
     try {
       const result = await handleFriendRequest(requestId, action)
@@ -306,6 +349,7 @@ export function useContactsDirectory() {
     requestDialog,
     requestTab,
     requestActionLoading,
+    friendActionLoading,
     selectableUsers,
     userOptionsLoading,
     userOptionsError,
@@ -320,6 +364,7 @@ export function useContactsDirectory() {
     loadSelectableUsers,
     handleAddFriend,
     handleCreateGroup,
+    handleDeleteFriend,
     handleIncomingRequest,
     resetFriendPage,
     resetGroupPage,

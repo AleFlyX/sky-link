@@ -9,7 +9,7 @@ import AppPagination from '../../../components/common/AppPagination.vue'
 import AppStatusTag from '../../../components/common/AppStatusTag.vue'
 import { getTaskStatusMeta, taskStatusOptions } from '../../../constants/enums'
 import { useTaskList } from '../composables/useTaskList'
-
+import { useUserStore } from '@/stores/user.js'
 const {
   columns,
   demoData,
@@ -35,6 +35,12 @@ const {
   total,
   updatingTaskId,
 } = useTaskList()
+const userStore=useUserStore();
+// 非负责人不显示操作按钮
+function isExecutor(row){
+  console.log(row.executor.userId==userStore.user.id)
+  return row.executor.userId==userStore.user.id
+}
 </script>
 
 <template>
@@ -107,7 +113,7 @@ const {
         </template>
         <template #actions="{ row }">
           <AppButton
-            v-if="getNextStatusAction(row)"
+            v-if="getNextStatusAction(row)&&isExecutor(row)"
             v-permission="'task:status:update'"
             size="small"
             variant="secondary"

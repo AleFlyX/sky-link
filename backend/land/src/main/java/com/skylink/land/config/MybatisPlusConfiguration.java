@@ -35,6 +35,7 @@ public class MybatisPlusConfiguration {
         ObjectProvider<Interceptor> interceptorsProvider
     )
         throws Exception {
+        // 手动组装 MyBatis-Plus 的工厂：它负责把实体、Mapper、XML 和数据源连成可执行 SQL 的会话。
         MybatisSqlSessionFactoryBean factoryBean = new MybatisSqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
         factoryBean.setTypeAliasesPackage(properties.getTypeAliasesPackage());
@@ -45,10 +46,12 @@ public class MybatisPlusConfiguration {
 
         Resource[] mapperLocations = properties.resolveMapperLocations();
         if (mapperLocations.length > 0) {
+            // 复杂查询仍可写在 Mapper XML 中；这里把配置扫描到的 XML 注册给 MyBatis。
             factoryBean.setMapperLocations(mapperLocations);
         }
 
         MybatisConfiguration configuration = new MybatisConfiguration();
+        // 让数据库列 create_time 能自动映射到 Java 字段 createTime，减少重复映射代码。
         configuration.setMapUnderscoreToCamelCase(mapUnderscoreToCamelCase);
         configuration.setLogImpl(logImpl);
         factoryBean.setConfiguration(configuration);
@@ -59,6 +62,7 @@ public class MybatisPlusConfiguration {
 
         Interceptor[] interceptors = interceptorsProvider.orderedStream().toArray(Interceptor[]::new);
         if (interceptors.length > 0) {
+            // 将 Spring 中注册的 MyBatis 拦截器（例如分页）挂到同一个 SqlSessionFactory。
             factoryBean.setPlugins(interceptors);
         }
 
@@ -68,6 +72,7 @@ public class MybatisPlusConfiguration {
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        // selectPage 会依赖此插件按 MySQL 方言生成分页 SQL，而不是一次把所有记录查回内存。
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         return interceptor;
     }

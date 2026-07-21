@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { login, refreshToken } from '../api/auth'
 import { downloadFile } from '../api/file'
-import { getSentFriendRequests, handleFriendRequest } from '../api/friend'
+import { deleteFriend, getSentFriendRequests, handleFriendRequest } from '../api/friend'
 import { sendMessage } from '../api/message'
 import {
   createPermission,
@@ -75,6 +75,12 @@ describe('business API contracts', () => {
 
     expect(request.put).toHaveBeenCalledWith('/friends/requests/5', { action: 'accept' })
     expect(request.get).toHaveBeenCalledWith('/friends/requests/sent', { page: 1, size: 10 })
+  })
+
+  it('deletes a friend by the peer user id', () => {
+    deleteFriend(1002)
+
+    expect(request.delete).toHaveBeenCalledWith('/friends/1002')
   })
 
   it('uses the raw download helper for file content', () => {

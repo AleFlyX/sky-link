@@ -33,9 +33,13 @@ defineProps({
     type: Number,
     default: 6,
   },
+  actionLoading: {
+    type: String,
+    default: '',
+  },
 })
 
-const emit = defineEmits(['update:page', 'open-request-dialog', 'open-chat'])
+const emit = defineEmits(['update:page', 'open-request-dialog', 'open-chat', 'delete-friend'])
 </script>
 
 <template>
@@ -61,7 +65,9 @@ const emit = defineEmits(['update:page', 'open-request-dialog', 'open-chat'])
         v-for="friend in friends"
         :key="friend.id"
         :friend="friend"
+        :action-loading="actionLoading"
         @open-chat="emit('open-chat', $event)"
+        @delete-friend="emit('delete-friend', $event)"
       />
     </div>
     <div v-else class="friend-directory__empty">

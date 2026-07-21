@@ -61,20 +61,25 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public TaskDto.TaskResponse createTask(Long currentUserId, TaskDto.CreateTaskRequest request) {
+        // 创建任务牵涉校验和写库；任一步抛异常时，事务会撤销本次数据库变更。
         requireCurrentUserId(currentUserId);
         validateCreateRequest(request);
+        // 当前实现只允许把任务分配给与创建者处于同一部门的已存在用户。
         validateExecutorAssignment(currentUserId, request.getExecutorId());
 
         Task task = new Task();
         task.setTitle(request.getTitle().trim());
         task.setContent(trimToNull(request.getContent()));
+        // 创建者由登录态决定，避免客户端把任务伪装成“别人创建”。
         task.setCreatorId(currentUserId);
         task.setExecutorId(request.getExecutorId());
         task.setPriority(request.getPriority() == null ? 2 : request.getPriority());
+        // 新任务统一从“未开始”起步，不能由前端直接指定任意初始状态。
         task.setStatus(STATUS_NOT_STARTED);
         task.setDeadline(toLocalDateTime(request.getDeadline()));
         taskMapper.insert(task);
 
+        // 插入后重新查询并补齐创建者/执行者展示信息，而不是只回传刚才的半成品实体。
         return buildTaskResponse(requireTask(task.getTaskId()));
     }
 
@@ -87,6 +92,7 @@ public class TaskServiceImpl implements TaskService {
         Set<Long> matchedUserIds = findUserIdsByKeyword(query.getKeyword());
 
         LambdaQueryWrapper<Task> wrapper = new LambdaQueryWrapper<Task>()
+            // 即使用户有 task:list 功能权限，也只能在列表中看到自己创建或执行的任务。
             .and(participant -> participant
                 .eq(Task::getCreatorId, currentUserId)
                 .or()
@@ -123,6 +129,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional(rollbackFor = Exception.class)
     public TaskDto.TaskResponse updateTask(Long currentUserId, Long taskId, TaskDto.UpdateTaskRequest request) {
         Task task = requireTask(taskId);
+        // 编辑任务内容属于“资源级权限”：创建者或管理员才能操作这条具体记录。
         requireCreatorOrAdministrator(currentUserId, task);
         if (request == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
@@ -136,6 +143,7 @@ public class TaskServiceImpl implements TaskService {
             task.setContent(trimToNull(request.getContent()));
         }
         if (request.getExecutorId() != null) {
+            // 换执行人时也必须重新做同部门校验，不能只在创建时检查一次。
             validateExecutorAssignment(task.getCreatorId(), request.getExecutorId());
             task.setExecutorId(request.getExecutorId());
         }
@@ -163,10 +171,12 @@ public class TaskServiceImpl implements TaskService {
         }
 
         Task task = requireTask(taskId);
+        // 状态推进交给执行者；创建者本身不一定能代替执行者推进工作流。
         requireExecutorOrAdministrator(currentUserId, task);
         int status = parseStatus(request.getStatus());
         task.setStatus(status);
         if (status == STATUS_IN_PROGRESS && task.getStartTime() == null) {
+            // 只记录第一次开始工作的时刻，之后反复切换状态不会覆盖原始开始时间。
             task.setStartTime(LocalDateTime.now());
         }
         taskMapper.updateById(task);
@@ -177,6 +187,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteTask(Long currentUserId, Long taskId) {
         Task task = requireTask(taskId);
+        // 删除是高风险动作，仍需资源级授权，不能只依赖 Controller 的功能权限注解。
         requireCreatorOrAdministrator(currentUserId, task);
         taskMapper.deleteById(taskId);
     }
@@ -247,6 +258,7 @@ public class TaskServiceImpl implements TaskService {
         User executor = requireExecutorUser(executorId);
 
         if (creator.getDepartmentId() == null) {
+            // 无法确定创建者所属范围时，宁可拒绝分配，也不放开跨部门任务。
             throw new BusinessException(
                 ErrorCode.BAD_REQUEST,
                 "task creator must belong to a department before assigning tasks"
@@ -259,6 +271,7 @@ public class TaskServiceImpl implements TaskService {
             );
         }
         if (!Objects.equals(creator.getDepartmentId(), executor.getDepartmentId())) {
+            // 部门 ID 是后端最终判断依据，前端展示的部门名称不能作为安全条件。
             throw new BusinessException(
                 ErrorCode.BAD_REQUEST,
                 "executor must belong to the same department as the task creator"

@@ -64,6 +64,7 @@ public class FriendServiceImpl implements FriendService {
 
         FriendPair pair = FriendPair.of(currentUserId, targetUserId);
         if (friendshipMapper.selectByUsers(pair.userId(), pair.friendUserId()) != null) {
+            // 好友关系按规范化后的两人组合查询，防止 A->B 与 B->A 被当成两条不同关系。
             throw new BusinessException(ErrorCode.CONFLICT, "you are already friends");
         }
 
@@ -75,6 +76,7 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException(ErrorCode.CONFLICT, "incoming friend request is waiting for you");
         }
 
+        // 同一对用户只允许保留一个待处理申请，避免双方不断重复发送造成状态混乱。
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setRequesterId(currentUserId);
         friendRequest.setReceiverId(targetUserId);
@@ -104,6 +106,7 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException(ErrorCode.NOT_FOUND, "friend request not found");
         }
         if (!currentUserId.equals(friendRequest.getReceiverId())) {
+            // 申请只能由接收方处理，申请人自己不能伪造“同意”。
             throw new BusinessException(ErrorCode.FORBIDDEN, "only the receiver can process this friend request");
         }
         if (!Integer.valueOf(STATUS_PENDING).equals(friendRequest.getStatus())) {
@@ -125,6 +128,7 @@ public class FriendServiceImpl implements FriendService {
                 .set(FriendRequest::getStatus, nextStatus)
         );
         if (updated != 1) {
+            // 更新条件仍要求 pending，用一次受影响行数检查抵御两个请求并发处理同一申请。
             throw new BusinessException(ErrorCode.CONFLICT, "friend request has already been processed");
         }
         if (nextStatus == STATUS_REJECTED) {
@@ -138,6 +142,7 @@ public class FriendServiceImpl implements FriendService {
 
         FriendPair pair = FriendPair.of(friendRequest.getRequesterId(), friendRequest.getReceiverId());
         if (friendshipMapper.selectByUsers(pair.userId(), pair.friendUserId()) == null) {
+            // 同意申请后才创建真正的好友关系；若并发下关系已存在则不重复插入。
             Friendship friendship = new Friendship();
             friendship.setUserId(pair.userId());
             friendship.setFriendUserId(pair.friendUserId());

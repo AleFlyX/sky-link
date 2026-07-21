@@ -97,8 +97,10 @@ public class MessageServiceImpl implements MessageService {
         if (request == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "request body is required");
         }
+        // 一条消息只能是单聊或群聊，不能同时指定 receiverId 和 groupId。
         requireExactlyOneTarget(request.getReceiverId(), request.getGroupId());
 
+        // 推送前先确认发送者账号仍启用；被禁用用户不能借既有 WebSocket 或 HTTP 会话继续发消息。
         User sender = requireEnabledUser(currentUserId, "sender user not found");
         String content = normalizeContent(request.getContent());
         int messageType = toMessageTypeCode(request.getMessageType());
@@ -142,12 +144,14 @@ public class MessageServiceImpl implements MessageService {
         long total;
         List<MessageHistoryRow> rows;
         if (query.getReceiverId() != null) {
+            // 单聊双方必须已经是好友，不能通过猜测用户 ID 读取或发送陌生人消息。
             requireSingleChatAccess(currentUserId, query.getReceiverId());
             total = messageMapper.countSingleMessages(currentUserId, query.getReceiverId(), query.getBefore());
             rows = total == 0
                 ? List.of()
                 : messageMapper.selectSingleMessages(currentUserId, query.getReceiverId(), query.getBefore(), offset, size);
         } else {
+            // 群聊记录同样要求当前人仍是这个群的有效成员。
             requireGroupChatAccess(currentUserId, query.getGroupId());
             total = messageMapper.countGroupMessages(currentUserId, query.getGroupId(), query.getBefore());
             rows = total == 0
@@ -212,6 +216,7 @@ public class MessageServiceImpl implements MessageService {
 
         message.setIsRecalled(MESSAGE_RECALLED);
         MessageDto.MessageResponse response = toMessageResponse(message, displayName(userMapper.selectById(message.getSenderId())));
+        // 撤回也要实时通知；否则其他在线页面会继续显示未撤回的旧内容。
         publishRecallEventAfterCommit(message, response);
         return response;
     }
@@ -245,7 +250,9 @@ public class MessageServiceImpl implements MessageService {
             response
         );
         runAfterCommit(() -> {
+            // 发送者自己的其他标签页也要收到事件，才能同步会话预览；不是只推给接收者。
             messagePushService.push("message.created", response, senderSession, List.of(currentUserId));
+            // 接收者可能同时开多个页面，注册表会把这一条事件复制给其所有在线 session。
             messagePushService.push("message.created", response, receiverSession, List.of(receiverId));
         });
         return response;
@@ -269,6 +276,7 @@ public class MessageServiceImpl implements MessageService {
             group.getGroupName(),
             response
         );
+        // 群消息只推给当前有效群成员；具体成员列表由后端查询，前端不能自行指定接收者。
         List<Long> recipients = activeGroupMemberIds(groupId, currentUserId);
         runAfterCommit(() -> messagePushService.push("message.created", response, session, recipients));
         return response;
@@ -304,6 +312,7 @@ public class MessageServiceImpl implements MessageService {
                 response
             );
             runAfterCommit(() -> {
+                // 单聊双方各自看到的会话标题不同，因此分别构造并推送对应 session 视图。
                 messagePushService.push("message.recalled", response, senderSession, List.of(message.getSenderId()));
                 messagePushService.push("message.recalled", response, receiverSession, List.of(message.getReceiverId()));
             });
@@ -317,6 +326,7 @@ public class MessageServiceImpl implements MessageService {
             group == null ? "群聊#" + message.getGroupId() : group.getGroupName(),
             response
         );
+        // 群撤回通知给所有当前有效成员；发送者也会通过其在线连接收到同步事件。
         List<Long> recipients = activeGroupMemberIds(message.getGroupId(), message.getSenderId());
         runAfterCommit(() -> messagePushService.push("message.recalled", response, session, recipients));
     }
@@ -338,6 +348,7 @@ public class MessageServiceImpl implements MessageService {
         }
         FriendPair pair = FriendPair.of(currentUserId, receiverId);
         if (friendshipMapper.selectByUsers(pair.userId(), pair.friendUserId()) == null) {
+            // 后端复查好友关系；前端联系人列表的显示不能当作授权依据。
             throw new BusinessException(ErrorCode.FORBIDDEN, "you can only send messages to friends");
         }
     }
@@ -346,6 +357,7 @@ public class MessageServiceImpl implements MessageService {
         requireActiveGroup(groupId);
         GroupMember membership = groupMemberMapper.selectMembership(groupId, currentUserId);
         if (membership == null || !isActiveGroupRole(membership.getMemberRole())) {
+            // 已退出的成员角色不再拥有读取或发送该群消息的资格。
             throw new BusinessException(ErrorCode.FORBIDDEN, "you are not a member of this group");
         }
     }
@@ -504,12 +516,14 @@ public class MessageServiceImpl implements MessageService {
 
     private void runAfterCommit(Runnable action) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            // 没有事务时无法等待提交，直接执行；当前消息写入路径通常会进入下面的 afterCommit 分支。
             action.run();
             return;
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
+                // 只在数据库真正提交后才广播，避免前端收到一条随后被事务回滚的“幽灵消息”。
                 action.run();
             }
         });

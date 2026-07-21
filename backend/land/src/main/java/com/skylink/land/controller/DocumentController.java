@@ -32,6 +32,8 @@ public class DocumentController {
     }
     @PostMapping("/{documentId}/collaboration-ticket") @RequirePermission("document:get")
     public DocumentDto.CollaborationTicketResponse ticket(@PathVariable Long documentId) {
+        // 先通过普通 JWT + document:get 功能权限，再由 Service 检查这篇具体文档的资源级权限。
+        // 返回的是短期协同票据和 BFF WebSocket 地址，不是把用户的长期 access token 交给协同服务。
         return collaborationService.issueTicket(AuthContext.requireUserId(), documentId);
     }
     @PutMapping("/{documentId}") @RequirePermission("document:update")

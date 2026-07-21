@@ -39,10 +39,12 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Long userId, String username, List<String> roles) {
+        // 登录成功时签发给普通业务请求使用的短期 access token。
         return generateToken(userId, username, roles, ACCESS_TOKEN_TYPE, properties.getTtl());
     }
 
     public String generateRefreshToken(Long userId, String username, List<String> roles) {
+        // refresh token 类型不同、有效期不同，只应交给刷新接口使用。
         return generateToken(userId, username, roles, REFRESH_TOKEN_TYPE, properties.getRefreshTtl());
     }
 
@@ -63,6 +65,7 @@ public class JwtTokenProvider {
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("iss", properties.getIssuer());
+        // sub 只保存用户 ID；权限仍会在每个请求中由数据库重新计算，避免 Token 内权限陈旧。
         payload.put("sub", String.valueOf(userId));
         payload.put("token_type", tokenType);
         payload.put("username", username);
@@ -72,6 +75,7 @@ public class JwtTokenProvider {
 
         String encodedHeader = encodeJson(header);
         String encodedPayload = encodeJson(payload);
+        // JWT 的前两段可以被解码查看，真正防篡改依靠服务端密钥生成的第三段签名。
         String signature = sign(encodedHeader + "." + encodedPayload);
         return encodedHeader + "." + encodedPayload + "." + signature;
     }
@@ -92,6 +96,7 @@ public class JwtTokenProvider {
 
         String unsignedToken = parts[0] + "." + parts[1];
         if (!constantTimeEquals(sign(unsignedToken), parts[2])) {
+            // 先验签再信任 payload，任何一位被改动都会导致签名不匹配。
             throw new UnauthorizedException("Token 签名无效");
         }
 
@@ -100,11 +105,13 @@ public class JwtTokenProvider {
             throw new UnauthorizedException("Token 签发方无效");
         }
         if (StringUtils.hasText(expectedTokenType) && !expectedTokenType.equals(payload.get("token_type"))) {
+            // access token 不能冒充 refresh token，反之亦然。
             throw new UnauthorizedException("Token 类型无效");
         }
 
         Instant expiresAt = Instant.ofEpochSecond(asLong(payload.get("exp")));
         if (Instant.now().isAfter(expiresAt)) {
+            // 即便签名正确，超过 exp 的令牌也必须失效。
             throw new UnauthorizedException("Token 已过期");
         }
 
@@ -162,6 +169,7 @@ public class JwtTokenProvider {
         }
         int result = 0;
         for (int i = 0; i < expectedBytes.length; i++) {
+            // 累积每一位差异，避免发现首个差异就提前返回而泄露可被利用的时间信息。
             result |= expectedBytes[i] ^ actualBytes[i];
         }
         return result == 0;

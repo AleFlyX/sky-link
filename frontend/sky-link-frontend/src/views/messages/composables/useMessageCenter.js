@@ -38,8 +38,11 @@ export function useMessageCenter() {
   const loadError = ref('')
   const demoData = ref(isDemoMode())
   const connectionState = ref('connecting')
+  // 保存当前 WebSocket 实例；它与 HTTP 请求实例不同，不能通过 Axios 拦截器自动管理。
   const socket = ref(null)
+  // 断线重连只允许一个定时器，避免网络抖动产生多条并行连接。
   const reconnectTimer = ref(null)
+  // 组件主动卸载/切换用户时设为 true，防止 onclose 又自动重连。
   const closingSocket = ref(false)
   const hasMoreHistory = ref(false)
   const loadingHistory = ref(false)
@@ -64,18 +67,23 @@ export function useMessageCenter() {
   })
 
   function buildWebSocketUrl() {
+    // 连接时读取最新 access token；token 刷新后下次重连会自动使用新值。
     const token = localStorage.getItem(TOKEN_KEY)
     if (!token) {
       return null
     }
 
-    const explicitWebSocketUrl = import.meta.env.VITE_WS_URL
+    const explicitWebSocketUrl = import.meta.env.VITE_WS_URL // 允许通过环境变量显式指定 WebSocket URL，主要用于测试和调试。
+    // 优先允许部署环境显式配置 WS 地址；否则从 API 基地址或当前站点推导。
     const apiBase =
       explicitWebSocketUrl || import.meta.env.VITE_API_BASE_URL || window.location.origin
     const url = new URL(apiBase, window.location.origin)
+    // HTTPS 页面必须使用加密的 wss，HTTP 本地开发则使用 ws。
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    // 未显式配置时必须与后端 WebSocketConfiguration 的 /ws/messages 完全一致。
     url.pathname = explicitWebSocketUrl ? url.pathname : '/ws/messages'
     url.search = ''
+    // WebSocket 握手无法复用 Axios 的 Authorization 拦截器，因此当前实现把 token 放到连接参数中。
     url.searchParams.set('token', token)
     return url.toString()
   }
@@ -86,14 +94,14 @@ export function useMessageCenter() {
       if (!element) {
         return
       }
-
+      // 如果用户滚动到接近底部的位置，或者强制滚动，则将滚动条滚动到底部。避免在用户查看历史消息时被新消息打断。
       const distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight
       if (force || distanceToBottom < 120) {
         element.scrollTop = element.scrollHeight
       }
     })
   }
-
+  // 同步当前会话的预览信息，包括最后一条消息和最后更新时间。
   function syncActiveSessionPreview() {
     if (!activeSession.value) {
       return
@@ -103,7 +111,7 @@ export function useMessageCenter() {
     if (!latestMessage) {
       return
     }
-
+    // 更新当前会话的最后消息和最后时间戳，以便在会话列表中显示最新的预览信息。
     sessions.value = upsertSession(sessions.value, {
       ...activeSession.value,
       lastMessage: latestMessage,
@@ -112,12 +120,14 @@ export function useMessageCenter() {
   }
 
   function closeSocket() {
+    // 标记为主动关闭，使 onclose 区分“页面离开”与“网络异常”。
     closingSocket.value = true
     if (reconnectTimer.value) {
       window.clearTimeout(reconnectTimer.value)
       reconnectTimer.value = null
     }
     if (socket.value) {
+      // close 只发起关闭流程；真正的引用清理由 onclose 或此处置空完成。
       socket.value.close()
       socket.value = null
     }
@@ -125,11 +135,13 @@ export function useMessageCenter() {
 
   function scheduleReconnect() {
     if (demoData.value || closingSocket.value) {
+      // 演示数据无需真实连接；主动关闭后也绝不能再偷偷重连。
       return
     }
     if (reconnectTimer.value) {
       window.clearTimeout(reconnectTimer.value)
     }
+    // 断线后延迟重连，并且始终只保留一个定时器，避免网络波动时同时创建多条连接。
     reconnectTimer.value = window.setTimeout(() => {
       reconnectTimer.value = null
       connectSocket()
@@ -138,6 +150,7 @@ export function useMessageCenter() {
 
   function connectSocket() {
     if (demoData.value || !currentUserId.value) {
+      // 未登录没有 Token 也没有可认证用户，不建立匿名实时消息连接。
       connectionState.value = demoData.value ? 'connected' : 'disconnected'
       return
     }
@@ -147,6 +160,7 @@ export function useMessageCenter() {
       (socket.value.readyState === WebSocket.OPEN ||
         socket.value.readyState === WebSocket.CONNECTING)
     ) {
+      // 已连接或正在连接时不再创建第二个 WebSocket，防止同一消息被重复推送。
       return
     }
 
@@ -158,41 +172,51 @@ export function useMessageCenter() {
 
     closingSocket.value = false
     connectionState.value = 'connecting'
+    // 此刻只建立推送通道；发送消息仍通过 HTTP API，以保留后端事务、好友和群成员校验。
     const ws = new WebSocket(url)
     socket.value = ws
 
     ws.onopen = () => {
+      // 握手认证成功后才会触发 open；401/Origin 不通过通常会走 error/close。
       connectionState.value = 'connected'
     }
 
     ws.onmessage = (event) => {
       try {
+        // 服务端 MessagePushService 推送的是 JSON：{ type, message, session }。
         const payload = JSON.parse(event.data)
         if (!payload?.type || !payload?.message) {
+          // 忽略格式不完整的帧，避免异常数据污染页面消息列表。
           return
         }
 
         if (payload.session) {
+          // 无论用户当前打开哪个会话，都先更新会话列表中的最后消息和时间。
           sessions.value = upsertSession(sessions.value, payload.session)
         }
 
         const conversationKey = getConversationKeyFromMessage(payload.message, currentUserId.value)
         if (conversationKey && conversationKey === activeSessionId.value) {
+          // 只有当前正在看的会话才立即插入聊天窗口；其他会话只更新其列表预览。
           messages.value = upsertMessage(messages.value, payload.message)
           scrollThreadToBottom(payload.type === 'message.created')
         }
       } catch (error) {
+        // 单个坏帧不能导致整条连接崩溃；保留警告方便开发者排查服务端协议问题。
         console.warn('ignored websocket message', error)
       }
     }
 
     ws.onerror = () => {
+      // 浏览器不会提供可安全展示的底层错误细节；状态交给 onclose/reconnect 统一处理。
       connectionState.value = 'disconnected'
     }
 
     ws.onclose = () => {
+      // 关闭后丢弃旧实例，下一次重连会创建全新的 WebSocket。
       socket.value = null
       if (!closingSocket.value) {
+        // 非主动关闭视为断线，3 秒后重连；用户切换/组件卸载时不会走这里的重连逻辑。
         connectionState.value = 'disconnected'
         scheduleReconnect()
       }
@@ -393,6 +417,7 @@ export function useMessageCenter() {
   watch(
     currentUserId,
     () => {
+      // 登录、退出或用户切换都先关旧连接再按新身份连接，避免一条 socket 混用两个人的 Token。
       closeSocket()
       connectSocket()
     },
@@ -404,6 +429,7 @@ export function useMessageCenter() {
   })
 
   onBeforeUnmount(() => {
+    // 页面卸载时清理 socket 和重连定时器，避免离开消息页后仍保持后台推送连接。
     closeSocket()
   })
 

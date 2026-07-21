@@ -122,6 +122,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
             new LambdaQueryWrapper<User>().eq(User::getDepartmentId, departmentId)
         );
         if (memberCount != null && memberCount > 0) {
+            // 有成员时拒绝删除，避免用户记录指向已不存在的部门。
             throw new BusinessException(ErrorCode.CONFLICT, "department still has members");
         }
 
@@ -163,6 +164,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
         }
 
         for (User user : users) {
+            // 加入部门本质是更新用户的 departmentId；同一用户只会有一个当前所属部门。
             userMapper.update(
                 null,
                 new LambdaUpdateWrapper<User>()
@@ -193,6 +195,7 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
             throw new BusinessException(ErrorCode.NOT_FOUND, "user not found");
         }
         if (!departmentId.equals(user.getDepartmentId())) {
+            // 不允许用任意 departmentId 把其他部门的人“移除”，必须先确认其确实属于当前部门。
             throw new BusinessException(ErrorCode.CONFLICT, "user is not in this department");
         }
 

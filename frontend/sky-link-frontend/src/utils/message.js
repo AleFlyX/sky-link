@@ -1,4 +1,4 @@
-const MESSAGE_RECALL_WINDOW_MS = 2 * 60 * 1000 // 消息撤回时间窗口，单位毫秒
+const MESSAGE_RECALL_WINDOW_MS = 2 * 60 * 1000 // 消息撤回时间窗口，单位毫秒 2分钟
 
 /**
  * 将任意值转换为 Date 对象，如果无法转换则返回 null
@@ -19,7 +19,7 @@ export function toDate(value) {
     return directDate
   }
 
-  const timeOnlyMatch = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
+  const timeOnlyMatch = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/)// 匹配时间格式 "HH:mm" 或 "HH:mm:ss"
   if (!timeOnlyMatch) {
     return null
   }
